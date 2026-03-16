@@ -20,7 +20,7 @@ import {
   LogOut,
   Bug,
   CheckCircle,
-  Handshake,
+  MessageSquare,
   GitBranch,
 } from "lucide-react";
 
@@ -58,7 +58,7 @@ const navSections: NavSection[] = [
       {
         label: "Negotiations",
         href: "/admin/negotiations",
-        icon: <Handshake size={20} />,
+        icon: <MessageSquare size={20} />,
       },
       {
         label: "Tenant Pipeline",
