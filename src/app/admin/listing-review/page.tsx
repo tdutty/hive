@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { useApi } from "@/lib/hooks";
 import { api } from "@/lib/api";
-import { StatusBadge } from "@/components/ui/StatusBadge";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -101,7 +100,7 @@ export default function ListingReviewPage() {
   const reviewListing = async (id: string, action: "approve" | "reject") => {
     setActionLoading((prev) => ({ ...prev, [id]: true }));
     try {
-      const res = await api.post(`/api/admin/listings/${id}/review`, {
+      await api.post(`/api/admin/listings/${id}/review`, {
         action,
         notes: notes[id] || undefined,
       });
