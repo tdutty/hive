@@ -19,6 +19,11 @@ const statusColorMap: Record<string, { bg: string; text: string; border: string 
     text: "text-yellow-700",
     border: "border-yellow-200",
   },
+  pending_review: {
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    border: "border-amber-200",
+  },
   approved: {
     bg: "bg-green-50",
     text: "text-green-700",

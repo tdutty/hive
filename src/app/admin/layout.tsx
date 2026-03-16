@@ -19,6 +19,7 @@ import {
   Bell,
   LogOut,
   Bug,
+  CheckCircle,
 } from "lucide-react";
 
 interface NavItem {
@@ -46,6 +47,11 @@ const navSections: NavSection[] = [
         label: "Listings",
         href: "/admin/listings",
         icon: <Building2 size={20} />,
+      },
+      {
+        label: "Listing Review",
+        href: "/admin/listing-review",
+        icon: <CheckCircle size={20} />,
       },
       {
         label: "Financial",
