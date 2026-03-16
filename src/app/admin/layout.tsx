@@ -20,6 +20,8 @@ import {
   LogOut,
   Bug,
   CheckCircle,
+  Handshake,
+  GitBranch,
 } from "lucide-react";
 
 interface NavItem {
@@ -52,6 +54,16 @@ const navSections: NavSection[] = [
         label: "Listing Review",
         href: "/admin/listing-review",
         icon: <CheckCircle size={20} />,
+      },
+      {
+        label: "Negotiations",
+        href: "/admin/negotiations",
+        icon: <Handshake size={20} />,
+      },
+      {
+        label: "Tenant Pipeline",
+        href: "/admin/tenant-pipeline",
+        icon: <GitBranch size={20} />,
       },
       {
         label: "Financial",
