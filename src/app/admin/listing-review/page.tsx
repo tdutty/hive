@@ -101,6 +101,15 @@ export default function ListingReviewPage() {
   const pagination = data?.pagination;
   const counts = data?.counts || { pending: 0, approved: 0, rejected: 0 };
 
+  // Group listings by city
+  const groupedByCity = listings.reduce<Record<string, ReviewListing[]>>((acc, listing) => {
+    const city = listing.address ? `${listing.address.city}, ${listing.address.state}` : "Unknown Location";
+    if (!acc[city]) acc[city] = [];
+    acc[city].push(listing);
+    return acc;
+  }, {});
+  const cityGroups = Object.entries(groupedByCity).sort((a, b) => b[1].length - a[1].length);
+
   const reviewListing = async (id: string, action: "approve" | "reject") => {
     setActionLoading((prev) => ({ ...prev, [id]: true }));
     try {
@@ -302,14 +311,22 @@ export default function ListingReviewPage() {
         </div>
       )}
 
-      {/* Listings */}
+      {/* Listings grouped by city */}
       {listings.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-lg p-12 text-center text-slate-500">
           No {activeTab === "PENDING_REVIEW" ? "pending" : activeTab.toLowerCase()} listings.
         </div>
       ) : (
-        <div className="space-y-3">
-          {listings.map((listing) => {
+        <div className="space-y-6">
+          {cityGroups.map(([city, cityListings]) => (
+            <div key={city}>
+              <div className="flex items-center gap-3 mb-3">
+                <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">{city}</h3>
+                <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded-full">{cityListings.length}</span>
+                <div className="flex-1 h-px bg-slate-200" />
+              </div>
+              <div className="space-y-3">
+          {cityListings.map((listing) => {
             const isExpanded = expandedId === listing.id;
             const isSelected = selectedIds.has(listing.id);
             const isLoading = actionLoading[listing.id];
@@ -540,6 +557,9 @@ export default function ListingReviewPage() {
               </div>
             );
           })}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
