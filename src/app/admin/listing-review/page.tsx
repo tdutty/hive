@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Image as ImageIcon,
   ExternalLink,
+  X,
 } from "lucide-react";
 import { useApi } from "@/lib/hooks";
 import { api } from "@/lib/api";
@@ -34,6 +35,7 @@ interface ReviewListing {
   createdAt: string;
   address: ListingAddress | null;
   primaryImage: string | null;
+  images: string[];
   qualityScore: number | null;
   daysOnMarket: number | null;
   ownerName: string | null;
@@ -71,6 +73,7 @@ export default function ListingReviewPage() {
   const [bulkNotes, setBulkNotes] = useState("");
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+  const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
 
   const {
     data,
@@ -331,13 +334,27 @@ export default function ListingReviewPage() {
                   )}
 
                   {/* Thumbnail */}
-                  <div className="w-20 h-20 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
+                  <div
+                    className="w-20 h-20 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0 relative cursor-pointer group"
+                    onClick={() => {
+                      if (listing.images.length > 0) {
+                        setLightbox({ images: listing.images, index: 0 });
+                      }
+                    }}
+                  >
                     {listing.primaryImage ? (
-                      <img
-                        src={listing.primaryImage}
-                        alt={listing.title}
-                        className="w-full h-full object-cover"
-                      />
+                      <>
+                        <img
+                          src={listing.primaryImage}
+                          alt={listing.title}
+                          className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
+                        />
+                        {listing.images.length > 1 && (
+                          <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[10px] font-medium px-1.5 py-0.5 rounded">
+                            1/{listing.images.length}
+                          </span>
+                        )}
+                      </>
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <ImageIcon size={24} className="text-slate-300" />
@@ -466,6 +483,30 @@ export default function ListingReviewPage() {
                         </div>
                       </div>
 
+                      {/* Photo gallery */}
+                      {listing.images.length > 0 && (
+                        <div className="mt-4">
+                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                            Photos ({listing.images.length})
+                          </p>
+                          <div className="grid grid-cols-4 gap-2">
+                            {listing.images.map((url, i) => (
+                              <div
+                                key={i}
+                                className="aspect-[4/3] rounded-lg overflow-hidden bg-slate-100 cursor-pointer group"
+                                onClick={() => setLightbox({ images: listing.images, index: i })}
+                              >
+                                <img
+                                  src={url}
+                                  alt={`${listing.title} photo ${i + 1}`}
+                                  className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Notes input for pending */}
                       {activeTab === "PENDING_REVIEW" && (
                         <div className="mt-4">
@@ -488,6 +529,61 @@ export default function ListingReviewPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+          onClick={() => setLightbox(null)}
+        >
+          <button
+            onClick={() => setLightbox(null)}
+            className="absolute top-4 right-4 text-white/80 hover:text-white p-2"
+          >
+            <X size={24} />
+          </button>
+
+          {lightbox.images.length > 1 && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightbox({
+                    ...lightbox,
+                    index: (lightbox.index - 1 + lightbox.images.length) % lightbox.images.length,
+                  });
+                }}
+                className="absolute left-4 text-white/80 hover:text-white p-2 bg-white/10 rounded-full"
+              >
+                <ChevronLeft size={28} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightbox({
+                    ...lightbox,
+                    index: (lightbox.index + 1) % lightbox.images.length,
+                  });
+                }}
+                className="absolute right-4 text-white/80 hover:text-white p-2 bg-white/10 rounded-full"
+              >
+                <ChevronRight size={28} />
+              </button>
+            </>
+          )}
+
+          <div className="max-w-4xl max-h-[85vh] relative" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={lightbox.images[lightbox.index]}
+              alt={`Photo ${lightbox.index + 1}`}
+              className="max-w-full max-h-[85vh] object-contain rounded-lg"
+            />
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white text-sm px-3 py-1 rounded-full">
+              {lightbox.index + 1} / {lightbox.images.length}
+            </div>
+          </div>
         </div>
       )}
 
