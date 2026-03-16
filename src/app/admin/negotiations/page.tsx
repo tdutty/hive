@@ -12,6 +12,7 @@ interface CounteredOffer {
   counteredAt: string | null;
   landlordName: string | null;
   landlordEmail: string | null;
+  landlordPhone: string | null;
   propertyTitle: string | null;
   propertyAddress: { street?: string; city?: string; state?: string } | null;
   tenantCount: number;
@@ -184,6 +185,11 @@ export default function NegotiationsPage() {
                         <div className="text-gray-400 text-sm">
                           {offer.landlordEmail}
                         </div>
+                        {offer.landlordPhone && (
+                          <a href={`tel:${offer.landlordPhone}`} className="text-blue-400 hover:text-blue-300 text-sm mt-1 inline-block">
+                            {offer.landlordPhone}
+                          </a>
+                        )}
                       </div>
                       <div>
                         <div className="text-gray-500 text-xs uppercase tracking-wider">

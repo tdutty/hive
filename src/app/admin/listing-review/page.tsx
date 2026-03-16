@@ -40,6 +40,7 @@ interface ReviewListing {
   daysOnMarket: number | null;
   ownerName: string | null;
   ownerEmail: string | null;
+  ownerPhone: string | null;
   zillowUrl: string | null;
   reviewedBy: string | null;
   reviewedAt: string | null;
@@ -458,8 +459,18 @@ export default function ListingReviewPage() {
                           <span className="text-slate-900">{listing.ownerName || "Unknown"}</span>
                         </div>
                         <div>
-                          <span className="font-medium text-slate-500">Owner Email:</span>{" "}
+                          <span className="font-medium text-slate-500">Email:</span>{" "}
                           <span className="text-slate-900">{listing.ownerEmail || "N/A"}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-slate-500">Phone:</span>{" "}
+                          {listing.ownerPhone ? (
+                            <a href={`tel:${listing.ownerPhone}`} className="text-blue-600 hover:underline">
+                              {listing.ownerPhone}
+                            </a>
+                          ) : (
+                            <span className="text-slate-400">N/A</span>
+                          )}
                         </div>
                         <div>
                           <span className="font-medium text-slate-500">Created:</span>{" "}
