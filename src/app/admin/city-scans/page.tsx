@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { RefreshCw, Search, Phone, Mail, Building2, MapPin, ChevronDown, ChevronUp } from "lucide-react";
+import { RefreshCw, Search, Phone, Mail, MapPin, ChevronDown, ChevronUp } from "lucide-react";
 
 interface CityScore {
   id: number;
