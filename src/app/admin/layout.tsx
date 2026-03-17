@@ -22,6 +22,7 @@ import {
   CheckCircle,
   MessageSquare,
   GitBranch,
+  MapPin,
 } from "lucide-react";
 
 interface NavItem {
@@ -64,6 +65,11 @@ const navSections: NavSection[] = [
         label: "Tenant Pipeline",
         href: "/admin/tenant-pipeline",
         icon: <GitBranch size={20} />,
+      },
+      {
+        label: "City Scans",
+        href: "/admin/city-scans",
+        icon: <MapPin size={20} />,
       },
       {
         label: "Financial",
