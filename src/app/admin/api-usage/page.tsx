@@ -21,6 +21,139 @@ interface APIProvider {
   errors: { endpoint: string; statusCode: number; message: string; timestamp: string }[];
 }
 
+interface Subscription {
+  name: string;
+  category: string;
+  plan: string;
+  monthlyCost: number;
+  billingCycle: "monthly" | "annual";
+  renewalDate: string;
+  status: "active" | "trial" | "cancelled";
+  creditsUsed?: number;
+  creditsTotal?: number;
+  costPerCall?: string;
+  notes?: string;
+}
+
+const SUBSCRIPTIONS: Subscription[] = [
+  {
+    name: "DigitalOcean",
+    category: "Infrastructure",
+    plan: "App Platform + Managed DB + Droplet",
+    monthlyCost: 85,
+    billingCycle: "monthly",
+    renewalDate: "2026-04-01",
+    status: "active",
+    notes: "SweetLease app + Locust app + Hive droplet + Postgres DB",
+  },
+  {
+    name: "Resend",
+    category: "Email",
+    plan: "Pro",
+    monthlyCost: 20,
+    billingCycle: "monthly",
+    renewalDate: "2026-04-01",
+    status: "active",
+    notes: "Transactional + outbound emails",
+  },
+  {
+    name: "RentCast",
+    category: "Property Data",
+    plan: "API Access",
+    monthlyCost: 0,
+    billingCycle: "monthly",
+    renewalDate: "2026-04-01",
+    status: "active",
+    costPerCall: "$0.01/listing",
+    notes: "Rental listing search + property details",
+  },
+  {
+    name: "Apollo.io",
+    category: "Contact Enrichment",
+    plan: "API",
+    monthlyCost: 0,
+    billingCycle: "monthly",
+    renewalDate: "2026-04-01",
+    status: "active",
+    costPerCall: "Credit-based",
+    notes: "Owner email + phone lookup",
+  },
+  {
+    name: "PropertyReach",
+    category: "Skip Tracing",
+    plan: "API - Core",
+    monthlyCost: 159,
+    billingCycle: "monthly",
+    renewalDate: "2026-04-16",
+    status: "trial",
+    costPerCall: "Per lookup",
+    notes: "Property owner data, skip trace, portfolio detection",
+  },
+  {
+    name: "Mapbox",
+    category: "Maps",
+    plan: "Free Tier",
+    monthlyCost: 0,
+    billingCycle: "monthly",
+    renewalDate: "2026-04-01",
+    status: "active",
+    notes: "City autocomplete + map rendering",
+  },
+  {
+    name: "Stripe",
+    category: "Payments",
+    plan: "Standard",
+    monthlyCost: 0,
+    billingCycle: "monthly",
+    renewalDate: "N/A",
+    status: "active",
+    costPerCall: "2.9% + $0.30/txn",
+    notes: "Tenant lease payments",
+  },
+  {
+    name: "Cal.com",
+    category: "Scheduling",
+    plan: "Free",
+    monthlyCost: 0,
+    billingCycle: "monthly",
+    renewalDate: "N/A",
+    status: "active",
+    notes: "Meeting scheduling for landlord outreach",
+  },
+  {
+    name: "Porkbun",
+    category: "Email / DNS",
+    plan: "Domain + Email",
+    monthlyCost: 2,
+    billingCycle: "annual",
+    renewalDate: "2027-02-01",
+    status: "active",
+    notes: "sweetlease.io domain + SMTP/IMAP for replies",
+  },
+  {
+    name: "ScraperAPI",
+    category: "Web Scraping",
+    plan: "Hobby",
+    monthlyCost: 49,
+    billingCycle: "monthly",
+    renewalDate: "2026-04-01",
+    status: "active",
+    costPerCall: "$0.001/request",
+    notes: "Zillow photo + contact scraping proxy",
+  },
+  {
+    name: "Anthropic (Claude)",
+    category: "AI",
+    plan: "API",
+    monthlyCost: 0,
+    billingCycle: "monthly",
+    renewalDate: "N/A",
+    status: "active",
+    costPerCall: "Per token",
+    notes: "AI email generation for outbound sequences",
+  },
+];
+
 export default function APIUsagePage() {
   const [sortBy, setSortBy] = useState("cost");
   const [expandedProvider, setExpandedProvider] = useState<string | null>(null);
@@ -74,8 +207,117 @@ export default function APIUsagePage() {
     <div className="space-y-8">
       {/* Page Title */}
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900 mb-2">API Usage</h1>
-        <p className="text-slate-500">Monitor third-party API consumption and costs</p>
+        <h1 className="text-2xl font-semibold text-slate-900 mb-2">API Usage &amp; Costs</h1>
+        <p className="text-slate-500">Monitor third-party API consumption, costs, and subscriptions</p>
+      </div>
+
+      {/* Subscriptions & Renewals */}
+      <div>
+        <h2 className="text-lg font-semibold text-slate-900 mb-4">Subscriptions &amp; Renewals</h2>
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-5">
+            <p className="text-xs font-semibold text-slate-500 mb-1">Monthly Burn</p>
+            <p className="text-2xl font-semibold text-amber-600">
+              {formatCurrency(SUBSCRIPTIONS.reduce((sum, s) => sum + (s.billingCycle === "monthly" ? s.monthlyCost : s.monthlyCost / 12), 0))}
+              <span className="text-sm text-slate-400 font-normal">/mo</span>
+            </p>
+          </div>
+          <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-5">
+            <p className="text-xs font-semibold text-slate-500 mb-1">Active Services</p>
+            <p className="text-2xl font-semibold text-slate-900">
+              {SUBSCRIPTIONS.filter(s => s.status === "active").length}
+            </p>
+          </div>
+          <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-5">
+            <p className="text-xs font-semibold text-slate-500 mb-1">Next Renewal</p>
+            <p className="text-2xl font-semibold text-slate-900">
+              {(() => {
+                const upcoming = SUBSCRIPTIONS
+                  .filter(s => s.renewalDate !== "N/A")
+                  .sort((a, b) => new Date(a.renewalDate).getTime() - new Date(b.renewalDate).getTime());
+                if (upcoming.length === 0) return "None";
+                const next = upcoming[0];
+                const days = Math.ceil((new Date(next.renewalDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                return `${days}d`;
+              })()}
+              <span className="text-sm text-slate-400 font-normal ml-1">
+                ({(() => {
+                  const upcoming = SUBSCRIPTIONS
+                    .filter(s => s.renewalDate !== "N/A")
+                    .sort((a, b) => new Date(a.renewalDate).getTime() - new Date(b.renewalDate).getTime());
+                  return upcoming[0]?.name || "";
+                })()})
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50">
+                <th className="text-left font-semibold text-slate-600 px-5 py-3">Service</th>
+                <th className="text-left font-semibold text-slate-600 px-5 py-3">Category</th>
+                <th className="text-left font-semibold text-slate-600 px-5 py-3">Plan</th>
+                <th className="text-right font-semibold text-slate-600 px-5 py-3">Cost</th>
+                <th className="text-left font-semibold text-slate-600 px-5 py-3">Per Call</th>
+                <th className="text-left font-semibold text-slate-600 px-5 py-3">Renewal</th>
+                <th className="text-left font-semibold text-slate-600 px-5 py-3">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {SUBSCRIPTIONS.map((sub) => {
+                const daysUntil = sub.renewalDate !== "N/A"
+                  ? Math.ceil((new Date(sub.renewalDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                  : null;
+                return (
+                  <tr key={sub.name} className="border-b border-slate-100 hover:bg-slate-50">
+                    <td className="px-5 py-3">
+                      <div className="font-medium text-slate-900">{sub.name}</div>
+                      {sub.notes && <div className="text-xs text-slate-400 mt-0.5">{sub.notes}</div>}
+                    </td>
+                    <td className="px-5 py-3 text-slate-600">{sub.category}</td>
+                    <td className="px-5 py-3 text-slate-600">{sub.plan}</td>
+                    <td className="px-5 py-3 text-right">
+                      {sub.monthlyCost > 0 ? (
+                        <span className="font-semibold text-slate-900">
+                          {formatCurrency(sub.monthlyCost)}
+                          <span className="text-slate-400 font-normal">/{sub.billingCycle === "annual" ? "yr" : "mo"}</span>
+                        </span>
+                      ) : (
+                        <span className="text-green-600 font-medium">Free</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 text-slate-500">{sub.costPerCall || "—"}</td>
+                    <td className="px-5 py-3">
+                      {sub.renewalDate === "N/A" ? (
+                        <span className="text-slate-400">—</span>
+                      ) : (
+                        <div>
+                          <div className="text-slate-900">{new Date(sub.renewalDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                          {daysUntil !== null && daysUntil <= 14 && (
+                            <div className={`text-xs font-medium ${daysUntil <= 3 ? "text-red-600" : "text-amber-600"}`}>
+                              {daysUntil <= 0 ? "Overdue" : `${daysUntil}d away`}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-5 py-3">
+                      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                        sub.status === "active" ? "bg-green-50 text-green-700" :
+                        sub.status === "trial" ? "bg-amber-50 text-amber-700" :
+                        "bg-red-50 text-red-700"
+                      }`}>
+                        {sub.status}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Error States */}
