@@ -97,6 +97,11 @@ const navSections: NavSection[] = [
         icon: <Activity size={20} />,
       },
       { label: "API Usage", href: "/admin/api-usage", icon: <Zap size={20} /> },
+      {
+        label: "Alerts",
+        href: "/admin/alerts",
+        icon: <Bell size={20} />,
+      },
       { label: "Bugs", href: "/admin/bugs", icon: <Bug size={20} /> },
     ],
   },
