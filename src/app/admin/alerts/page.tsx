@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { RefreshCw, AlertTriangle, CheckCircle, XCircle, Clock, Image } from "lucide-react";
+import { RefreshCw, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 
 interface PhotoMonitorStats {
   totalListings: number;
@@ -141,7 +141,7 @@ export default function AlertsPage() {
             <div className="p-6 border-b border-slate-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Image size={20} className="text-slate-600" />
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-600"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
                   <h2 className="text-lg font-semibold text-slate-900">Photo Download Pipeline</h2>
                 </div>
                 <div className="flex items-center gap-2">
