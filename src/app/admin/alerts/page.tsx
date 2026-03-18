@@ -22,43 +22,74 @@ interface PhotoMonitorStats {
   issues: string[];
 }
 
-const STATUS_CONFIG = {
-  healthy: { color: "bg-green-500", text: "text-green-700", bg: "bg-green-50", border: "border-green-200", label: "Healthy" },
-  degraded: { color: "bg-amber-500", text: "text-amber-700", bg: "bg-amber-50", border: "border-amber-200", label: "Degraded" },
-  blocked: { color: "bg-red-500", text: "text-red-700", bg: "bg-red-50", border: "border-red-200", label: "Blocked" },
-  idle: { color: "bg-gray-400", text: "text-gray-600", bg: "bg-gray-50", border: "border-gray-200", label: "Idle" },
+interface EnrichmentStats {
+  totalListings: number;
+  enriched: number;
+  pending: number;
+  percentComplete: number;
+  creditsUsed: number;
+  enrichedLastHour: number;
+  failedLastHour: number;
+  avgPhotosPerListing: number;
+  estimatedCreditsNeeded: number;
+  creditsBurnRate: number;
+  successRate: number;
+  etaHours: number | null;
+  status: "healthy" | "degraded" | "blocked" | "idle" | "credits_low";
+  issues: string[];
+}
+
+const STATUS_CONFIG: Record<string, { color: string; text: string; label: string }> = {
+  healthy: { color: "bg-green-500", text: "text-green-700", label: "Healthy" },
+  degraded: { color: "bg-amber-500", text: "text-amber-700", label: "Degraded" },
+  blocked: { color: "bg-red-500", text: "text-red-700", label: "Blocked" },
+  idle: { color: "bg-gray-400", text: "text-gray-600", label: "Idle" },
+  credits_low: { color: "bg-red-500", text: "text-red-700", label: "Credits Low" },
 };
 
 export default function AlertsPage() {
   const [photoStats, setPhotoStats] = useState<PhotoMonitorStats | null>(null);
+  const [enrichStats, setEnrichStats] = useState<EnrichmentStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   const fetchStats = async () => {
     try {
-      const data = await api.get<PhotoMonitorStats>("/api/admin/photo-monitor");
-      setPhotoStats(data);
+      const [photo, enrich] = await Promise.allSettled([
+        api.get<PhotoMonitorStats>("/api/admin/photo-monitor"),
+        api.get<EnrichmentStats>("/api/admin/enrichment-monitor"),
+      ]);
+      if (photo.status === "fulfilled") setPhotoStats(photo.value);
+      if (enrich.status === "fulfilled") setEnrichStats(enrich.value);
       setLastRefresh(new Date());
-    } catch (err) {
-      console.error("Failed to fetch stats:", err);
+    } catch {
+      console.error("Failed to fetch stats");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
+  useEffect(() => { fetchStats(); }, []);
 
-  // Auto-refresh every 30 seconds
   useEffect(() => {
     if (!autoRefresh) return;
     const interval = setInterval(fetchStats, 30000);
     return () => clearInterval(interval);
   }, [autoRefresh]);
 
-  const sc = photoStats ? STATUS_CONFIG[photoStats.status] : STATUS_CONFIG.idle;
+  // Collect all alerts
+  const allIssues: Array<{ source: string; severity: string; message: string }> = [];
+  if (photoStats?.issues) {
+    for (const issue of photoStats.issues) {
+      allIssues.push({ source: "Photo Download", severity: photoStats.status, message: issue });
+    }
+  }
+  if (enrichStats?.issues) {
+    for (const issue of enrichStats.issues) {
+      allIssues.push({ source: "Listing Enrichment", severity: enrichStats.status, message: issue });
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -69,20 +100,11 @@ export default function AlertsPage() {
         </div>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-2 text-sm text-slate-500">
-            <input
-              type="checkbox"
-              checked={autoRefresh}
-              onChange={(e) => setAutoRefresh(e.target.checked)}
-              className="rounded border-slate-300"
-            />
+            <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} className="rounded border-slate-300" />
             Auto-refresh
           </label>
-          <button
-            onClick={fetchStats}
-            className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50"
-          >
-            <RefreshCw size={14} />
-            Refresh
+          <button onClick={fetchStats} className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+            <RefreshCw size={14} />Refresh
           </button>
         </div>
       </div>
@@ -91,169 +113,194 @@ export default function AlertsPage() {
         <div className="flex items-center justify-center py-12">
           <RefreshCw className="animate-spin text-amber-600" size={32} />
         </div>
-      ) : photoStats ? (
+      ) : (
         <>
-          {/* Active Alerts */}
-          {photoStats.issues.length > 0 && (
+          {/* Alert Banners */}
+          {allIssues.length > 0 ? (
             <div className="space-y-3">
-              {photoStats.issues.map((issue, i) => (
-                <div
-                  key={i}
-                  className={`flex items-start gap-3 p-4 rounded-lg border ${
-                    photoStats.status === "blocked"
-                      ? "bg-red-50 border-red-200"
-                      : photoStats.status === "degraded"
-                        ? "bg-amber-50 border-amber-200"
-                        : "bg-blue-50 border-blue-200"
-                  }`}
-                >
-                  <AlertTriangle
-                    size={18}
-                    className={
-                      photoStats.status === "blocked"
-                        ? "text-red-600"
-                        : photoStats.status === "degraded"
-                          ? "text-amber-600"
-                          : "text-blue-600"
-                    }
-                  />
+              {allIssues.map((issue, i) => (
+                <div key={i} className={`flex items-start gap-3 p-4 rounded-lg border ${
+                  issue.severity === "blocked" || issue.severity === "credits_low" ? "bg-red-50 border-red-200" :
+                  issue.severity === "degraded" ? "bg-amber-50 border-amber-200" : "bg-blue-50 border-blue-200"
+                }`}>
+                  <AlertTriangle size={18} className={
+                    issue.severity === "blocked" || issue.severity === "credits_low" ? "text-red-600" :
+                    issue.severity === "degraded" ? "text-amber-600" : "text-blue-600"
+                  } />
                   <div>
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{issue.source}</p>
                     <p className={`text-sm font-medium ${
-                      photoStats.status === "blocked" ? "text-red-900" : photoStats.status === "degraded" ? "text-amber-900" : "text-blue-900"
-                    }`}>
-                      {issue}
-                    </p>
+                      issue.severity === "blocked" || issue.severity === "credits_low" ? "text-red-900" :
+                      issue.severity === "degraded" ? "text-amber-900" : "text-blue-900"
+                    }`}>{issue.message}</p>
                   </div>
                 </div>
               ))}
             </div>
-          )}
-
-          {photoStats.issues.length === 0 && photoStats.status === "healthy" && (
+          ) : (
             <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
               <CheckCircle size={18} className="text-green-600" />
               <p className="text-sm font-medium text-green-900">All systems operating normally</p>
             </div>
           )}
 
-          {/* Photo Download Monitor */}
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-600"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                  <h2 className="text-lg font-semibold text-slate-900">Photo Download Pipeline</h2>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className={`w-2.5 h-2.5 rounded-full ${sc.color} ${photoStats.status === 'healthy' || photoStats.status === 'degraded' ? 'animate-pulse' : ''}`} />
-                  <span className={`text-sm font-medium ${sc.text}`}>{sc.label}</span>
-                </div>
-              </div>
-            </div>
+          {/* Enrichment Pipeline */}
+          {enrichStats && (
+            <PipelineCard
+              title="Listing Enrichment"
+              subtitle="Full property details from Scrapeak (photos, description, amenities)"
+              status={enrichStats.status}
+              percentComplete={enrichStats.percentComplete}
+              completedCount={enrichStats.enriched}
+              totalCount={enrichStats.totalListings}
+              pendingCount={enrichStats.pending}
+              lastHourSuccess={enrichStats.enrichedLastHour}
+              lastHourFailed={enrichStats.failedLastHour}
+              successRate={enrichStats.successRate}
+              etaHours={enrichStats.etaHours}
+              extraStats={[
+                { label: "Credits Used", value: enrichStats.creditsUsed.toLocaleString() },
+                { label: "Credits/Hour", value: enrichStats.creditsBurnRate.toLocaleString() },
+                { label: "Credits Needed", value: enrichStats.estimatedCreditsNeeded.toLocaleString() },
+                { label: "Avg Photos", value: String(enrichStats.avgPhotosPerListing) + "/listing" },
+              ]}
+            />
+          )}
 
-            {/* Progress Bar */}
-            <div className="p-6 border-b border-slate-200">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-slate-700">
-                  {photoStats.withS3Photos.toLocaleString()} / {photoStats.withZillowPhotos.toLocaleString()} listings
-                </span>
-                <span className="text-sm font-bold text-slate-900">{photoStats.percentComplete}%</span>
-              </div>
-              <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    photoStats.status === "blocked" ? "bg-red-500" : photoStats.status === "degraded" ? "bg-amber-500" : "bg-green-500"
-                  }`}
-                  style={{ width: `${photoStats.percentComplete}%` }}
-                />
-              </div>
-              <div className="flex items-center justify-between mt-2">
-                <span className="text-xs text-slate-400">
-                  {photoStats.totalS3Photos.toLocaleString()} photos on our CDN
-                </span>
-                <span className="text-xs text-slate-400">
-                  {photoStats.pendingDownload.toLocaleString()} listings remaining
-                </span>
-              </div>
-            </div>
+          {/* Photo Download Pipeline */}
+          {photoStats && (
+            <PipelineCard
+              title="Photo Download"
+              subtitle="Transferring images from Zillow to our CDN"
+              status={photoStats.status}
+              percentComplete={photoStats.percentComplete}
+              completedCount={photoStats.withS3Photos}
+              totalCount={photoStats.withZillowPhotos}
+              pendingCount={photoStats.pendingDownload}
+              lastHourSuccess={photoStats.downloadedLastHour}
+              lastHourFailed={photoStats.failedLastHour}
+              successRate={photoStats.successRate}
+              etaHours={photoStats.estimatedHoursRemaining}
+              extraStats={[
+                { label: "Zillow Photos", value: photoStats.totalZillowPhotos.toLocaleString() },
+                { label: "On CDN", value: photoStats.totalS3Photos.toLocaleString() },
+                { label: "Downloaded (24h)", value: photoStats.downloadedLast24h.toLocaleString() },
+                { label: "Failed (24h)", value: String(photoStats.failedLast24h) },
+              ]}
+            />
+          )}
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-4 border-b border-slate-200">
-              <div className="p-5 border-r border-slate-200">
-                <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Last Hour</div>
-                <div className="text-2xl font-semibold text-slate-900">{photoStats.downloadedLastHour.toLocaleString()}</div>
-                <div className="text-xs text-slate-400">photos downloaded</div>
-              </div>
-              <div className="p-5 border-r border-slate-200">
-                <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Failed (1h)</div>
-                <div className={`text-2xl font-semibold ${photoStats.failedLastHour > 0 ? "text-red-600" : "text-slate-900"}`}>
-                  {photoStats.failedLastHour}
-                </div>
-                <div className="text-xs text-slate-400">errors</div>
-              </div>
-              <div className="p-5 border-r border-slate-200">
-                <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Success Rate</div>
-                <div className={`text-2xl font-semibold ${
-                  photoStats.successRate >= 80 ? "text-green-600" : photoStats.successRate >= 50 ? "text-amber-600" : "text-red-600"
-                }`}>
-                  {photoStats.successRate}%
-                </div>
-                <div className="text-xs text-slate-400">last hour</div>
-              </div>
-              <div className="p-5">
-                <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">ETA</div>
-                <div className="text-2xl font-semibold text-slate-900">
-                  {photoStats.estimatedHoursRemaining !== null
-                    ? photoStats.estimatedHoursRemaining > 24
-                      ? `${Math.round(photoStats.estimatedHoursRemaining / 24)}d`
-                      : `${photoStats.estimatedHoursRemaining}h`
-                    : "—"}
-                </div>
-                <div className="text-xs text-slate-400">remaining</div>
-              </div>
+          {/* Last Updated */}
+          {lastRefresh && (
+            <div className="text-center">
+              <span className="text-xs text-slate-400 flex items-center justify-center gap-1">
+                <Clock size={12} />
+                Last updated {lastRefresh.toLocaleTimeString()}
+                {autoRefresh && " · Auto-refreshing every 30s"}
+              </span>
             </div>
-
-            {/* 24h Summary */}
-            <div className="p-5 bg-slate-50">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-4">
-                  <span className="text-slate-500">Last 24 hours:</span>
-                  <span className="font-medium text-green-700">{photoStats.downloadedLast24h.toLocaleString()} downloaded</span>
-                  {photoStats.failedLast24h > 0 && (
-                    <span className="font-medium text-red-600">{photoStats.failedLast24h.toLocaleString()} failed</span>
-                  )}
-                </div>
-                {lastRefresh && (
-                  <span className="text-slate-400 flex items-center gap-1">
-                    <Clock size={12} />
-                    Updated {lastRefresh.toLocaleTimeString()}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Photo Inventory */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-5">
-              <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Total Listings</div>
-              <div className="text-2xl font-semibold text-slate-900">{photoStats.totalListings.toLocaleString()}</div>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-5">
-              <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Zillow Photo URLs</div>
-              <div className="text-2xl font-semibold text-slate-900">{photoStats.totalZillowPhotos.toLocaleString()}</div>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-5">
-              <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">On Our CDN</div>
-              <div className="text-2xl font-semibold text-green-600">{photoStats.totalS3Photos.toLocaleString()}</div>
-            </div>
-          </div>
+          )}
         </>
-      ) : (
-        <div className="bg-white border border-slate-200 rounded-lg p-12 text-center text-slate-500">
-          Unable to load monitoring data
-        </div>
       )}
+    </div>
+  );
+}
+
+function PipelineCard({
+  title, subtitle, status, percentComplete, completedCount, totalCount, pendingCount,
+  lastHourSuccess, lastHourFailed, successRate, etaHours, extraStats,
+}: {
+  title: string;
+  subtitle: string;
+  status: string;
+  percentComplete: number;
+  completedCount: number;
+  totalCount: number;
+  pendingCount: number;
+  lastHourSuccess: number;
+  lastHourFailed: number;
+  successRate: number;
+  etaHours: number | null;
+  extraStats: Array<{ label: string; value: string }>;
+}) {
+  const sc = STATUS_CONFIG[status] || STATUS_CONFIG.idle;
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+      <div className="p-6 border-b border-slate-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+            <p className="text-sm text-slate-400">{subtitle}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className={`w-2.5 h-2.5 rounded-full ${sc.color} ${status === 'healthy' ? 'animate-pulse' : ''}`} />
+            <span className={`text-sm font-medium ${sc.text}`}>{sc.label}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="p-6 border-b border-slate-200">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-slate-700">
+            {completedCount.toLocaleString()} / {totalCount.toLocaleString()}
+          </span>
+          <span className="text-sm font-bold text-slate-900">{percentComplete}%</span>
+        </div>
+        <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${
+              status === "blocked" || status === "credits_low" ? "bg-red-500" : status === "degraded" ? "bg-amber-500" : "bg-green-500"
+            }`}
+            style={{ width: `${percentComplete}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between mt-2">
+          <span className="text-xs text-slate-400">{pendingCount.toLocaleString()} remaining</span>
+          <span className="text-xs text-slate-400">
+            ETA: {etaHours !== null ? (etaHours > 24 ? `${Math.round(etaHours / 24)}d ${etaHours % 24}h` : `${etaHours}h`) : "—"}
+          </span>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-4 border-b border-slate-200">
+        <div className="p-4 border-r border-slate-200">
+          <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Last Hour</div>
+          <div className="text-xl font-semibold text-slate-900">{lastHourSuccess.toLocaleString()}</div>
+          <div className="text-xs text-slate-400">processed</div>
+        </div>
+        <div className="p-4 border-r border-slate-200">
+          <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Failed (1h)</div>
+          <div className={`text-xl font-semibold ${lastHourFailed > 0 ? "text-red-600" : "text-slate-900"}`}>
+            {lastHourFailed}
+          </div>
+          <div className="text-xs text-slate-400">errors</div>
+        </div>
+        <div className="p-4 border-r border-slate-200">
+          <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Success Rate</div>
+          <div className={`text-xl font-semibold ${successRate >= 80 ? "text-green-600" : successRate >= 50 ? "text-amber-600" : "text-red-600"}`}>
+            {successRate}%
+          </div>
+          <div className="text-xs text-slate-400">last hour</div>
+        </div>
+        <div className="p-4">
+          <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Rate</div>
+          <div className="text-xl font-semibold text-slate-900">{lastHourSuccess.toLocaleString()}</div>
+          <div className="text-xs text-slate-400">per hour</div>
+        </div>
+      </div>
+
+      {/* Extra Stats */}
+      <div className="grid grid-cols-4 bg-slate-50">
+        {extraStats.map((stat, i) => (
+          <div key={i} className={`p-4 ${i < extraStats.length - 1 ? "border-r border-slate-200" : ""}`}>
+            <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">{stat.label}</div>
+            <div className="text-sm font-semibold text-slate-700">{stat.value}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
