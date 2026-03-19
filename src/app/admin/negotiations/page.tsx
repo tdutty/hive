@@ -27,6 +27,7 @@ export default function NegotiationsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [counterAmounts, setCounterAmounts] = useState<Record<string, number>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<{ offerId: string; message: string; type: 'success' | 'error' } | null>(null);
 
   const fetchOffers = async () => {
     try {
@@ -64,9 +65,18 @@ export default function NegotiationsPage() {
         action,
         newAmount: action === "counter" ? counterAmounts[offerId] : undefined,
       });
+      const messages: Record<string, string> = {
+        accept: "Counter accepted — triggering lease generation",
+        counter: `Counter-offer of $${counterAmounts[offerId]?.toLocaleString()}/mo sent to landlord`,
+        reject: "Offer rejected — landlord notified",
+      };
+      setConfirmation({ offerId, message: messages[action], type: 'success' });
+      setTimeout(() => setConfirmation(null), 5000);
       await fetchOffers();
     } catch (err) {
       console.error("Action failed:", err);
+      setConfirmation({ offerId, message: "Action failed — check console", type: 'error' });
+      setTimeout(() => setConfirmation(null), 5000);
     } finally {
       setActionLoading(null);
     }
@@ -88,6 +98,12 @@ export default function NegotiationsPage() {
           Landlord counter offers requiring your response
         </p>
       </div>
+
+      {confirmation && (
+        <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium ${confirmation.type === 'success' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>
+          {confirmation.message}
+        </div>
+      )}
 
       {offers.length === 0 ? (
         <div className="bg-[#2a2a3d] border border-[#3a3a4d] rounded-lg p-12 text-center">
@@ -223,8 +239,7 @@ export default function NegotiationsPage() {
                         disabled={actionLoading === offer.id}
                         className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded transition-colors disabled:opacity-50"
                       >
-                        Accept ${(offer.counterAmount || 0).toLocaleString()}
-                        /mo
+                        {actionLoading === offer.id ? 'Processing...' : `Accept $${(offer.counterAmount || 0).toLocaleString()}/mo`}
                       </button>
 
                       {/* Counter Back */}
@@ -252,7 +267,7 @@ export default function NegotiationsPage() {
                           }
                           className="px-4 py-3 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium transition-colors disabled:opacity-50"
                         >
-                          Counter
+                          {actionLoading === offer.id ? '...' : 'Counter'}
                         </button>
                       </div>
 
@@ -262,7 +277,7 @@ export default function NegotiationsPage() {
                         disabled={actionLoading === offer.id}
                         className="px-6 py-3 text-gray-400 hover:text-red-400 text-sm font-medium transition-colors disabled:opacity-50"
                       >
-                        Walk Away
+                        {actionLoading === offer.id ? 'Processing...' : 'Walk Away'}
                       </button>
                     </div>
                   </div>
