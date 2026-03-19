@@ -23,6 +23,7 @@ import {
   MessageSquare,
   GitBranch,
   MapPin,
+  FileSignature,
 } from "lucide-react";
 
 interface NavItem {
@@ -70,6 +71,11 @@ const navSections: NavSection[] = [
         label: "City Scans",
         href: "/admin/city-scans",
         icon: <MapPin size={20} />,
+      },
+      {
+        label: "Signing Pipeline",
+        href: "/admin/signing-pipeline",
+        icon: <FileSignature size={20} />,
       },
       {
         label: "Financial",
