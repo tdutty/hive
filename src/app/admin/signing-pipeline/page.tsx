@@ -9,6 +9,7 @@ import {
   Clock,
   XCircle,
   ArrowRightLeft,
+  DollarSign,
 } from "lucide-react";
 
 interface PipelineEntry {
@@ -42,6 +43,17 @@ interface CancelledEntry {
   cancelledAt: string;
 }
 
+interface FundsHeldEntry {
+  notificationId: string;
+  landlordName: string;
+  landlordEmail: string;
+  landlordPhone: string;
+  property: string;
+  amount: number;
+  onboardingStatus: string;
+  createdAt: string;
+}
+
 interface SwapCandidate {
   candidateName: string;
   candidateEmail: string;
@@ -56,11 +68,13 @@ interface PipelineData {
     atRisk: number;
     completedAllTime: number;
     cancelledAllTime: number;
+    fundsHeld: number;
   };
   atRisk: PipelineEntry[];
   pending: PipelineEntry[];
   recentCompleted: CompletedEntry[];
   recentCancelled: CancelledEntry[];
+  fundsHeld: FundsHeldEntry[];
   swapCandidates: SwapCandidate[];
 }
 
@@ -145,7 +159,7 @@ export default function SigningPipelinePage() {
 
       {/* Summary Cards */}
       {data && (
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-5 gap-4">
           <div className="bg-white border border-gray-200 rounded-lg p-5">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
@@ -198,6 +212,69 @@ export default function SigningPipelinePage() {
               </div>
             </div>
           </div>
+          <div className={`bg-white border rounded-lg p-5 ${data.summary.fundsHeld > 0 ? 'border-amber-300 bg-amber-50' : 'border-gray-200'}`}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                <DollarSign size={20} className="text-amber-600" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {data.summary.fundsHeld}
+                </div>
+                <div className="text-xs text-gray-500">Funds Held</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Funds Held — Landlords Need to Onboard */}
+      {data && data.fundsHeld.length > 0 && (
+        <div className="bg-white border border-amber-300 rounded-lg">
+          <div className="px-6 py-4 border-b border-amber-200 bg-amber-50 rounded-t-lg">
+            <div className="flex items-center gap-2">
+              <DollarSign size={18} className="text-amber-600" />
+              <h2 className="font-semibold text-amber-900">
+                Funds Held — Landlord Bank Account Needed
+              </h2>
+            </div>
+            <p className="text-xs text-amber-700 mt-1">Call these landlords to complete their Stripe Connect setup</p>
+          </div>
+          <table className="w-full">
+            <thead>
+              <tr className="text-xs text-gray-500 uppercase border-b border-gray-100">
+                <th className="text-left px-6 py-3">Landlord</th>
+                <th className="text-left px-6 py-3">Contact</th>
+                <th className="text-left px-6 py-3">Property</th>
+                <th className="text-left px-6 py-3">Amount Held</th>
+                <th className="text-left px-6 py-3">Status</th>
+                <th className="text-left px-6 py-3">Since</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {data.fundsHeld.map((entry) => (
+                <tr key={entry.notificationId} className="hover:bg-amber-50">
+                  <td className="px-6 py-3">
+                    <div className="font-medium text-sm text-gray-900">{entry.landlordName}</div>
+                  </td>
+                  <td className="px-6 py-3">
+                    <div className="text-sm text-gray-900">{entry.landlordPhone || 'No phone'}</div>
+                    <div className="text-xs text-gray-500">{entry.landlordEmail}</div>
+                  </td>
+                  <td className="px-6 py-3 text-sm text-gray-600">{entry.property}</td>
+                  <td className="px-6 py-3 text-sm font-bold text-amber-700">${entry.amount.toLocaleString()}</td>
+                  <td className="px-6 py-3">
+                    <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
+                      {entry.onboardingStatus}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3 text-xs text-gray-500">
+                    {new Date(entry.createdAt).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
