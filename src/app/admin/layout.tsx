@@ -24,6 +24,7 @@ import {
   GitBranch,
   MapPin,
   FileSignature,
+  ClipboardList,
 } from "lucide-react";
 
 interface NavItem {
@@ -51,6 +52,11 @@ const navSections: NavSection[] = [
         label: "Listings",
         href: "/admin/listings",
         icon: <Building2 size={20} />,
+      },
+      {
+        label: "Survey Respondents",
+        href: "/admin/survey-respondents",
+        icon: <ClipboardList size={20} />,
       },
       {
         label: "Listing Review",
