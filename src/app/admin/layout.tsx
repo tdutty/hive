@@ -25,6 +25,7 @@ import {
   MapPin,
   FileSignature,
   ClipboardList,
+  Megaphone,
 } from "lucide-react";
 
 interface NavItem {
@@ -82,6 +83,11 @@ const navSections: NavSection[] = [
         label: "Signing Pipeline",
         href: "/admin/signing-pipeline",
         icon: <FileSignature size={20} />,
+      },
+      {
+        label: "Campaigns",
+        href: "/admin/campaigns",
+        icon: <Megaphone size={20} />,
       },
       {
         label: "Financial",
