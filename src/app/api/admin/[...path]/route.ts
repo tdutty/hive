@@ -31,7 +31,7 @@ async function proxyAdmin(
   const cookie = req.headers.get("cookie");
   const sitePassword = process.env.SWEETLEASE_SITE_PASSWORD;
   const siteAccessCookie = sitePassword
-    ? `site_access=${Buffer.from(sitePassword).toString("base64")}`
+    ? `site_access=${Buffer.from(`${Date.now()}:${sitePassword}`).toString("base64")}`
     : "";
   headers["cookie"] = [cookie, siteAccessCookie].filter(Boolean).join("; ");
 
@@ -60,7 +60,7 @@ async function proxyAdmin(
     // Detect this and return a 401 so the Hive client can handle it.
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get("location") || "";
-      if (location.includes("/auth/signin") || location.includes("/login")) {
+      if (location.includes("/auth/signin") || location.includes("/login") || location.includes("/site-access")) {
         return NextResponse.json(
           { error: "Unauthorized", details: "SweetLease session is invalid or expired. Please sign in again." },
           { status: 401 }
