@@ -277,10 +277,9 @@ export default function SurveyRespondentsPage() {
                   <th className="text-left px-5 py-3">Name</th>
                   <th className="text-left px-5 py-3">Destination</th>
                   <th className="text-left px-5 py-3">Move-in</th>
-                  <th className="text-left px-5 py-3">Budget</th>
-                  <th className="text-left px-5 py-3">Beds</th>
+                  <th className="text-left px-5 py-3">Phone</th>
+                  <th className="text-left px-5 py-3">Roommates</th>
                   <th className="text-left px-5 py-3">Status</th>
-                  <th className="text-left px-5 py-3">Matches</th>
                   <th className="text-left px-5 py-3">Signed Up</th>
                 </tr>
               </thead>
@@ -302,10 +301,10 @@ export default function SurveyRespondentsPage() {
                       {r.moveInDate || "Flexible"}
                     </td>
                     <td className="px-5 py-3 text-sm text-gray-700">
-                      {r.budget}
+                      {r.phone || <span className="text-gray-300">—</span>}
                     </td>
                     <td className="px-5 py-3 text-sm text-gray-700">
-                      {r.bedrooms}
+                      {r.roommates || "No"}
                     </td>
                     <td className="px-5 py-3">
                       <span
@@ -313,12 +312,6 @@ export default function SurveyRespondentsPage() {
                       >
                         {r.status.replace(/_/g, " ")}
                       </span>
-                    </td>
-                    <td className="px-5 py-3 text-sm text-gray-700">
-                      {r.matchCount > 0 ? (
-                        <span className="font-medium">{r.matchCount}</span>
-                      ) : (
-                        <span className="text-gray-400">—</span>
                       )}
                     </td>
                     <td className="px-5 py-3 text-xs text-gray-500">
