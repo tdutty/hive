@@ -312,7 +312,6 @@ export default function SurveyRespondentsPage() {
                       >
                         {r.status.replace(/_/g, " ")}
                       </span>
-                      )}
                     </td>
                     <td className="px-5 py-3 text-xs text-gray-500">
                       {new Date(r.createdAt).toLocaleDateString()}
