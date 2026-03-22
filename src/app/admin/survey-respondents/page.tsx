@@ -8,12 +8,14 @@ interface Respondent {
   id: string;
   name: string;
   email: string;
+  phone: string | null;
   city: string;
   state: string;
   budget: string;
   budgetMax: number;
   bedrooms: number;
   moveInDate: string;
+  roommates: string;
   status: string;
   matchCount: number;
   confirmed: boolean;
