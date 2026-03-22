@@ -301,7 +301,7 @@ export default function SurveyRespondentsPage() {
                       {r.moveInDate || "Flexible"}
                     </td>
                     <td className="px-5 py-3 text-sm text-gray-700">
-                      {r.phone || <span className="text-gray-300">&mdash;</span>}
+                      {r.phone ? r.phone : "—"}
                     </td>
                     <td className="px-5 py-3 text-sm text-gray-700">
                       {r.roommates || "No"}
