@@ -85,6 +85,11 @@ const navSections: NavSection[] = [
         icon: <FileSignature size={20} />,
       },
       {
+        label: "Portfolio Holders",
+        href: "/admin/portfolio-holders",
+        icon: <Briefcase size={20} />,
+      },
+      {
         label: "Campaigns",
         href: "/admin/campaigns",
         icon: <Megaphone size={20} />,
