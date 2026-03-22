@@ -27,8 +27,13 @@ export default function UsersPage() {
     usersService.getRoleChanges({ limit: 50 })
   );
 
-  const loading = metricsLoading || roleLoading;
-  const error = metricsError || roleError;
+  // Fetch waitlist (actual users)
+  const { data: waitlistData, loading: waitlistLoading, error: waitlistError, refetch: refetchWaitlist } = useApi(() =>
+    usersService.getWaitlist({ limit: 100 })
+  );
+
+  const loading = metricsLoading || roleLoading || waitlistLoading;
+  const error = metricsError || roleError || waitlistError;
 
   if (loading) {
     return (
@@ -53,7 +58,7 @@ export default function UsersPage() {
           <p className="font-medium">Failed to load data</p>
           <p className="text-sm mt-1">{error}</p>
           <button
-            onClick={() => { refetchMetrics(); refetchRoles(); }}
+            onClick={() => { refetchMetrics(); refetchRoles(); refetchWaitlist(); }}
             className="mt-3 bg-red-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-red-700"
           >
             Retry
@@ -73,16 +78,32 @@ export default function UsersPage() {
   // Extract role changes for table
   const roleChanges = roleData?.roleChanges || [];
 
-  // Filter role changes based on search and role filter
-  const filteredUsers = roleChanges.filter((change: any) => {
+  // Extract waitlist entries as users
+  const waitlistEntries = (waitlistData?.entries || []).map((e: any) => ({
+    id: e.id,
+    userName: e.name,
+    userEmail: e.email,
+    newRole: 'USER',
+    status: e.status,
+    organization: e.organization,
+    createdAt: e.createdAt,
+    source: 'waitlist',
+  }));
+
+  // Combine role changes and waitlist entries
+  const allUsers = [...waitlistEntries, ...roleChanges.map((c: any) => ({ ...c, source: 'role_change' }))];
+
+  // Filter based on search and role filter
+  const filteredUsers = allUsers.filter((user: any) => {
     const matchesSearch =
-      (change.userName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        change.userEmail?.toLowerCase().includes(searchQuery.toLowerCase())) || false;
+      !searchQuery ||
+      (user.userName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.userEmail?.toLowerCase().includes(searchQuery.toLowerCase())) || false;
     const matchesRole =
       roleFilter === "all" ||
-      (roleFilter === "tenants" && change.newRole === "USER") ||
-      (roleFilter === "landlords" && change.newRole === "LANDLORD") ||
-      (roleFilter === "admins" && change.newRole === "ADMIN");
+      (roleFilter === "tenants" && user.newRole === "USER") ||
+      (roleFilter === "landlords" && user.newRole === "LANDLORD") ||
+      (roleFilter === "admins" && user.newRole === "ADMIN");
     return matchesSearch && matchesRole;
   });
 
