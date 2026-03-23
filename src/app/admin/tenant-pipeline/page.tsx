@@ -6,7 +6,6 @@ import {
   RefreshCw,
   Search,
   Mail,
-  Phone,
   MapPin,
   ChevronDown,
   ChevronRight,
