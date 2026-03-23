@@ -121,6 +121,11 @@ const navSections: NavSection[] = [
       },
       { label: "API Usage", href: "/admin/api-usage", icon: <Zap size={20} /> },
       {
+        label: "Credit Status",
+        href: "/admin/credit-status",
+        icon: <DollarSign size={20} />,
+      },
+      {
         label: "Alerts",
         href: "/admin/alerts",
         icon: <Bell size={20} />,
