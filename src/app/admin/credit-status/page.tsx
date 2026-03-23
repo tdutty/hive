@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { RefreshCw, Zap, AlertTriangle, CheckCircle, XCircle, HelpCircle } from "lucide-react";
+import { RefreshCw, AlertTriangle, CheckCircle, XCircle, HelpCircle } from "lucide-react";
 
 interface CreditInfo {
   credits: number | null;
