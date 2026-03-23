@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { DollarSign, TrendingUp, AlertCircle, Clock } from "lucide-react";
 import { useApi } from "@/lib/hooks";
-import { dashboardService } from "@/lib/services/dashboard";
+import { api } from "@/lib/api";
 import { financialService } from "@/lib/services/financial";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { DataTable } from "@/components/ui/DataTable";
@@ -15,9 +15,9 @@ import { formatCurrency } from "@/lib/utils";
 export default function FinancialPage() {
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Fetch dashboard metrics for revenue figures
-  const { data: metricsData, loading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useApi(() =>
-    dashboardService.getMetrics()
+  // Fetch real Stripe financial data
+  const { data: stripeData, loading: stripeLoading, error: stripeError, refetch: refetchStripe } = useApi(() =>
+    api.get<any>("/api/admin/financial")
   );
 
   // Fetch payment security data
@@ -25,8 +25,8 @@ export default function FinancialPage() {
     financialService.getPaymentSecurity()
   );
 
-  const loading = metricsLoading || securityLoading;
-  const error = metricsError || securityError;
+  const loading = stripeLoading || securityLoading;
+  const error = stripeError || securityError;
 
   if (loading) {
     return (
@@ -55,7 +55,7 @@ export default function FinancialPage() {
           <p className="font-medium">Failed to load data</p>
           <p className="text-sm mt-1">{error}</p>
           <button
-            onClick={() => { refetchMetrics(); refetchSecurity(); }}
+            onClick={() => { refetchStripe(); refetchSecurity(); }}
             className="mt-3 bg-red-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-red-700"
           >
             Retry
@@ -65,12 +65,11 @@ export default function FinancialPage() {
     );
   }
 
-  // Extract metrics from dashboard
-  const businessMetrics = metricsData?.businessMetrics || {};
-  const totalRevenue = businessMetrics.totalRevenue || 2456789;
-  const monthlyRevenue = businessMetrics.monthlyRevenue || 187234;
-  const outstandingBalances = businessMetrics.outstandingBalances || 34567;
-  const refundsTotal = businessMetrics.refundsTotal || 4230;
+  // Extract real Stripe metrics
+  const totalRevenue = stripeData?.totalRevenue || 0;
+  const monthlyRevenue = stripeData?.monthlyRevenue || 0;
+  const outstandingBalances = stripeData?.outstandingBalances || 0;
+  const refundsTotal = stripeData?.refundsTotal || 0;
 
   // Extract security data
   const securitySummary = securityData?.summary || {
@@ -82,93 +81,16 @@ export default function FinancialPage() {
     riskLevel: "LOW",
   };
 
-  // Build revenue trend data
-  const revenueTrendData = businessMetrics.revenueTrendData || [
-    { month: "Mar 2023", revenue: 1450000 },
-    { month: "Apr 2023", revenue: 1620000 },
-    { month: "May 2023", revenue: 1780000 },
-    { month: "Jun 2023", revenue: 1950000 },
-    { month: "Jul 2023", revenue: 2080000 },
-    { month: "Aug 2023", revenue: 2150000 },
-    { month: "Sep 2023", revenue: 2200000 },
-    { month: "Oct 2023", revenue: 2280000 },
-    { month: "Nov 2023", revenue: 2350000 },
-    { month: "Dec 2023", revenue: 2400000 },
-    { month: "Jan 2024", revenue: 2420000 },
-    { month: "Feb 2024", revenue: 2456789 },
-  ];
+  // Build revenue trend from Stripe data
+  const revenueTrendData = stripeData?.revenueTrend || [];
 
-  // Revenue by type
-  const revenueByTypeData = businessMetrics.revenueByType || [
-    { type: "Rent Collection", amount: 1650000, color: "#D97706" },
-    { type: "Deposits", amount: 480000, color: "#10b981" },
-    { type: "Subscription Fees", amount: 206789, color: "#3b82f6" },
-    { type: "Referral Commission", amount: 120000, color: "#8b5cf6" },
-  ];
-
-  // Payment methods
-  const paymentMethodsData = businessMetrics.paymentMethods || [
-    { name: "Card", value: 65, color: "#D97706" },
-    { name: "ACH", value: 20, color: "#3b82f6" },
-    { name: "Wire", value: 10, color: "#10b981" },
-    { name: "Other", value: 5, color: "#9ca3af" },
-  ];
-
-  // Revenue by region
-  const revenueByRegionData = businessMetrics.revenueByRegion || [
-    { city: "San Francisco", revenue: 486000 },
-    { city: "Los Angeles", revenue: 412000 },
-    { city: "New York", revenue: 658000 },
-    { city: "Chicago", revenue: 234000 },
-    { city: "Boston", revenue: 198000 },
-    { city: "Seattle", revenue: 176000 },
-    { city: "Austin", revenue: 142000 },
-    { city: "Denver", revenue: 150000 },
-  ];
+  // These will be empty until we have real transaction data
+  const revenueByTypeData: any[] = [];
+  const paymentMethodsData: any[] = [];
+  const revenueByRegionData: any[] = [];
 
   // Regional payment preferences table data
-  const regionalPaymentData = businessMetrics.regionalPayments || [
-    {
-      region: "New York",
-      card: 58,
-      ach: 28,
-      wire: 10,
-      other: 4,
-      volume: 658000,
-    },
-    {
-      region: "San Francisco",
-      card: 72,
-      ach: 15,
-      wire: 8,
-      other: 5,
-      volume: 486000,
-    },
-    {
-      region: "Los Angeles",
-      card: 68,
-      ach: 18,
-      wire: 9,
-      other: 5,
-      volume: 412000,
-    },
-    {
-      region: "Chicago",
-      card: 62,
-      ach: 22,
-      wire: 12,
-      other: 4,
-      volume: 234000,
-    },
-    {
-      region: "Boston",
-      card: 60,
-      ach: 25,
-      wire: 11,
-      other: 4,
-      volume: 198000,
-    },
-  ];
+  const regionalPaymentData: any[] = [];
 
   return (
     <div className="space-y-8">
@@ -185,25 +107,25 @@ export default function FinancialPage() {
         <MetricCard
           title="Total Revenue"
           value={formatCurrency(totalRevenue)}
-          trend={14.2}
+          trend={stripeData?.growth || 0}
           icon={DollarSign}
         />
         <MetricCard
           title="Monthly Revenue"
           value={formatCurrency(monthlyRevenue)}
-          subtitle="February 2024"
+          subtitle={stripeData?.currentMonth || ""}
           icon={TrendingUp}
         />
         <MetricCard
           title="Outstanding Balances"
           value={formatCurrency(outstandingBalances)}
-          subtitle="24 pending"
+          subtitle={`${stripeData?.pendingCount || 0} pending`}
           icon={Clock}
         />
         <MetricCard
           title="Refunds"
           value={formatCurrency(refundsTotal)}
-          subtitle="12 transactions"
+          subtitle={`${stripeData?.refundsCount || 0} transactions`}
           icon={AlertCircle}
         />
       </div>
