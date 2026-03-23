@@ -205,7 +205,11 @@ export default function UsersPage() {
               label: "Actions",
               render: (_value, row) => (
                 <button
-                  onClick={() => setSelectedUser(row)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedUser(row);
+                    setTimeout(() => document.getElementById('user-detail')?.scrollIntoView({ behavior: 'smooth' }), 100);
+                  }}
                   className="px-3 py-1 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700 transition-colors"
                 >
                   View
@@ -221,7 +225,7 @@ export default function UsersPage() {
 
       {/* User Detail Section */}
       {selectedUser && (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-8">
+        <div id="user-detail" className="bg-white border border-slate-200 rounded-lg shadow-sm p-8">
           <div className="flex justify-between items-start mb-6">
             <div>
               <h2 className="text-2xl font-semibold text-slate-900 mb-2">

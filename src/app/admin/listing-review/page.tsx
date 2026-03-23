@@ -75,6 +75,9 @@ export default function ListingReviewPage() {
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
   const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [cityFilter, setCityFilter] = useState("all");
+  const [bedsFilter, setBedsFilter] = useState("all");
 
   const {
     data,
@@ -97,9 +100,24 @@ export default function ListingReviewPage() {
     setExpandedId(null);
   }, [activeTab]);
 
-  const listings = data?.listings || [];
+  const rawListings = data?.listings || [];
   const pagination = data?.pagination;
   const counts = data?.counts || { pending: 0, approved: 0, rejected: 0 };
+
+  // Client-side filtering
+  const listings = rawListings.filter((l: any) => {
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const matchesSearch = l.title?.toLowerCase().includes(q) || l.address?.toLowerCase().includes(q) || l.city?.toLowerCase().includes(q);
+      if (!matchesSearch) return false;
+    }
+    if (cityFilter !== "all" && l.city !== cityFilter) return false;
+    if (bedsFilter !== "all" && String(l.bedrooms) !== bedsFilter) return false;
+    return true;
+  });
+
+  // Get unique cities for filter dropdown
+  const cities = [...new Set(rawListings.map((l: any) => l.city).filter(Boolean))].sort() as string[];
 
   // Group listings by city
   const groupedByCity = listings.reduce<Record<string, ReviewListing[]>>((acc, listing) => {
@@ -269,6 +287,50 @@ export default function ListingReviewPage() {
             </span>
           </button>
         ))}
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <input
+          type="text"
+          placeholder="Search address or title..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="px-3 py-2 border border-slate-200 rounded-lg text-sm w-64 focus:outline-none focus:border-amber-500"
+        />
+        <select
+          value={cityFilter}
+          onChange={(e) => setCityFilter(e.target.value)}
+          className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-amber-500"
+        >
+          <option value="all">All Cities</option>
+          {cities.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+        <select
+          value={bedsFilter}
+          onChange={(e) => setBedsFilter(e.target.value)}
+          className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-amber-500"
+        >
+          <option value="all">All Beds</option>
+          <option value="0">Studio</option>
+          <option value="1">1 Bed</option>
+          <option value="2">2 Beds</option>
+          <option value="3">3 Beds</option>
+          <option value="4">4+ Beds</option>
+        </select>
+        {(searchQuery || cityFilter !== "all" || bedsFilter !== "all") && (
+          <button
+            onClick={() => { setSearchQuery(""); setCityFilter("all"); setBedsFilter("all"); }}
+            className="px-3 py-2 text-sm text-slate-500 hover:text-slate-700"
+          >
+            Clear filters
+          </button>
+        )}
+        <span className="ml-auto text-sm text-slate-400">
+          {listings.length} of {rawListings.length} listings
+        </span>
       </div>
 
       {/* Bulk actions */}
