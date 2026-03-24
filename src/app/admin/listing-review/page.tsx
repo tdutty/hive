@@ -13,6 +13,7 @@ import {
   X,
   Sparkles,
   Loader2,
+  Download,
 } from "lucide-react";
 import { useApi } from "@/lib/hooks";
 import { api } from "@/lib/api";
@@ -84,6 +85,14 @@ export default function ListingReviewPage() {
   const [sortBy, setSortBy] = useState("newest");
   const [scoring, setScoring] = useState(false);
   const [scoreResult, setScoreResult] = useState<{ processed: number; avgScore: number; distribution: Record<string, number> } | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importCities, setImportCities] = useState<Array<{ city: string; state: string; tenantCount: number; approved: number; pending: number; total: number }>>([]);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importResult, setImportResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [importCity, setImportCity] = useState("");
+  const [importState, setImportState] = useState("");
+  const [customCity, setCustomCity] = useState("");
+  const [customState, setCustomState] = useState("");
 
   const {
     data,
@@ -112,6 +121,32 @@ export default function ListingReviewPage() {
       console.error("Scoring failed:", err);
     } finally {
       setScoring(false);
+    }
+  };
+
+  const openImportModal = async () => {
+    setShowImportModal(true);
+    setImportResult(null);
+    try {
+      const data = await api.get<{ cities: typeof importCities }>("/api/admin/listings/import-city");
+      setImportCities(data.cities || []);
+    } catch {}
+  };
+
+  const triggerImport = async () => {
+    const city = importCity || customCity;
+    const state = importState || customState;
+    if (!city || !state) return;
+
+    setImportLoading(true);
+    setImportResult(null);
+    try {
+      const result = await api.post<{ success: boolean; message: string }>("/api/admin/listings/import-city", { city, state });
+      setImportResult(result);
+    } catch (err: any) {
+      setImportResult({ success: false, message: err?.data?.error || "Import failed" });
+    } finally {
+      setImportLoading(false);
     }
   };
 
@@ -396,6 +431,13 @@ export default function ListingReviewPage() {
           </button>
         )}
         <div className="ml-auto flex items-center gap-3">
+          <button
+            onClick={openImportModal}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+          >
+            <Download size={14} />
+            Import Listings
+          </button>
           <button
             onClick={runScoring}
             disabled={scoring}
@@ -806,6 +848,119 @@ export default function ListingReviewPage() {
               Next
               <ChevronRight size={16} />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Import Listings Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center" onClick={() => setShowImportModal(false)}>
+          <div className="bg-white rounded-xl shadow-2xl w-[560px] max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Import Listings</h2>
+                <p className="text-sm text-slate-500">Search Zillow for new listings in a city. Duplicates are automatically skipped.</p>
+              </div>
+              <button onClick={() => setShowImportModal(false)} className="p-1 hover:bg-slate-100 rounded">
+                <X size={18} className="text-slate-400" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="px-6 py-4 space-y-4 max-h-[55vh] overflow-y-auto">
+              {/* Cities with tenant demand */}
+              {importCities.length > 0 && (
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">
+                    Cities with tenant demand
+                  </label>
+                  <div className="space-y-1.5">
+                    {importCities.map((c) => (
+                      <button
+                        key={`${c.city}-${c.state}`}
+                        onClick={() => { setImportCity(c.city); setImportState(c.state); setCustomCity(""); setCustomState(""); }}
+                        className={`w-full text-left px-4 py-3 rounded-lg border transition ${
+                          importCity === c.city && importState === c.state
+                            ? "border-amber-400 bg-amber-50 ring-1 ring-amber-200"
+                            : "border-slate-200 hover:bg-slate-50"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-sm font-medium text-slate-900">{c.city}, {c.state}</span>
+                            <span className="ml-2 text-xs text-slate-500">{c.tenantCount} tenant{c.tenantCount !== 1 ? "s" : ""} searching</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs">
+                            <span className="text-green-600">{c.approved} approved</span>
+                            <span className="text-amber-600">{c.pending} pending</span>
+                            <span className="text-slate-400">{c.total} total</span>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Custom city input */}
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">
+                  Or enter a custom city
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="City name"
+                    value={customCity}
+                    onChange={(e) => { setCustomCity(e.target.value); setImportCity(""); setImportState(""); }}
+                    className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-amber-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="State (e.g. PA)"
+                    value={customState}
+                    onChange={(e) => { setCustomState(e.target.value.toUpperCase()); setImportCity(""); setImportState(""); }}
+                    className="w-24 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-amber-500"
+                    maxLength={2}
+                  />
+                </div>
+              </div>
+
+              {/* Result message */}
+              {importResult && (
+                <div className={`p-3 rounded-lg text-sm ${
+                  importResult.success
+                    ? "bg-green-50 border border-green-200 text-green-800"
+                    : "bg-red-50 border border-red-200 text-red-800"
+                }`}>
+                  {importResult.message}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50">
+              <p className="text-xs text-slate-400">
+                {(importCity || customCity) ? `Importing for: ${importCity || customCity}, ${importState || customState}` : "Select a city to import"}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowImportModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 rounded-lg transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={triggerImport}
+                  disabled={importLoading || (!(importCity && importState) && !(customCity && customState))}
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700 disabled:opacity-50 transition"
+                >
+                  {importLoading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                  {importLoading ? "Importing..." : "Start Import"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
