@@ -11,6 +11,8 @@ import {
   Image as ImageIcon,
   ExternalLink,
   X,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { useApi } from "@/lib/hooks";
 import { api } from "@/lib/api";
@@ -79,6 +81,9 @@ export default function ListingReviewPage() {
   const [cityFilter, setCityFilter] = useState("all");
   const [bedsFilter, setBedsFilter] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
+  const [scoring, setScoring] = useState(false);
+  const [scoreResult, setScoreResult] = useState<{ processed: number; avgScore: number; distribution: Record<string, number> } | null>(null);
 
   const {
     data,
@@ -91,9 +96,24 @@ export default function ListingReviewPage() {
         status: activeTab,
         page,
         limit: 20,
+        sort: sortBy,
       }),
-    [activeTab, page]
+    [activeTab, page, sortBy]
   );
+
+  const runScoring = async () => {
+    setScoring(true);
+    setScoreResult(null);
+    try {
+      const result = await api.post<{ processed: number; avgScore: number; distribution: Record<string, number> }>("/api/admin/listings/score", {});
+      setScoreResult(result);
+      refetch();
+    } catch (err) {
+      console.error("Scoring failed:", err);
+    } finally {
+      setScoring(false);
+    }
+  };
 
   useEffect(() => {
     setPage(1);
@@ -357,6 +377,16 @@ export default function ListingReviewPage() {
           <option value="2500-3000">$2,500 – $3,000</option>
           <option value="over3000">$3,000+</option>
         </select>
+        <select
+          value={sortBy}
+          onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+          className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-amber-500"
+        >
+          <option value="newest">Newest First</option>
+          <option value="score">Best Quality</option>
+          <option value="price_asc">Price: Low to High</option>
+          <option value="price_desc">Price: High to Low</option>
+        </select>
         {(searchQuery || cityFilter !== "all" || bedsFilter !== "all" || priceFilter !== "all") && (
           <button
             onClick={() => { setSearchQuery(""); setCityFilter("all"); setBedsFilter("all"); setPriceFilter("all"); }}
@@ -365,10 +395,41 @@ export default function ListingReviewPage() {
             Clear filters
           </button>
         )}
-        <span className="ml-auto text-sm text-slate-400">
-          {listings.length} of {rawListings.length} listings
-        </span>
+        <div className="ml-auto flex items-center gap-3">
+          <button
+            onClick={runScoring}
+            disabled={scoring}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 disabled:opacity-50 transition-colors"
+          >
+            {scoring ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+            {scoring ? "Scoring..." : "Score All"}
+          </button>
+          <span className="text-sm text-slate-400">
+            {listings.length} of {rawListings.length} listings
+          </span>
+        </div>
       </div>
+
+      {/* Score result banner */}
+      {scoreResult && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center justify-between">
+          <div className="text-sm text-amber-800">
+            <span className="font-semibold">Scored {scoreResult.processed.toLocaleString()} listings</span>
+            {" — "}Avg: {scoreResult.avgScore}/100
+            {" | "}
+            <span className="text-green-700">{scoreResult.distribution.excellent} excellent</span>
+            {", "}
+            <span className="text-blue-700">{scoreResult.distribution.good} good</span>
+            {", "}
+            <span className="text-amber-700">{scoreResult.distribution.fair} fair</span>
+            {", "}
+            <span className="text-red-700">{scoreResult.distribution.poor} poor</span>
+          </div>
+          <button onClick={() => { setSortBy("score"); setScoreResult(null); }} className="text-sm font-medium text-amber-700 hover:text-amber-900">
+            Sort by quality →
+          </button>
+        </div>
+      )}
 
       {/* Bulk actions */}
       {activeTab === "PENDING_REVIEW" && listings.length > 0 && (
@@ -485,9 +546,14 @@ export default function ListingReviewPage() {
                       <h3 className="font-semibold text-slate-900 text-sm truncate">
                         {listing.title}
                       </h3>
-                      {listing.qualityScore !== null && (
-                        <span className="px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded-full">
-                          Q: {listing.qualityScore}
+                      {listing.qualityScore != null && (
+                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${
+                          listing.qualityScore >= 75 ? "bg-green-50 text-green-700 border-green-200" :
+                          listing.qualityScore >= 50 ? "bg-blue-50 text-blue-700 border-blue-200" :
+                          listing.qualityScore >= 25 ? "bg-amber-50 text-amber-700 border-amber-200" :
+                          "bg-red-50 text-red-700 border-red-200"
+                        }`}>
+                          {listing.qualityScore}/100
                         </span>
                       )}
                       {listing.daysOnMarket !== null && (
