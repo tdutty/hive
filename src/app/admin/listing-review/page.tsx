@@ -78,6 +78,7 @@ export default function ListingReviewPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [cityFilter, setCityFilter] = useState("all");
   const [bedsFilter, setBedsFilter] = useState("all");
+  const [priceFilter, setPriceFilter] = useState("all");
 
   const {
     data,
@@ -104,20 +105,43 @@ export default function ListingReviewPage() {
   const pagination = data?.pagination;
   const counts = data?.counts || { pending: 0, approved: 0, rejected: 0 };
 
+  // Get unique cities for filter dropdown (from address object)
+  const cities = [...new Set(
+    rawListings
+      .map((l) => l.address ? `${l.address.city}, ${l.address.state}` : null)
+      .filter(Boolean)
+  )].sort() as string[];
+
+  // Get unique bed counts
+  const bedOptions = [...new Set(rawListings.map((l) => l.bedrooms))].sort((a, b) => a - b);
+
   // Client-side filtering
-  const listings = rawListings.filter((l: any) => {
+  const listings = rawListings.filter((l) => {
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      const matchesSearch = l.title?.toLowerCase().includes(q) || l.address?.toLowerCase().includes(q) || l.city?.toLowerCase().includes(q);
+      const addrStr = l.address
+        ? `${l.address.street} ${l.address.city} ${l.address.state} ${l.address.zipCode}`.toLowerCase()
+        : "";
+      const matchesSearch =
+        l.title?.toLowerCase().includes(q) || addrStr.includes(q);
       if (!matchesSearch) return false;
     }
-    if (cityFilter !== "all" && l.city !== cityFilter) return false;
+    if (cityFilter !== "all") {
+      const listingCity = l.address ? `${l.address.city}, ${l.address.state}` : "";
+      if (listingCity !== cityFilter) return false;
+    }
     if (bedsFilter !== "all" && String(l.bedrooms) !== bedsFilter) return false;
+    if (priceFilter !== "all") {
+      const p = l.price;
+      if (priceFilter === "under1000" && p >= 1000) return false;
+      if (priceFilter === "1000-1500" && (p < 1000 || p >= 1500)) return false;
+      if (priceFilter === "1500-2000" && (p < 1500 || p >= 2000)) return false;
+      if (priceFilter === "2000-2500" && (p < 2000 || p >= 2500)) return false;
+      if (priceFilter === "2500-3000" && (p < 2500 || p >= 3000)) return false;
+      if (priceFilter === "over3000" && p < 3000) return false;
+    }
     return true;
   });
-
-  // Get unique cities for filter dropdown
-  const cities = [...new Set(rawListings.map((l: any) => l.city).filter(Boolean))].sort() as string[];
 
   // Group listings by city
   const groupedByCity = listings.reduce<Record<string, ReviewListing[]>>((acc, listing) => {
@@ -314,15 +338,28 @@ export default function ListingReviewPage() {
           className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-amber-500"
         >
           <option value="all">All Beds</option>
-          <option value="0">Studio</option>
-          <option value="1">1 Bed</option>
-          <option value="2">2 Beds</option>
-          <option value="3">3 Beds</option>
-          <option value="4">4+ Beds</option>
+          {bedOptions.map((b) => (
+            <option key={b} value={String(b)}>
+              {b === 0 ? "Studio" : `${b} Bed${b > 1 ? "s" : ""}`}
+            </option>
+          ))}
         </select>
-        {(searchQuery || cityFilter !== "all" || bedsFilter !== "all") && (
+        <select
+          value={priceFilter}
+          onChange={(e) => setPriceFilter(e.target.value)}
+          className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-amber-500"
+        >
+          <option value="all">All Prices</option>
+          <option value="under1000">Under $1,000</option>
+          <option value="1000-1500">$1,000 – $1,500</option>
+          <option value="1500-2000">$1,500 – $2,000</option>
+          <option value="2000-2500">$2,000 – $2,500</option>
+          <option value="2500-3000">$2,500 – $3,000</option>
+          <option value="over3000">$3,000+</option>
+        </select>
+        {(searchQuery || cityFilter !== "all" || bedsFilter !== "all" || priceFilter !== "all") && (
           <button
-            onClick={() => { setSearchQuery(""); setCityFilter("all"); setBedsFilter("all"); }}
+            onClick={() => { setSearchQuery(""); setCityFilter("all"); setBedsFilter("all"); setPriceFilter("all"); }}
             className="px-3 py-2 text-sm text-slate-500 hover:text-slate-700"
           >
             Clear filters
