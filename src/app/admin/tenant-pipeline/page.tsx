@@ -73,16 +73,6 @@ const STAGES = [
   { key: "leased", label: "Leased", icon: CheckCircle, color: "green", action: "View Lease", actionColor: "bg-green-600 hover:bg-green-500" },
 ];
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: "text-gray-400 bg-gray-400/10 border-gray-400/20",
-  searching: "text-blue-400 bg-blue-400/10 border-blue-400/20",
-  matched: "text-indigo-400 bg-indigo-400/10 border-indigo-400/20",
-  selections_confirmed: "text-purple-400 bg-purple-400/10 border-purple-400/20",
-  outreach: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20",
-  negotiating: "text-amber-400 bg-amber-400/10 border-amber-400/20",
-  lease_pending: "text-orange-400 bg-orange-400/10 border-orange-400/20",
-  leased: "text-green-400 bg-green-400/10 border-green-400/20",
-};
 
 const BORDER_COLORS: Record<string, string> = {
   gray: "border-l-gray-500",
