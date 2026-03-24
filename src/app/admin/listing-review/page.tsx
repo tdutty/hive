@@ -86,7 +86,7 @@ export default function ListingReviewPage() {
   const [scoring, setScoring] = useState(false);
   const [scoreResult, setScoreResult] = useState<{ processed: number; avgScore: number; distribution: Record<string, number> } | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [importCities, setImportCities] = useState<Array<{ city: string; state: string; tenantCount: number; approved: number; pending: number; total: number }>>([]);
+  const [importCities, setImportCities] = useState<Array<{ city: string; state: string; tenantCount: number; approved: number; pending: number; total: number; budgetMin: number; budgetMax: number; searchMax: number; bedroomRange: number[]; tenants: Array<{ name: string; bedrooms: number; budget: string; status: string }> }>>([]);
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState<{ success: boolean; message: string } | null>(null);
   const [importCity, setImportCity] = useState("");
@@ -886,16 +886,20 @@ export default function ListingReviewPage() {
                             : "border-slate-200 hover:bg-slate-50"
                         }`}
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-1">
                           <div>
                             <span className="text-sm font-medium text-slate-900">{c.city}, {c.state}</span>
-                            <span className="ml-2 text-xs text-slate-500">{c.tenantCount} tenant{c.tenantCount !== 1 ? "s" : ""} searching</span>
+                            <span className="ml-2 text-xs text-slate-500">{c.tenantCount} tenant{c.tenantCount !== 1 ? "s" : ""}</span>
                           </div>
                           <div className="flex items-center gap-3 text-xs">
                             <span className="text-green-600">{c.approved} approved</span>
                             <span className="text-amber-600">{c.pending} pending</span>
-                            <span className="text-slate-400">{c.total} total</span>
                           </div>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-slate-500">
+                          <span>Budget: <span className="font-medium text-slate-700">${c.budgetMin?.toLocaleString() || '0'} – ${c.budgetMax?.toLocaleString() || '?'}</span></span>
+                          <span>Search up to: <span className="font-medium text-amber-700">${c.searchMax?.toLocaleString()}</span> <span className="text-slate-400">(+22%)</span></span>
+                          <span>Beds: <span className="font-medium text-slate-700">{c.bedroomRange?.map(b => b === 0 ? 'Studio' : `${b}BR`).join(', ') || '—'}</span></span>
                         </div>
                       </button>
                     ))}
