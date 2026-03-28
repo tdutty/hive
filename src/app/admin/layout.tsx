@@ -34,6 +34,7 @@ import {
   UserCheck,
   FileText,
   ShieldAlert,
+  GraduationCap,
 } from "lucide-react";
 import {
   useNotifications,
@@ -101,6 +102,11 @@ const navSections: NavSection[] = [
         label: "Portfolio Holders",
         href: "/admin/portfolio-holders",
         icon: <Briefcase size={20} />,
+      },
+      {
+        label: "NPI Prospects",
+        href: "/admin/npi-prospects",
+        icon: <GraduationCap size={20} />,
       },
       {
         label: "Campaigns",
