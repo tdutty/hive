@@ -106,7 +106,7 @@ export default function ListingReviewPage() {
         page,
         limit: 20,
         sort: sortBy,
-        city: cityFilter !== "all" ? cityFilter : undefined,
+        city: cityFilter !== "all" ? cityFilter.split(",")[0].trim() : undefined,
       }),
     [activeTab, page, sortBy, cityFilter]
   );
@@ -182,10 +182,7 @@ export default function ListingReviewPage() {
         l.title?.toLowerCase().includes(q) || addrStr.includes(q);
       if (!matchesSearch) return false;
     }
-    if (cityFilter !== "all") {
-      const listingCity = l.address ? `${l.address.city}, ${l.address.state}` : "";
-      if (listingCity !== cityFilter) return false;
-    }
+    // City filtering is handled server-side via API param
     if (bedsFilter !== "all" && String(l.bedrooms) !== bedsFilter) return false;
     if (priceFilter !== "all") {
       const p = l.price;
