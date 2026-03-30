@@ -66,6 +66,10 @@ interface ReviewQueueResponse {
     approved: number;
     rejected: number;
   };
+  filters?: {
+    cities: string[];
+    bedrooms: number[];
+  };
 }
 
 type TabStatus = "PENDING_REVIEW" | "APPROVED" | "REJECTED";
@@ -162,15 +166,9 @@ export default function ListingReviewPage() {
   const pagination = data?.pagination;
   const counts = data?.counts || { pending: 0, approved: 0, rejected: 0 };
 
-  // Get unique cities for filter dropdown (from address object)
-  const cities = [...new Set(
-    rawListings
-      .map((l) => l.address ? `${l.address.city}, ${l.address.state}` : null)
-      .filter(Boolean)
-  )].sort() as string[];
-
-  // Get unique bed counts
-  const bedOptions = [...new Set(rawListings.map((l) => l.bedrooms))].sort((a, b) => a - b);
+  // Use API-provided filter options (all cities/beds for this status, not just current page)
+  const cities = data?.filters?.cities || [];
+  const bedOptions = data?.filters?.bedrooms || [];
 
   // Client-side filtering
   const listings = rawListings.filter((l) => {
