@@ -14,6 +14,7 @@ import {
   Sparkles,
   Loader2,
   Download,
+  Star,
 } from "lucide-react";
 import { useApi } from "@/lib/hooks";
 import { api } from "@/lib/api";
@@ -220,6 +221,21 @@ export default function ListingReviewPage() {
       refetch();
     } catch (err: any) {
       alert(err?.data?.error || "Review failed");
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [id]: false }));
+    }
+  };
+
+  const boostListing = async (id: string) => {
+    setActionLoading((prev) => ({ ...prev, [id]: true }));
+    try {
+      await api.post(`/api/admin/listings/${id}/review`, {
+        action: "boost",
+        qualityScore: 95,
+      });
+      refetch();
+    } catch (err: any) {
+      alert(err?.data?.error || "Boost failed");
     } finally {
       setActionLoading((prev) => ({ ...prev, [id]: false }));
     }
@@ -633,6 +649,18 @@ export default function ListingReviewPage() {
 
                   {/* Actions */}
                   <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      disabled={isLoading}
+                      onClick={() => boostListing(listing.id)}
+                      className={`p-2 rounded-md transition-colors ${
+                        listing.qualityScore && listing.qualityScore >= 90
+                          ? "text-amber-500 bg-amber-50"
+                          : "text-slate-400 hover:text-amber-500 hover:bg-amber-50"
+                      }`}
+                      title={listing.qualityScore && listing.qualityScore >= 90 ? "Boosted" : "Boost ranking"}
+                    >
+                      <Star size={18} fill={listing.qualityScore && listing.qualityScore >= 90 ? "currentColor" : "none"} />
+                    </button>
                     <button
                       onClick={() => setExpandedId(isExpanded ? null : listing.id)}
                       className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-md transition-colors"
