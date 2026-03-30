@@ -112,8 +112,11 @@ export default function ListingReviewPage() {
         limit: 20,
         sort: sortBy,
         city: cityFilter !== "all" ? cityFilter.split(",")[0].trim() : undefined,
+        bedrooms: bedsFilter !== "all" ? bedsFilter : undefined,
+        minPrice: priceFilter === "under1000" ? 0 : priceFilter === "1000-1500" ? 1000 : priceFilter === "1500-2000" ? 1500 : priceFilter === "2000-2500" ? 2000 : priceFilter === "2500-3000" ? 2500 : priceFilter === "over3000" ? 3000 : undefined,
+        maxPrice: priceFilter === "under1000" ? 1000 : priceFilter === "1000-1500" ? 1500 : priceFilter === "1500-2000" ? 2000 : priceFilter === "2000-2500" ? 2500 : priceFilter === "2500-3000" ? 3000 : undefined,
       }),
-    [activeTab, page, sortBy, cityFilter]
+    [activeTab, page, sortBy, cityFilter, bedsFilter, priceFilter]
   );
 
   const runScoring = async () => {
@@ -181,17 +184,7 @@ export default function ListingReviewPage() {
         l.title?.toLowerCase().includes(q) || addrStr.includes(q);
       if (!matchesSearch) return false;
     }
-    // City filtering is handled server-side via API param
-    if (bedsFilter !== "all" && String(l.bedrooms) !== bedsFilter) return false;
-    if (priceFilter !== "all") {
-      const p = l.price;
-      if (priceFilter === "under1000" && p >= 1000) return false;
-      if (priceFilter === "1000-1500" && (p < 1000 || p >= 1500)) return false;
-      if (priceFilter === "1500-2000" && (p < 1500 || p >= 2000)) return false;
-      if (priceFilter === "2000-2500" && (p < 2000 || p >= 2500)) return false;
-      if (priceFilter === "2500-3000" && (p < 2500 || p >= 3000)) return false;
-      if (priceFilter === "over3000" && p < 3000) return false;
-    }
+    // City, beds, and price filtering handled server-side via API params
     return true;
   });
 
