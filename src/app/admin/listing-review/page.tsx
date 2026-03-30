@@ -106,8 +106,9 @@ export default function ListingReviewPage() {
         page,
         limit: 20,
         sort: sortBy,
+        city: cityFilter !== "all" ? cityFilter : undefined,
       }),
-    [activeTab, page, sortBy]
+    [activeTab, page, sortBy, cityFilter]
   );
 
   const runScoring = async () => {
