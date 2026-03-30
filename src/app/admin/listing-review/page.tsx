@@ -722,11 +722,11 @@ export default function ListingReviewPage() {
                           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                             Photos ({listing.images.length})
                           </p>
-                          <div className="grid grid-cols-4 gap-2">
+                          <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
                             {listing.images.map((url, i) => (
                               <div
                                 key={i}
-                                className="aspect-[4/3] rounded-lg overflow-hidden bg-slate-100 cursor-pointer group"
+                                className="w-32 h-24 rounded-lg overflow-hidden bg-slate-100 cursor-pointer group flex-shrink-0"
                                 onClick={() => setLightbox({ images: listing.images, index: i })}
                               >
                                 <img
