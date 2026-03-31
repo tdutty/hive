@@ -35,6 +35,18 @@ interface PipelineData {
     selectionsConfirmed: boolean;
     hasNegotiation: boolean;
     createdAt: string;
+    selections: Array<{
+      rank: number;
+      listing: {
+        id: string;
+        title: string;
+        price: number;
+        bedrooms: number;
+        bathrooms: number;
+        address: string | null;
+        image: string | null;
+      };
+    }>;
   }>;
   activeNegotiations: Array<{
     groupId: string;
@@ -88,6 +100,7 @@ export default function TenantPipelinePage() {
   const [data, setData] = useState<PipelineData | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
+  const [expandedTenant, setExpandedTenant] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const fetchData = async () => {
@@ -220,7 +233,11 @@ export default function TenantPipelinePage() {
                   ) : (
                     <div className="divide-y divide-slate-100">
                       {requests.map((r) => (
-                        <div key={r.id} className="flex items-center justify-between px-6 py-3 hover:bg-slate-50 transition">
+                        <div key={r.id}>
+                        <div
+                          className="flex items-center justify-between px-6 py-3 hover:bg-slate-50 transition cursor-pointer"
+                          onClick={() => setExpandedTenant(expandedTenant === r.id ? null : r.id)}
+                        >
                           <div className="flex items-center gap-4 min-w-0">
                             <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 text-xs font-bold shrink-0">
                               {r.name.charAt(0).toUpperCase()}
@@ -285,6 +302,39 @@ export default function TenantPipelinePage() {
                               )}
                             </div>
                           </div>
+                        </div>
+                        {/* Expanded selections */}
+                        {expandedTenant === r.id && r.selections && r.selections.length > 0 && (
+                          <div className="px-6 py-4 bg-slate-50 border-t border-slate-100">
+                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                              Favorites ({r.selections.length})
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              {r.selections.map((s) => (
+                                <div key={s.listing.id} className="flex items-center gap-3 bg-white border border-slate-200 rounded-lg p-2.5">
+                                  <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-[10px] font-bold shrink-0">
+                                    {s.rank}
+                                  </div>
+                                  {s.listing.image ? (
+                                    <img src={s.listing.image} alt="" className="w-12 h-12 rounded object-cover shrink-0" />
+                                  ) : (
+                                    <div className="w-12 h-12 rounded bg-slate-100 shrink-0" />
+                                  )}
+                                  <div className="min-w-0 flex-1">
+                                    <div className="text-sm font-medium text-slate-900 truncate">{s.listing.title}</div>
+                                    <div className="text-xs text-slate-500 truncate">{s.listing.address}</div>
+                                    <div className="text-xs font-semibold text-slate-700">${s.listing.price.toLocaleString()}/mo · {s.listing.bedrooms}BR/{s.listing.bathrooms}BA</div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {expandedTenant === r.id && (!r.selections || r.selections.length === 0) && (
+                          <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 text-xs text-slate-400">
+                            No favorites selected yet
+                          </div>
+                        )}
                         </div>
                       ))}
                     </div>
