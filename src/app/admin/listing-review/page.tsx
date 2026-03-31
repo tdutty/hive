@@ -248,6 +248,7 @@ export default function ListingReviewPage() {
   const [scoring, setScoring] = useState(false);
   const [autoApproving, setAutoApproving] = useState(false);
   const [autoApproveResult, setAutoApproveResult] = useState<{ approved: number; skipped: number; summary: string } | null>(null);
+  const [sendingMatches, setSendingMatches] = useState<string | null>(null);
   const [scoreResult, setScoreResult] = useState<{ processed: number; avgScore: number; distribution: Record<string, number> } | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importCities, setImportCities] = useState<Array<{ city: string; state: string; tenantCount: number; approved: number; pending: number; total: number; budgetMin: number; budgetMax: number; searchMax: number; bedroomRange: number[]; tenants: Array<{ name: string; bedrooms: number; budget: string; status: string }> }>>([]);
@@ -307,6 +308,19 @@ export default function ListingReviewPage() {
       console.error("Auto-approve failed:", err);
     } finally {
       setAutoApproving(false);
+    }
+  };
+
+  const sendMatchesToTenants = async (city: string) => {
+    setSendingMatches(city);
+    try {
+      const result = await api.post<{ notified: number; message: string }>("/api/admin/listings/send-matches", { city });
+      alert(result.message || `Sent matches to ${result.notified} tenant(s) in ${city}`);
+      refetch();
+    } catch (err: any) {
+      alert(err?.data?.error || "Failed to send matches");
+    } finally {
+      setSendingMatches(null);
     }
   };
 
@@ -651,8 +665,17 @@ export default function ListingReviewPage() {
                     {dc.approved}/{40}
                   </span>
                 </div>
-                <div className="text-[10px] text-slate-400 mt-1">
-                  {dc.pending} pending review
+                <div className="flex items-center justify-between mt-1.5">
+                  <span className="text-[10px] text-slate-400">{dc.pending} pending</span>
+                  {isReady && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); sendMatchesToTenants(dc.city); }}
+                      disabled={sendingMatches === dc.city}
+                      className="text-[10px] px-2 py-0.5 bg-green-600 text-white rounded font-medium hover:bg-green-700 disabled:opacity-50"
+                    >
+                      {sendingMatches === dc.city ? "Sending..." : "Send Matches"}
+                    </button>
+                  )}
                 </div>
               </button>
             );
