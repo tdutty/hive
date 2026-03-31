@@ -629,8 +629,8 @@ export default function ListingReviewPage() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 -mt-1">
           {data.filters.demandCities.map((dc) => {
             const isActive = cityFilter === `${dc.city}, ${dc.state}`;
-            const progress = dc.approved >= 40 ? 100 : Math.round((dc.approved / 40) * 100);
-            const isReady = dc.approved >= 40;
+            const progress = dc.approved >= 20 ? 100 : Math.round((dc.approved / 40) * 100);
+            const isReady = dc.approved >= 20;
             return (
               <button
                 key={dc.city}
@@ -662,7 +662,7 @@ export default function ListingReviewPage() {
                     />
                   </div>
                   <span className="text-[10px] font-medium text-slate-500 whitespace-nowrap">
-                    {dc.approved}/{40}
+                    {dc.approved}/{20}
                   </span>
                 </div>
                 <div className="flex items-center justify-between mt-1.5">
