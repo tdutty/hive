@@ -45,6 +45,11 @@ interface PipelineData {
         bathrooms: number;
         address: string | null;
         image: string | null;
+        ownerName: string | null;
+        ownerEmail: string | null;
+        ownerPhone: string | null;
+        ownerType: string | null;
+        zillowUrl: string | null;
       };
     }>;
   }>;
@@ -324,6 +329,27 @@ export default function TenantPipelinePage() {
                                     <div className="text-sm font-medium text-slate-900 truncate">{s.listing.title}</div>
                                     <div className="text-xs text-slate-500 truncate">{s.listing.address}</div>
                                     <div className="text-xs font-semibold text-slate-700">${s.listing.price.toLocaleString()}/mo · {s.listing.bedrooms}BR/{s.listing.bathrooms}BA</div>
+                                    {/* Contact info */}
+                                    <div className="mt-1.5 pt-1.5 border-t border-slate-100 flex flex-wrap gap-x-3 gap-y-0.5">
+                                      {s.listing.ownerName && (
+                                        <span className="text-[10px] text-slate-600">
+                                          <span className="font-medium">{s.listing.ownerName}</span>
+                                          {s.listing.ownerType && <span className="text-slate-400 ml-1">({s.listing.ownerType})</span>}
+                                        </span>
+                                      )}
+                                      {s.listing.ownerEmail && (
+                                        <a href={`mailto:${s.listing.ownerEmail}`} className="text-[10px] text-blue-600 hover:underline">{s.listing.ownerEmail}</a>
+                                      )}
+                                      {s.listing.ownerPhone && (
+                                        <a href={`tel:${s.listing.ownerPhone}`} className="text-[10px] text-blue-600 hover:underline">{s.listing.ownerPhone}</a>
+                                      )}
+                                      {!s.listing.ownerName && !s.listing.ownerEmail && !s.listing.ownerPhone && (
+                                        <span className="text-[10px] text-amber-600 font-medium">No contact — needs enrichment</span>
+                                      )}
+                                      {s.listing.zillowUrl && (
+                                        <a href={s.listing.zillowUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-slate-400 hover:text-slate-600">Zillow ↗</a>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               ))}
