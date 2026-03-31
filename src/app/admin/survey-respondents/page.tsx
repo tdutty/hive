@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { RefreshCw, MapPin, Calendar, Users, Search } from "lucide-react";
+import { RefreshCw, MapPin, Calendar, Users, Search, ChevronDown, ChevronUp, DollarSign, Bed, Home, UserCheck } from "lucide-react";
 
 interface Respondent {
   id: string;
@@ -61,6 +61,7 @@ export default function SurveyRespondentsPage() {
   const [search, setSearch] = useState("");
   const [cityFilter, setCityFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
@@ -286,40 +287,93 @@ export default function SurveyRespondentsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {(filtered || []).map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-50">
-                    <td className="px-5 py-3">
-                      <div className="font-medium text-sm text-gray-900">
-                        {r.name}
-                      </div>
-                      <div className="text-xs text-gray-400">{r.email}</div>
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="text-sm text-gray-900 font-medium">
-                        {r.city}, {r.state}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3 text-sm text-gray-700">
-                      {r.moveInDate || "Flexible"}
-                    </td>
-                    <td className="px-5 py-3 text-sm text-gray-700">
-                      {r.phone ? r.phone : "-"}
-                    </td>
-                    <td className="px-5 py-3 text-sm text-gray-700">
-                      {r.roommates || "No"}
-                    </td>
-                    <td className="px-5 py-3">
-                      <span
-                        className={`px-2 py-0.5 text-xs font-medium rounded-full ${statusColors[r.status] || "bg-gray-100 text-gray-600"}`}
+                {(filtered || []).map((r) => {
+                  const isExpanded = expandedId === r.id;
+                  return (
+                    <React.Fragment key={r.id}>
+                      <tr
+                        className="hover:bg-gray-50 cursor-pointer"
+                        onClick={() => setExpandedId(isExpanded ? null : r.id)}
                       >
-                        {r.status.replace(/_/g, " ")}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 text-xs text-gray-500">
-                      {new Date(r.createdAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-2">
+                            {isExpanded ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
+                            <div>
+                              <div className="font-medium text-sm text-gray-900">{r.name}</div>
+                              <div className="text-xs text-gray-400">{r.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3">
+                          <div className="text-sm text-gray-900 font-medium">
+                            {r.city}, {r.state}
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-sm text-gray-700">
+                          {r.moveInDate || "Flexible"}
+                        </td>
+                        <td className="px-5 py-3 text-sm text-gray-700">
+                          {r.phone ? r.phone : "-"}
+                        </td>
+                        <td className="px-5 py-3 text-sm text-gray-700">
+                          {r.roommates || "No"}
+                        </td>
+                        <td className="px-5 py-3">
+                          <span
+                            className={`px-2 py-0.5 text-xs font-medium rounded-full ${statusColors[r.status] || "bg-gray-100 text-gray-600"}`}
+                          >
+                            {r.status.replace(/_/g, " ")}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-xs text-gray-500">
+                          {new Date(r.createdAt).toLocaleDateString()}
+                        </td>
+                      </tr>
+                      {isExpanded && (
+                        <tr>
+                          <td colSpan={7} className="px-5 py-4 bg-gray-50/50">
+                            <div className="grid grid-cols-4 gap-4">
+                              <div className="bg-white border border-gray-200 rounded-lg p-3">
+                                <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                                  <DollarSign size={12} />
+                                  Budget
+                                </div>
+                                <div className="font-semibold text-gray-900">{r.budget}</div>
+                                <div className="text-xs text-gray-500">Max: ${r.budgetMax?.toLocaleString()}/mo</div>
+                              </div>
+                              <div className="bg-white border border-gray-200 rounded-lg p-3">
+                                <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                                  <Bed size={12} />
+                                  Bedrooms
+                                </div>
+                                <div className="font-semibold text-gray-900">{r.bedrooms === 0 ? "Studio" : r.bedrooms + " BR"}</div>
+                              </div>
+                              <div className="bg-white border border-gray-200 rounded-lg p-3">
+                                <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                                  <Home size={12} />
+                                  Matches
+                                </div>
+                                <div className="font-semibold text-gray-900">{r.matchCount} listings</div>
+                                <div className="text-xs text-gray-500">{r.confirmed ? "Selections confirmed" : "Not confirmed yet"}</div>
+                              </div>
+                              <div className="bg-white border border-gray-200 rounded-lg p-3">
+                                <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                                  <UserCheck size={12} />
+                                  Preferences
+                                </div>
+                                <div className="text-sm text-gray-900">
+                                  {r.wantsPhysicianMatch ? "Wants roommate match" : "Solo"}
+                                  {r.genderPreference && <span className="text-xs text-gray-500 ml-1">({r.genderPreference})</span>}
+                                </div>
+                                <div className="text-xs text-gray-500">{r.inNegotiation ? "In negotiation" : "Not in negotiation"}</div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
             {(filtered || []).length === 0 && (
