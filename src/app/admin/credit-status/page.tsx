@@ -39,10 +39,7 @@ export default function CreditStatusPage() {
     setLoading(true);
     setError(null);
     try {
-      const locustUrl = process.env.NEXT_PUBLIC_LOCUST_API_URL || "https://locust-m7ng3.ondigitalocean.app";
-      const resp = await fetch(`${locustUrl}/api/admin/credit-status`, {
-        credentials: "include",
-      });
+      const resp = await fetch("/api/credit-status");
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
       setStatus(data);
