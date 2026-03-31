@@ -222,6 +222,8 @@ interface ReviewQueueResponse {
     demandCities: Array<{
       city: string;
       state: string;
+      approved: number;
+      pending: number;
       tenants: Array<{ name: string; budgetMax: number; bedrooms: number }>;
     }>;
   };
@@ -396,12 +398,12 @@ export default function ListingReviewPage() {
       return next;
     });
     try {
-      await Promise.all(
+      await Promise.allSettled(
         ids.map((id) =>
           api.post(`/api/admin/listings/${id}/review`, {
             action,
             notes: bulkNotes || undefined,
-          })
+          }).catch(() => {}) // Skip already-approved or other errors
         )
       );
       setSelectedIds(new Set());
@@ -588,28 +590,50 @@ export default function ListingReviewPage() {
         )}
       </div>
 
-      {/* Demand Cities — quick filters */}
+      {/* Demand Cities — cards */}
       {data?.filters?.demandCities && data.filters.demandCities.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 -mt-2">
-          <span className="text-xs text-slate-400 uppercase tracking-wider mr-1">Active demand:</span>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 -mt-1">
           {data.filters.demandCities.map((dc) => {
             const isActive = cityFilter === `${dc.city}, ${dc.state}`;
+            const progress = dc.approved >= 40 ? 100 : Math.round((dc.approved / 40) * 100);
+            const isReady = dc.approved >= 40;
             return (
               <button
                 key={dc.city}
                 onClick={() => { setCityFilter(isActive ? "all" : `${dc.city}, ${dc.state}`); setPage(1); }}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
+                className={`text-left p-3 rounded-lg border-2 transition ${
                   isActive
-                    ? "bg-amber-500 text-white"
-                    : "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
+                    ? "border-amber-500 bg-amber-50"
+                    : isReady
+                    ? "border-green-300 bg-green-50/50 hover:border-green-400"
+                    : "border-slate-200 bg-white hover:border-amber-300"
                 }`}
               >
-                {dc.city} · {dc.tenants.length} tenant{dc.tenants.length > 1 ? "s" : ""}
-                {dc.tenants[0] && (
-                  <span className="ml-1 opacity-70">
-                    (${dc.tenants[0].budgetMax.toLocaleString()}, {dc.tenants[0].bedrooms === 0 ? "Studio" : dc.tenants[0].bedrooms + "BR"})
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-semibold text-sm text-slate-900">{dc.city}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                    isReady ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                  }`}>
+                    {dc.tenants.length} tenant{dc.tenants.length > 1 ? "s" : ""}
                   </span>
-                )}
+                </div>
+                <div className="text-xs text-slate-500 mb-2">
+                  ${dc.tenants[0]?.budgetMax.toLocaleString()}/mo · {dc.tenants[0]?.bedrooms === 0 ? "Studio" : dc.tenants[0]?.bedrooms + "BR"}
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${isReady ? "bg-green-500" : "bg-amber-500"}`}
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-medium text-slate-500 whitespace-nowrap">
+                    {dc.approved}/{40}
+                  </span>
+                </div>
+                <div className="text-[10px] text-slate-400 mt-1">
+                  {dc.pending} pending review
+                </div>
               </button>
             );
           })}
