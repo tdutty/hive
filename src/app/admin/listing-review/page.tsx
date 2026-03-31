@@ -69,6 +69,11 @@ interface ReviewQueueResponse {
   filters?: {
     cities: string[];
     bedrooms: number[];
+    demandCities: Array<{
+      city: string;
+      state: string;
+      tenants: Array<{ name: string; budgetMax: number; bedrooms: number }>;
+    }>;
   };
 }
 
@@ -384,13 +389,24 @@ export default function ListingReviewPage() {
         />
         <select
           value={cityFilter}
-          onChange={(e) => setCityFilter(e.target.value)}
+          onChange={(e) => { setCityFilter(e.target.value); setPage(1); }}
           className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-amber-500"
         >
           <option value="all">All Cities</option>
-          {cities.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
+          {data?.filters?.demandCities && data.filters.demandCities.length > 0 && (
+            <optgroup label="🔥 Cities with active tenants">
+              {data.filters.demandCities.map((dc) => (
+                <option key={`demand-${dc.city}`} value={`${dc.city}, ${dc.state}`}>
+                  {dc.city}, {dc.state} ({dc.tenants.length} tenant{dc.tenants.length > 1 ? "s" : ""})
+                </option>
+              ))}
+            </optgroup>
+          )}
+          <optgroup label="All Cities">
+            {cities.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </optgroup>
         </select>
         <select
           value={bedsFilter}
@@ -429,12 +445,43 @@ export default function ListingReviewPage() {
         </select>
         {(searchQuery || cityFilter !== "all" || bedsFilter !== "all" || priceFilter !== "all") && (
           <button
-            onClick={() => { setSearchQuery(""); setCityFilter("all"); setBedsFilter("all"); setPriceFilter("all"); }}
+            onClick={() => { setSearchQuery(""); setCityFilter("all"); setBedsFilter("all"); setPriceFilter("all"); setPage(1); }}
             className="px-3 py-2 text-sm text-slate-500 hover:text-slate-700"
           >
             Clear filters
           </button>
         )}
+      </div>
+
+      {/* Demand Cities — quick filters */}
+      {data?.filters?.demandCities && data.filters.demandCities.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 -mt-2">
+          <span className="text-xs text-slate-400 uppercase tracking-wider mr-1">Active demand:</span>
+          {data.filters.demandCities.map((dc) => {
+            const isActive = cityFilter === `${dc.city}, ${dc.state}`;
+            return (
+              <button
+                key={dc.city}
+                onClick={() => { setCityFilter(isActive ? "all" : `${dc.city}, ${dc.state}`); setPage(1); }}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
+                  isActive
+                    ? "bg-amber-500 text-white"
+                    : "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
+                }`}
+              >
+                {dc.city} · {dc.tenants.length} tenant{dc.tenants.length > 1 ? "s" : ""}
+                {dc.tenants[0] && (
+                  <span className="ml-1 opacity-70">
+                    (${dc.tenants[0].budgetMax.toLocaleString()}, {dc.tenants[0].bedrooms === 0 ? "Studio" : dc.tenants[0].bedrooms + "BR"})
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="flex items-center gap-3">
         <div className="ml-auto flex items-center gap-3">
           <button
             onClick={openImportModal}
