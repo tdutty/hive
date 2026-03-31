@@ -246,6 +246,8 @@ export default function ListingReviewPage() {
   const [priceFilter, setPriceFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [scoring, setScoring] = useState(false);
+  const [autoApproving, setAutoApproving] = useState(false);
+  const [autoApproveResult, setAutoApproveResult] = useState<{ approved: number; skipped: number; summary: string } | null>(null);
   const [scoreResult, setScoreResult] = useState<{ processed: number; avgScore: number; distribution: Record<string, number> } | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importCities, setImportCities] = useState<Array<{ city: string; state: string; tenantCount: number; approved: number; pending: number; total: number; budgetMin: number; budgetMax: number; searchMax: number; bedroomRange: number[]; tenants: Array<{ name: string; bedrooms: number; budget: string; status: string }> }>>([]);
@@ -287,6 +289,24 @@ export default function ListingReviewPage() {
       console.error("Scoring failed:", err);
     } finally {
       setScoring(false);
+    }
+  };
+
+  const runAutoApprove = async (dryRun = false) => {
+    setAutoApproving(true);
+    setAutoApproveResult(null);
+    try {
+      const city = cityFilter !== "all" ? cityFilter.split(",")[0].trim() : undefined;
+      const result = await api.post<{ approved: number; skipped: number; summary: string; reasons: Record<string, number> }>(
+        "/api/admin/listings/auto-approve",
+        { city, dryRun }
+      );
+      setAutoApproveResult(result);
+      if (!dryRun) refetch();
+    } catch (err) {
+      console.error("Auto-approve failed:", err);
+    } finally {
+      setAutoApproving(false);
     }
   };
 
@@ -643,6 +663,14 @@ export default function ListingReviewPage() {
       <div className="flex items-center gap-3">
         <div className="ml-auto flex items-center gap-3">
           <button
+            onClick={() => runAutoApprove(false)}
+            disabled={autoApproving}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+          >
+            {autoApproving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+            {autoApproving ? "Approving..." : `Auto-Approve${cityFilter !== "all" ? " " + cityFilter.split(",")[0] : ""}`}
+          </button>
+          <button
             onClick={openImportModal}
             className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
           >
@@ -664,6 +692,17 @@ export default function ListingReviewPage() {
       </div>
 
       {/* Score result banner */}
+      {autoApproveResult && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center justify-between">
+          <div className="text-sm text-green-800">
+            <span className="font-semibold">{autoApproveResult.summary}</span>
+          </div>
+          <button onClick={() => setAutoApproveResult(null)} className="text-sm font-medium text-green-700 hover:text-green-900">
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {scoreResult && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center justify-between">
           <div className="text-sm text-amber-800">
