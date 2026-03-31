@@ -390,23 +390,34 @@ export default function ListingReviewPage() {
         <select
           value={cityFilter}
           onChange={(e) => { setCityFilter(e.target.value); setPage(1); }}
-          className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-amber-500"
+          className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-amber-500 min-w-[200px]"
         >
           <option value="all">All Cities</option>
           {data?.filters?.demandCities && data.filters.demandCities.length > 0 && (
-            <optgroup label="🔥 Cities with active tenants">
+            <optgroup label="⭐ Active Tenant Demand">
               {data.filters.demandCities.map((dc) => (
                 <option key={`demand-${dc.city}`} value={`${dc.city}, ${dc.state}`}>
-                  {dc.city}, {dc.state} ({dc.tenants.length} tenant{dc.tenants.length > 1 ? "s" : ""})
+                  {dc.city}, {dc.state} — {dc.tenants.length} tenant{dc.tenants.length > 1 ? "s" : ""}
                 </option>
               ))}
             </optgroup>
           )}
-          <optgroup label="All Cities">
-            {cities.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </optgroup>
+          {(() => {
+            const byState: Record<string, string[]> = {};
+            cities.forEach((c) => {
+              const parts = c.split(", ");
+              const state = parts[parts.length - 1] || "Other";
+              if (!byState[state]) byState[state] = [];
+              byState[state].push(c);
+            });
+            return Object.entries(byState).sort(([a], [b]) => a.localeCompare(b)).map(([state, stateCities]) => (
+              <optgroup key={state} label={state}>
+                {stateCities.map((c) => (
+                  <option key={c} value={c}>{c.split(", ")[0]}</option>
+                ))}
+              </optgroup>
+            ));
+          })()}
         </select>
         <select
           value={bedsFilter}
