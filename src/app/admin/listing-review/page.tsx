@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   CheckCircle,
   XCircle,
@@ -15,7 +15,157 @@ import {
   Loader2,
   Download,
   Star,
+  Search,
+  MapPin,
 } from "lucide-react";
+
+// Custom city picker with search, demand cities, and collapsible state groups
+function CityPicker({
+  value,
+  onChange,
+  cities,
+  demandCities,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  cities: string[];
+  demandCities?: Array<{ city: string; state: string; tenants: Array<{ name: string; budgetMax: number; bedrooms: number }> }>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [expandedStates, setExpandedStates] = useState<Set<string>>(new Set());
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const toggleState = (state: string) => {
+    setExpandedStates((prev) => {
+      const next = new Set(prev);
+      next.has(state) ? next.delete(state) : next.add(state);
+      return next;
+    });
+  };
+
+  const byState: Record<string, string[]> = {};
+  cities.forEach((c) => {
+    const parts = c.split(", ");
+    const state = parts[parts.length - 1] || "Other";
+    if (!byState[state]) byState[state] = [];
+    byState[state].push(c);
+  });
+
+  const q = search.toLowerCase();
+  const filteredStates = Object.entries(byState)
+    .map(([state, stateCities]) => ({
+      state,
+      cities: q ? stateCities.filter((c) => c.toLowerCase().includes(q)) : stateCities,
+    }))
+    .filter((s) => s.cities.length > 0)
+    .sort((a, b) => a.state.localeCompare(b.state));
+
+  const displayLabel = value === "all" ? "All Cities" : value;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white hover:bg-slate-50 min-w-[200px] justify-between"
+      >
+        <span className="truncate">{displayLabel}</span>
+        <ChevronDown size={14} className={`text-slate-400 transition ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 mt-1 w-80 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
+          {/* Search */}
+          <div className="p-2 border-b border-slate-100">
+            <div className="relative">
+              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search cities..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-amber-400"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <div className="max-h-[400px] overflow-y-auto">
+            {/* All Cities option */}
+            <button
+              onClick={() => { onChange("all"); setOpen(false); setSearch(""); }}
+              className={`w-full px-4 py-2.5 text-left text-sm hover:bg-slate-50 flex items-center gap-2 ${value === "all" ? "bg-amber-50 text-amber-700 font-medium" : "text-slate-700"}`}
+            >
+              All Cities
+            </button>
+
+            {/* Demand cities */}
+            {demandCities && demandCities.length > 0 && !q && (
+              <div className="border-t border-slate-100">
+                <div className="px-4 py-2 text-[10px] uppercase tracking-wider text-amber-600 font-semibold bg-amber-50/50">
+                  Active Tenant Demand
+                </div>
+                {demandCities.map((dc) => (
+                  <button
+                    key={dc.city}
+                    onClick={() => { onChange(`${dc.city}, ${dc.state}`); setOpen(false); setSearch(""); }}
+                    className={`w-full px-4 py-2.5 text-left text-sm hover:bg-amber-50 flex items-center justify-between ${value === `${dc.city}, ${dc.state}` ? "bg-amber-50 text-amber-700 font-medium" : "text-slate-700"}`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <MapPin size={12} className="text-amber-500" />
+                      {dc.city}, {dc.state}
+                    </span>
+                    <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                      {dc.tenants.length} tenant{dc.tenants.length > 1 ? "s" : ""}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* States — collapsible */}
+            <div className="border-t border-slate-100">
+              {filteredStates.map(({ state, cities: stateCities }) => {
+                const isExpanded = expandedStates.has(state) || !!q;
+                return (
+                  <div key={state}>
+                    <button
+                      onClick={() => !q && toggleState(state)}
+                      className="w-full px-4 py-2 flex items-center justify-between text-xs uppercase tracking-wider text-slate-500 font-semibold bg-slate-50 hover:bg-slate-100"
+                    >
+                      <span>{state}</span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-normal text-slate-400">{stateCities.length}</span>
+                        {!q && (isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />)}
+                      </span>
+                    </button>
+                    {isExpanded && stateCities.map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => { onChange(c); setOpen(false); setSearch(""); }}
+                        className={`w-full px-8 py-2 text-left text-sm hover:bg-slate-50 ${value === c ? "bg-amber-50 text-amber-700 font-medium" : "text-slate-600"}`}
+                      >
+                        {c.split(", ")[0]}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 import { useApi } from "@/lib/hooks";
 import { api } from "@/lib/api";
 import { MetricCard } from "@/components/ui/MetricCard";
@@ -387,38 +537,12 @@ export default function ListingReviewPage() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="px-3 py-2 border border-slate-200 rounded-lg text-sm w-64 focus:outline-none focus:border-amber-500"
         />
-        <select
+        <CityPicker
           value={cityFilter}
-          onChange={(e) => { setCityFilter(e.target.value); setPage(1); }}
-          className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-amber-500 min-w-[200px]"
-        >
-          <option value="all">All Cities</option>
-          {data?.filters?.demandCities && data.filters.demandCities.length > 0 && (
-            <optgroup label="⭐ Active Tenant Demand">
-              {data.filters.demandCities.map((dc) => (
-                <option key={`demand-${dc.city}`} value={`${dc.city}, ${dc.state}`}>
-                  {dc.city}, {dc.state} — {dc.tenants.length} tenant{dc.tenants.length > 1 ? "s" : ""}
-                </option>
-              ))}
-            </optgroup>
-          )}
-          {(() => {
-            const byState: Record<string, string[]> = {};
-            cities.forEach((c) => {
-              const parts = c.split(", ");
-              const state = parts[parts.length - 1] || "Other";
-              if (!byState[state]) byState[state] = [];
-              byState[state].push(c);
-            });
-            return Object.entries(byState).sort(([a], [b]) => a.localeCompare(b)).map(([state, stateCities]) => (
-              <optgroup key={state} label={state}>
-                {stateCities.map((c) => (
-                  <option key={c} value={c}>{c.split(", ")[0]}</option>
-                ))}
-              </optgroup>
-            ));
-          })()}
-        </select>
+          onChange={(v) => { setCityFilter(v); setPage(1); }}
+          cities={cities}
+          demandCities={data?.filters?.demandCities}
+        />
         <select
           value={bedsFilter}
           onChange={(e) => setBedsFilter(e.target.value)}
