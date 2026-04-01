@@ -224,7 +224,7 @@ interface ReviewQueueResponse {
       state: string;
       approved: number;
       pending: number;
-      tenants: Array<{ name: string; budgetMax: number; bedrooms: number }>;
+      tenants: Array<{ name: string; email: string; budgetMax: number; bedrooms: number; wantsRoommate: boolean; genderPref: string | null; moveInDate: string; status: string }>;
     }>;
   };
 }
@@ -677,6 +677,20 @@ export default function ListingReviewPage() {
                     </button>
                   )}
                 </div>
+                {/* Tenant details */}
+                {isActive && (
+                  <div className="mt-2 pt-2 border-t border-slate-100 space-y-1.5">
+                    {dc.tenants.map((t, i) => (
+                      <div key={i} className="text-[10px] flex items-center gap-2">
+                        <span className="font-medium text-slate-700 truncate max-w-[100px]">{t.name}</span>
+                        <span className="text-slate-400">${t.budgetMax.toLocaleString()}</span>
+                        <span className="text-slate-400">{t.bedrooms === 0 ? "Studio" : t.bedrooms + "BR"}</span>
+                        {t.wantsRoommate && <span className="px-1 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px]">Roommate</span>}
+                        {t.moveInDate && <span className="text-slate-400">{t.moveInDate.slice(0, 7)}</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </button>
             );
           })}
