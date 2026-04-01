@@ -107,6 +107,7 @@ export default function TenantPipelinePage() {
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
   const [expandedTenant, setExpandedTenant] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [outreachLoading, setOutreachLoading] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -280,8 +281,22 @@ export default function TenantPipelinePage() {
                                 </a>
                               )}
                               {stage.key === "selections_confirmed" && (
-                                <button className="px-2.5 py-1 text-[11px] font-medium bg-purple-600 text-white rounded hover:bg-purple-700 transition">
-                                  Trigger Outreach
+                                <button
+                                  disabled={outreachLoading === r.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOutreachLoading(r.id);
+                                    api.post("/api/admin/tenant-match/trigger-outreach", { matchRequestId: r.id })
+                                      .then((res: any) => {
+                                        alert(res.message || `Outreach triggered for ${r.selections?.length || 0} listings`);
+                                        fetchData();
+                                      })
+                                      .catch((err: any) => alert(err?.data?.error || "Outreach failed"))
+                                      .finally(() => setOutreachLoading(null));
+                                  }}
+                                  className="px-2.5 py-1 text-[11px] font-medium bg-purple-600 text-white rounded hover:bg-purple-700 transition disabled:opacity-50"
+                                >
+                                  {outreachLoading === r.id ? "Sending..." : "Trigger Outreach"}
                                 </button>
                               )}
                               {stage.key === "outreach" && (
