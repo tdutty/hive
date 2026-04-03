@@ -34,6 +34,8 @@ interface PipelineData {
     matchCount: number;
     selectionsConfirmed: boolean;
     hasNegotiation: boolean;
+    communicationsPaused: boolean;
+    communicationsPausedAt: string | null;
     createdAt: string;
     selections: Array<{
       rank: number;
@@ -108,6 +110,7 @@ export default function TenantPipelinePage() {
   const [expandedTenant, setExpandedTenant] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [outreachLoading, setOutreachLoading] = useState<string | null>(null);
+  const [pauseLoading, setPauseLoading] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -249,7 +252,12 @@ export default function TenantPipelinePage() {
                               {r.name.charAt(0).toUpperCase()}
                             </div>
                             <div className="min-w-0">
-                              <div className="text-slate-900 text-sm font-medium truncate">{r.name}</div>
+                              <div className="text-slate-900 text-sm font-medium truncate flex items-center gap-2">
+                                {r.name}
+                                {r.communicationsPaused && (
+                                  <span className="px-1.5 py-0.5 text-[9px] font-bold bg-red-100 text-red-700 rounded uppercase tracking-wider">Paused</span>
+                                )}
+                              </div>
                               <div className="text-slate-500 text-xs truncate flex items-center gap-1.5">
                                 <Mail size={10} /> {r.email}
                               </div>
@@ -320,6 +328,30 @@ export default function TenantPipelinePage() {
                               {(stage.key === "pending" || stage.key === "searching") && (
                                 <span className="text-slate-400 text-[11px]">Auto-processing</span>
                               )}
+                              {/* Pause/Resume button — available on all stages */}
+                              <button
+                                disabled={pauseLoading === r.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const newPaused = !r.communicationsPaused;
+                                  if (newPaused && !confirm(`Pause ALL communications for ${r.name}? No emails or outreach will be sent.`)) return;
+                                  setPauseLoading(r.id);
+                                  api.post("/api/admin/tenant-match/pause", { matchRequestId: r.id, paused: newPaused })
+                                    .then((res: any) => {
+                                      alert(res.message || `${newPaused ? 'Paused' : 'Resumed'}`);
+                                      fetchData();
+                                    })
+                                    .catch((err: any) => alert(err?.data?.error || "Failed"))
+                                    .finally(() => setPauseLoading(null));
+                                }}
+                                className={`px-2.5 py-1 text-[11px] font-medium rounded transition disabled:opacity-50 ${
+                                  r.communicationsPaused
+                                    ? "bg-green-600 text-white hover:bg-green-700"
+                                    : "bg-red-100 text-red-700 hover:bg-red-200"
+                                }`}
+                              >
+                                {pauseLoading === r.id ? "..." : r.communicationsPaused ? "Resume" : "Pause"}
+                              </button>
                             </div>
                           </div>
                         </div>
