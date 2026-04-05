@@ -35,6 +35,7 @@ import {
   FileText,
   ShieldAlert,
   GraduationCap,
+  BarChart3,
 } from "lucide-react";
 import {
   useNotifications,
@@ -150,6 +151,7 @@ const navSections: NavSection[] = [
         icon: <Bell size={20} />,
       },
       { label: "Bugs", href: "/admin/bugs", icon: <Bug size={20} /> },
+      { label: "Analytics", href: "/admin/analytics", icon: <BarChart3 size={20} /> },
     ],
   },
   {
@@ -197,7 +199,7 @@ function Sidebar() {
     .slice(0, 2);
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 border-r border-[#2f2f42] bg-[#1e1e2d] text-white pt-6 overflow-y-auto">
+    <aside className="fixed left-0 top-0 h-screen w-64 border-r border-[#2f2f42] bg-[#1e1e2d] text-white pt-6 flex flex-col">
       {/* Logo */}
       <div className="px-6 mb-12 flex items-center gap-3">
         <div className="w-8 h-8 flex items-center justify-center">
@@ -221,7 +223,7 @@ function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="space-y-8 px-3">
+      <nav className="space-y-8 px-3 flex-1 overflow-y-auto pb-4">
         {navSections.map((section) => (
           <div key={section.title}>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] px-3 mb-3">
@@ -248,7 +250,7 @@ function Sidebar() {
       </nav>
 
       {/* User / Logout */}
-      <div className="absolute bottom-6 left-3 right-3 border-t border-[#2f2f42] pt-4">
+      <div className="shrink-0 mx-3 border-t border-[#2f2f42] pt-4 pb-6">
         <div className="flex items-center gap-3 px-3 mb-3">
           <div className="w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
             {initials}
