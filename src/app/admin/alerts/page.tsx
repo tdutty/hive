@@ -57,11 +57,11 @@ export default function AlertsPage() {
   const fetchStats = async () => {
     try {
       const [photo, enrich] = await Promise.allSettled([
-        api.get<PhotoMonitorStats>("/api/admin/photo-monitor"),
-        api.get<EnrichmentStats>("/api/admin/enrichment-monitor"),
+        api.get<PhotoMonitorStats>("/api/admin/photo-monitor").catch(() => null),
+        api.get<EnrichmentStats>("/api/admin/enrichment-monitor").catch(() => null),
       ]);
-      if (photo.status === "fulfilled") setPhotoStats(photo.value);
-      if (enrich.status === "fulfilled") setEnrichStats(enrich.value);
+      if (photo.status === "fulfilled" && photo.value) setPhotoStats(photo.value);
+      if (enrich.status === "fulfilled" && enrich.value) setEnrichStats(enrich.value);
       setLastRefresh(new Date());
     } catch {
       console.error("Failed to fetch stats");
