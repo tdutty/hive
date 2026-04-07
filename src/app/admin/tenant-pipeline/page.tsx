@@ -111,6 +111,7 @@ export default function TenantPipelinePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [outreachLoading, setOutreachLoading] = useState<string | null>(null);
   const [pauseLoading, setPauseLoading] = useState<string | null>(null);
+  const [smsLoading, setSmsLoading] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -305,6 +306,26 @@ export default function TenantPipelinePage() {
                                   className="px-2.5 py-1 text-[11px] font-medium bg-purple-600 text-white rounded hover:bg-purple-700 transition disabled:opacity-50"
                                 >
                                   {outreachLoading === r.id ? "Sending..." : "Trigger Outreach"}
+                                </button>
+                              )}
+                              {(stage.key === "selections_confirmed" || stage.key === "outreach") && (
+                                <button
+                                  disabled={smsLoading === r.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!confirm(`Send SMS to landlords with phone numbers for ${r.name}'s selections?`)) return;
+                                    setSmsLoading(r.id);
+                                    api.post("/api/admin/tenant-match/sms-outreach", { matchRequestId: r.id })
+                                      .then((res: any) => {
+                                        alert(res.message || `SMS sent to ${res.sent || 0} landlords`);
+                                        fetchData();
+                                      })
+                                      .catch((err: any) => alert(err?.data?.error || "SMS failed"))
+                                      .finally(() => setSmsLoading(null));
+                                  }}
+                                  className="px-2.5 py-1 text-[11px] font-medium bg-green-600 text-white rounded hover:bg-green-700 transition disabled:opacity-50"
+                                >
+                                  {smsLoading === r.id ? "Texting..." : "Send Texts"}
                                 </button>
                               )}
                               {stage.key === "outreach" && (
