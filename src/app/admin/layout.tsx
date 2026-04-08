@@ -36,6 +36,7 @@ import {
   ShieldAlert,
   GraduationCap,
   BarChart3,
+  Phone,
 } from "lucide-react";
 import {
   useNotifications,
@@ -153,6 +154,7 @@ const navSections: NavSection[] = [
       { label: "Bugs", href: "/admin/bugs", icon: <Bug size={20} /> },
       { label: "Analytics", href: "/admin/analytics", icon: <BarChart3 size={20} /> },
       { label: "SMS Inbox", href: "/admin/sms-inbox", icon: <MessageSquare size={20} /> },
+      { label: "Call Log", href: "/admin/call-log", icon: <Phone size={20} /> },
     ],
   },
   {
