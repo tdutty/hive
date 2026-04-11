@@ -155,6 +155,7 @@ const navSections: NavSection[] = [
       { label: "Analytics", href: "/admin/analytics", icon: <BarChart3 size={20} /> },
       { label: "SMS Inbox", href: "/admin/sms-inbox", icon: <MessageSquare size={20} /> },
       { label: "Call Log", href: "/admin/call-log", icon: <Phone size={20} /> },
+      { label: "Demand Map", href: "/admin/demand-map", icon: <MapPinned size={20} /> },
     ],
   },
   {
