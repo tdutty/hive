@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { RefreshCw, MapPin, Users, Home, DollarSign, Calendar, Phone, Mail, Building2 } from "lucide-react";
+import { RefreshCw, MapPin, Users, Home, DollarSign, Calendar, Phone, Mail } from "lucide-react";
 
 interface Tenant {
   name: string;
