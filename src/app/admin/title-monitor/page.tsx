@@ -140,7 +140,7 @@ export default function TitleMonitorPage() {
       {!loading && !results && !error && (
         <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
           <FileText size={32} className="text-slate-300 mx-auto mb-3" />
-          <p className="text-sm text-slate-500">Click "Run Scan" to find acquisition targets.</p>
+          <p className="text-sm text-slate-500">Click Run Scan to find acquisition targets.</p>
         </div>
       )}
     </div>
