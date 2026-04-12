@@ -37,6 +37,11 @@ import {
   GraduationCap,
   BarChart3,
   Phone,
+  Search,
+  Scale,
+  Building,
+  Eye,
+  MessageCircle,
 } from "lucide-react";
 import {
   useNotifications,
@@ -172,6 +177,46 @@ const navSections: NavSection[] = [
         label: "Settings",
         href: "/admin/settings",
         icon: <Settings size={20} />,
+      },
+    ],
+  },
+  {
+    title: "Intelligence",
+    items: [
+      {
+        label: "BiggerPockets",
+        href: "/admin/biggerpockets",
+        icon: <Search size={20} />,
+      },
+      {
+        label: "Eviction Court",
+        href: "/admin/eviction-court",
+        icon: <Scale size={20} />,
+      },
+      {
+        label: "Lender Network",
+        href: "/admin/lender-network",
+        icon: <Building size={20} />,
+      },
+      {
+        label: "Listing Monitor",
+        href: "/admin/listing-monitor",
+        icon: <Eye size={20} />,
+      },
+      {
+        label: "Portfolio Intel",
+        href: "/admin/portfolio-intel",
+        icon: <Briefcase size={20} />,
+      },
+      {
+        label: "Title Monitor",
+        href: "/admin/title-monitor",
+        icon: <FileText size={20} />,
+      },
+      {
+        label: "Intercept",
+        href: "/admin/intercept",
+        icon: <MessageCircle size={20} />,
       },
     ],
   },
