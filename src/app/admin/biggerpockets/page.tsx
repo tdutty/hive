@@ -26,7 +26,7 @@ export default function BiggerPocketsPage() {
         </div>
         <div className="flex items-center gap-2 mb-4">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
-            Coming Soon
+            Active
           </span>
         </div>
         <p className="text-sm text-slate-500">
