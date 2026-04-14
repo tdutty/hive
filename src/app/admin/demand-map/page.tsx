@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { api } from "@/lib/api";
+import { sweetleaseApi } from "@/lib/api";
 import { RefreshCw, MapPin, Users, Home, DollarSign, Calendar, Phone, Mail } from "lucide-react";
 
 interface Tenant {
@@ -44,7 +44,7 @@ export default function DemandMapPage() {
 
   const fetchData = async () => {
     try {
-      const result = await api.get<{ cities: CityData[] }>("/api/admin/demand-map");
+      const result = await sweetleaseApi.get<{ cities: CityData[] }>("/api/admin/demand-map");
       setData(result.cities || []);
     } catch {
       console.error("Failed to fetch demand map");

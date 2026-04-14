@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Eye, Play, Loader2, AlertCircle, Clock } from "lucide-react";
-import { api } from "@/lib/api";
+import { sweetleaseApi } from "@/lib/api";
 
 export default function ListingMonitorPage() {
   const [loading, setLoading] = useState(false);
@@ -14,7 +14,7 @@ export default function ListingMonitorPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.post("/api/admin/intelligence/listing-monitor", {
+      const data = await sweetleaseApi.post("/api/admin/intelligence/listing-monitor", {
         cities: ["Houston", "Nashville", "Columbus", "Pittsburgh", "Cleveland", "Cincinnati", "New York"],
       });
       setResults(data);
@@ -146,7 +146,7 @@ export default function ListingMonitorPage() {
       {!loading && !results && !error && (
         <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
           <Eye size={32} className="text-slate-300 mx-auto mb-3" />
-          <p className="text-sm text-slate-500">Click "Run Scan" to check listings across target cities.</p>
+          <p className="text-sm text-slate-500">Click &ldquo;Run Scan&rdquo; to check listings across target cities.</p>
         </div>
       )}
     </div>

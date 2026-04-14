@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { FileText, Play, Loader2, AlertCircle, Clock } from "lucide-react";
-import { api } from "@/lib/api";
+import { sweetleaseApi } from "@/lib/api";
 
 export default function TitleMonitorPage() {
   const [loading, setLoading] = useState(false);
@@ -14,7 +14,7 @@ export default function TitleMonitorPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.post("/api/admin/intelligence/title-monitor", { action: "targets", limit: 50 });
+      const data = await sweetleaseApi.post("/api/admin/intelligence/title-monitor", { action: "targets", limit: 50 });
       setResults(data);
       setLastRun(new Date().toLocaleString());
     } catch (err: any) {

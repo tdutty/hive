@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { api } from "@/lib/api";
+import { sweetleaseApi } from "@/lib/api";
 import { RefreshCw, Send, MessageSquare, Phone, MapPin } from "lucide-react";
 
 interface SmsMessage {
@@ -36,7 +36,7 @@ export default function SmsInboxPage() {
 
   const fetchConversations = async () => {
     try {
-      const data = await api.get<{ conversations: Conversation[] }>("/api/admin/sms");
+      const data = await sweetleaseApi.get<{ conversations: Conversation[] }>("/api/admin/sms");
       setConversations(data.conversations);
       // Update selected conversation if it exists
       if (selected) {
@@ -66,7 +66,7 @@ export default function SmsInboxPage() {
     if (!reply.trim() || !selected) return;
     setSending(true);
     try {
-      await api.post("/api/admin/sms", { to: selected.phone, body: reply });
+      await sweetleaseApi.post("/api/admin/sms", { to: selected.phone, body: reply });
       setReply("");
       await fetchConversations();
     } catch (err) {

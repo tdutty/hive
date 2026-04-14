@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Search, Play, Loader2, AlertCircle, Clock } from "lucide-react";
-import { api } from "@/lib/api";
+import { sweetleaseApi } from "@/lib/api";
 
 export default function BiggerPocketsPage() {
   const [loading, setLoading] = useState(false);
@@ -14,7 +14,7 @@ export default function BiggerPocketsPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.post("/api/admin/intelligence/biggerpockets", { action: "alerts" });
+      const data = await sweetleaseApi.post("/api/admin/intelligence/biggerpockets", { action: "alerts" });
       setResults(data);
       setLastRun(new Date().toLocaleString());
     } catch (err: any) {
@@ -140,7 +140,7 @@ export default function BiggerPocketsPage() {
       {!loading && !results && !error && (
         <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
           <Search size={32} className="text-slate-300 mx-auto mb-3" />
-          <p className="text-sm text-slate-500">Click "Run Scan" to check BiggerPockets alerts.</p>
+          <p className="text-sm text-slate-500">Click &ldquo;Run Scan&rdquo; to check BiggerPockets alerts.</p>
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { api } from "@/lib/api";
+import { sweetleaseApi } from "@/lib/api";
 import { RefreshCw, Phone, PhoneIncoming, PhoneOutgoing, Clock, ChevronDown, ChevronRight } from "lucide-react";
 
 interface Call {
@@ -38,7 +38,7 @@ export default function CallLogPage() {
 
   const fetchCalls = async () => {
     try {
-      const data = await api.get<{ calls: Call[] }>("/api/admin/retell-calls");
+      const data = await sweetleaseApi.get<{ calls: Call[] }>("/api/admin/retell-calls");
       setCalls(data.calls || []);
     } catch {
       console.error("Failed to fetch calls");

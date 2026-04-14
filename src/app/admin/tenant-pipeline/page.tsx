@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { api } from "@/lib/api";
+import { sweetleaseApi } from "@/lib/api";
 import {
   RefreshCw,
   Search,
@@ -116,7 +116,7 @@ export default function TenantPipelinePage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const result = await api.get<PipelineData>("/api/admin/tenant-match/pipeline");
+      const result = await sweetleaseApi.get<PipelineData>("/api/admin/tenant-match/pipeline");
       setData(result);
     } catch (err) {
       console.error("Failed to load pipeline:", err);
@@ -295,7 +295,7 @@ export default function TenantPipelinePage() {
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setOutreachLoading(r.id);
-                                    api.post("/api/admin/tenant-match/trigger-outreach", { matchRequestId: r.id })
+                                    sweetleaseApi.post("/api/admin/tenant-match/trigger-outreach", { matchRequestId: r.id })
                                       .then((res: any) => {
                                         alert(res.message || `Outreach triggered for ${r.selections?.length || 0} listings`);
                                         fetchData();
@@ -315,7 +315,7 @@ export default function TenantPipelinePage() {
                                     e.stopPropagation();
                                     if (!confirm(`Send SMS to landlords with phone numbers for ${r.name}'s selections?`)) return;
                                     setSmsLoading(r.id);
-                                    api.post("/api/admin/tenant-match/sms-outreach", { matchRequestId: r.id })
+                                    sweetleaseApi.post("/api/admin/tenant-match/sms-outreach", { matchRequestId: r.id })
                                       .then((res: any) => {
                                         alert(res.message || `SMS sent to ${res.sent || 0} landlords`);
                                         fetchData();
@@ -357,7 +357,7 @@ export default function TenantPipelinePage() {
                                   const newPaused = !r.communicationsPaused;
                                   if (newPaused && !confirm(`Pause ALL communications for ${r.name}? No emails or outreach will be sent.`)) return;
                                   setPauseLoading(r.id);
-                                  api.post("/api/admin/tenant-match/pause", { matchRequestId: r.id, paused: newPaused })
+                                  sweetleaseApi.post("/api/admin/tenant-match/pause", { matchRequestId: r.id, paused: newPaused })
                                     .then((res: any) => {
                                       alert(res.message || `${newPaused ? 'Paused' : 'Resumed'}`);
                                       fetchData();
