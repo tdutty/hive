@@ -171,6 +171,11 @@ const navSections: NavSection[] = [
         href: "/admin/pm-pipeline",
         icon: <Building2 size={20} />,
       },
+      {
+        label: "Propify Integration",
+        href: "/admin/propify",
+        icon: <Zap size={20} />,
+      },
     ],
   },
   {
