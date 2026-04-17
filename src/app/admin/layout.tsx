@@ -164,6 +164,16 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    title: "Growth",
+    items: [
+      {
+        label: "PM Pipeline",
+        href: "/admin/pm-pipeline",
+        icon: <Building2 size={20} />,
+      },
+    ],
+  },
+  {
     title: "Business",
     items: [
       {
