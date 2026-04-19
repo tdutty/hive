@@ -36,7 +36,7 @@ async function request<T>(endpoint: string, options: FetchOptions & { base?: str
 
   const res = await fetch(url, {
     ...fetchOptions,
-    credentials: "include",
+    credentials: base ? "omit" : "include",
     headers: {
       "Content-Type": "application/json",
       ...fetchOptions.headers,
