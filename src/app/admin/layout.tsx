@@ -202,6 +202,11 @@ const navSections: NavSection[] = [
         href: "/admin/concierge/commitments",
         icon: <CheckCheck size={20} />,
       },
+      {
+        label: "Cadences",
+        href: "/admin/concierge/cadences",
+        icon: <GitBranch size={20} />,
+      },
     ],
   },
   {
