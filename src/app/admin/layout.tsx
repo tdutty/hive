@@ -188,9 +188,19 @@ const navSections: NavSection[] = [
         icon: <Inbox size={20} />,
       },
       {
+        label: "Drafts",
+        href: "/admin/concierge/drafts",
+        icon: <FileText size={20} />,
+      },
+      {
         label: "Contacts",
         href: "/admin/concierge/contacts",
         icon: <Users size={20} />,
+      },
+      {
+        label: "Commitments",
+        href: "/admin/concierge/commitments",
+        icon: <CheckCheck size={20} />,
       },
     ],
   },
