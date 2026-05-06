@@ -179,6 +179,16 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    title: "Concierge",
+    items: [
+      {
+        label: "Contacts",
+        href: "/admin/concierge/contacts",
+        icon: <Users size={20} />,
+      },
+    ],
+  },
+  {
     title: "Business",
     items: [
       {
