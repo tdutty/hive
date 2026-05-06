@@ -42,6 +42,7 @@ import {
   Building,
   Eye,
   MessageCircle,
+  Inbox,
 } from "lucide-react";
 import {
   useNotifications,
@@ -181,6 +182,11 @@ const navSections: NavSection[] = [
   {
     title: "Concierge",
     items: [
+      {
+        label: "Inbox",
+        href: "/admin/concierge",
+        icon: <Inbox size={20} />,
+      },
       {
         label: "Contacts",
         href: "/admin/concierge/contacts",
