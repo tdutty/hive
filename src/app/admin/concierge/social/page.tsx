@@ -39,6 +39,25 @@ const CITY_COLORS: Record<string, { bg: string; text: string }> = {
   Boston: { bg: "bg-red-100", text: "text-red-700" },
   Houston: { bg: "bg-green-100", text: "text-green-700" },
   National: { bg: "bg-gray-100", text: "text-gray-700" },
+  NYC: { bg: "bg-orange-100", text: "text-orange-700" },
+  Baltimore: { bg: "bg-indigo-100", text: "text-indigo-700" },
+  "Los Angeles": { bg: "bg-sky-100", text: "text-sky-700" },
+  "San Francisco": { bg: "bg-teal-100", text: "text-teal-700" },
+  "Ann Arbor": { bg: "bg-amber-100", text: "text-amber-700" },
+  Durham: { bg: "bg-violet-100", text: "text-violet-700" },
+  Philadelphia: { bg: "bg-rose-100", text: "text-rose-700" },
+  Chicago: { bg: "bg-cyan-100", text: "text-cyan-700" },
+  Atlanta: { bg: "bg-emerald-100", text: "text-emerald-700" },
+  Seattle: { bg: "bg-fuchsia-100", text: "text-fuchsia-700" },
+  Dallas: { bg: "bg-lime-100", text: "text-lime-700" },
+  "Rochester MN": { bg: "bg-stone-100", text: "text-stone-700" },
+  Indianapolis: { bg: "bg-zinc-100", text: "text-zinc-700" },
+  Birmingham: { bg: "bg-red-100", text: "text-red-700" },
+  Cincinnati: { bg: "bg-orange-100", text: "text-orange-700" },
+  Minneapolis: { bg: "bg-blue-100", text: "text-blue-700" },
+  Charleston: { bg: "bg-green-100", text: "text-green-700" },
+  "New Orleans": { bg: "bg-purple-100", text: "text-purple-700" },
+  Madison: { bg: "bg-pink-100", text: "text-pink-700" },
 };
 
 const GROUPS: GroupData[] = [
@@ -64,6 +83,58 @@ const GROUPS: GroupData[] = [
   { name: "Houston Medical Center", url: "https://facebook.com/groups/233850040126034/", city: "Houston" },
   // National
   { name: "USMLE Residency Match", url: "https://facebook.com/groups/437428600378395/", city: "National" },
+  // NYC
+  { name: "Columbia University Housing", url: "https://facebook.com/groups/ColumbiaUniversityHousing/", city: "NYC" },
+  { name: "Sinai Student Housing - ISMMS", url: "https://facebook.com/groups/sinaistudenthousing/", city: "NYC" },
+  { name: "NYU Housing/Sublets/Rentals", url: "https://facebook.com/groups/NYUHousingSubletsRentals/", city: "NYC" },
+  { name: "Gypsy Housing New York", url: "https://facebook.com/groups/NewYorkARS/", city: "NYC" },
+  // Baltimore
+  { name: "JHMI Housing - East Baltimore", url: "https://facebook.com/groups/1582913955203310/", city: "Baltimore" },
+  { name: "JHU Housing, Sublets & Roommates", url: "https://facebook.com/groups/jhuhousing/", city: "Baltimore" },
+  { name: "UMB Housing, Sublets", url: "https://facebook.com/groups/umbhousing/", city: "Baltimore" },
+  // Los Angeles
+  { name: "UCLA Housing, Rooms, Apartments", url: "https://facebook.com/groups/415336998925847/", city: "Los Angeles" },
+  { name: "Cedars-Sinai Housing/Rentals", url: "https://facebook.com/groups/377936620032639/", city: "Los Angeles" },
+  // San Francisco
+  { name: "UCSF Student Housing", url: "https://facebook.com/groups/apartments.ucsanfrancisco/", city: "San Francisco" },
+  { name: "UCSF Off-Campus Housing", url: "https://facebook.com/groups/ucsfhousing/", city: "San Francisco" },
+  { name: "Stanford University Housing", url: "https://facebook.com/groups/stanfordhousing/", city: "San Francisco" },
+  // Ann Arbor
+  { name: "Student Housing in Ann Arbor", url: "https://facebook.com/groups/14085799663/", city: "Ann Arbor" },
+  { name: "UMich Off-Campus Housing", url: "https://facebook.com/groups/1931776477066245/", city: "Ann Arbor" },
+  // Durham
+  { name: "Duke University Housing", url: "https://facebook.com/groups/256677058925606/", city: "Durham" },
+  { name: "Duke Off Campus Housing", url: "https://facebook.com/groups/dukeuniversityoffcampushousingroommatesearch/", city: "Durham" },
+  // Philadelphia
+  { name: "UPenn Housing, Sublets & Roommates", url: "https://facebook.com/groups/935981056448770/", city: "Philadelphia" },
+  { name: "Thomas Jefferson/Drexel Off-Campus", url: "https://facebook.com/groups/824156272438870/", city: "Philadelphia" },
+  // Chicago
+  { name: "Northwestern Apartments and Housing", url: "https://facebook.com/groups/northwesternhousing/", city: "Chicago" },
+  { name: "UChicago Apartments and Housing", url: "https://facebook.com/groups/uchicagohousing/", city: "Chicago" },
+  // Atlanta
+  { name: "Emory University Apartments and Housing", url: "https://facebook.com/groups/emoryhousing/", city: "Atlanta" },
+  // Seattle
+  { name: "UW Housing, Subleases & Roommates", url: "https://facebook.com/groups/UWSubleasesRoommates/", city: "Seattle" },
+  { name: "UW Student Housing & Rentals", url: "https://facebook.com/groups/UWRentals/", city: "Seattle" },
+  // Dallas
+  { name: "UTSW Rental, Housing, Apartment", url: "https://facebook.com/groups/497472708085406/", city: "Dallas" },
+  // Rochester MN
+  { name: "Rochester MN Rentals, Apartments", url: "https://facebook.com/groups/716574462519336/", city: "Rochester MN" },
+  // Indianapolis
+  { name: "IUPUI Student Housing", url: "https://facebook.com/groups/apartments.iupui/", city: "Indianapolis" },
+  // Birmingham
+  { name: "UAB Housing, Room Rentals", url: "https://facebook.com/groups/birmingham.uab.housing.rentals.alabama/", city: "Birmingham" },
+  // Cincinnati
+  { name: "UC Apartments and Housing", url: "https://facebook.com/groups/cincinnati.housing/", city: "Cincinnati" },
+  { name: "UC Off Campus Housing", url: "https://facebook.com/groups/148519802222255/", city: "Cincinnati" },
+  // Minneapolis
+  { name: "UMN Graduate Student Housing", url: "https://facebook.com/groups/1765033537090564/", city: "Minneapolis" },
+  // Charleston
+  { name: "MUSC Roommates in Charleston", url: "https://facebook.com/groups/MUSCROOMMATES/", city: "Charleston" },
+  // New Orleans
+  { name: "New Orleans Housing, Rooms", url: "https://facebook.com/groups/200135023911082/", city: "New Orleans" },
+  // Madison
+  { name: "UW-Madison Off Campus Housing", url: "https://facebook.com/groups/universityofwisconsinmadisonoffcampushousingsearch/", city: "Madison" },
 ];
 
 const CITY_HOSPITALS: Record<string, string> = {
@@ -73,6 +144,25 @@ const CITY_HOSPITALS: Record<string, string> = {
   Nashville: "Vanderbilt University Medical Center, TriStar, and Saint Thomas",
   Boston: "Mass General, Brigham and Women's, Beth Israel, and Boston Medical Center",
   Houston: "UTHealth, MD Anderson, Memorial Hermann, and Houston Methodist",
+  NYC: "NewYork-Presbyterian, Mount Sinai, Montefiore, and NYU Langone",
+  Baltimore: "Johns Hopkins Hospital and University of Maryland Medical Center",
+  "Los Angeles": "UCLA Medical Center and Cedars-Sinai",
+  "San Francisco": "UCSF Medical Center and Stanford Health Care",
+  "Ann Arbor": "University of Michigan Health",
+  Durham: "Duke University Hospital",
+  Philadelphia: "Penn Medicine and Thomas Jefferson University Hospital",
+  Chicago: "Northwestern Memorial, Rush University Medical Center, and UChicago Medicine",
+  Atlanta: "Emory University Hospital and Grady Memorial",
+  Seattle: "UW Medical Center and Harborview Medical Center",
+  Dallas: "UT Southwestern Medical Center and Parkland Hospital",
+  "Rochester MN": "Mayo Clinic",
+  Indianapolis: "IU Health and Eskenazi Health",
+  Birmingham: "UAB Hospital",
+  Cincinnati: "UC Medical Center and Cincinnati Children's",
+  Minneapolis: "University of Minnesota Medical Center",
+  Charleston: "Medical University of South Carolina (MUSC)",
+  "New Orleans": "Ochsner Medical Center and Tulane Medical Center",
+  Madison: "UW Health and University of Wisconsin Hospital",
 };
 
 function getCityPost(city: string): string {
