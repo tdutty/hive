@@ -207,6 +207,11 @@ const navSections: NavSection[] = [
         href: "/admin/concierge/cadences",
         icon: <GitBranch size={20} />,
       },
+      {
+        label: "Market",
+        href: "/admin/concierge/market",
+        icon: <BarChart3 size={20} />,
+      },
     ],
   },
   {
