@@ -43,6 +43,7 @@ import {
   Eye,
   MessageCircle,
   Inbox,
+  Share2,
 } from "lucide-react";
 import {
   useNotifications,
@@ -211,6 +212,11 @@ const navSections: NavSection[] = [
         label: "Market",
         href: "/admin/concierge/market",
         icon: <BarChart3 size={20} />,
+      },
+      {
+        label: "Social",
+        href: "/admin/concierge/social",
+        icon: <Share2 size={20} />,
       },
     ],
   },
