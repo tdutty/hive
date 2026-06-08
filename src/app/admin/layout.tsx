@@ -88,6 +88,11 @@ const navSections: NavSection[] = [
         icon: <CheckCircle size={20} />,
       },
       {
+        label: "PM Port Review",
+        href: "/admin/pm-port",
+        icon: <Inbox size={20} />,
+      },
+      {
         label: "Negotiations",
         href: "/admin/negotiations",
         icon: <MessageSquare size={20} />,
