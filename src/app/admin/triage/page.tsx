@@ -15,6 +15,9 @@ const CLS: Record<Classification, { label: string; cls: string; icon: JSX.Elemen
 };
 const STAGES = ["Lead Drop", "Responded", "Interested", "Consented", "Partnership", "Declined"];
 const JOB: Record<ScheduledRow["status"], string> = { waiting: "bg-amber-100 text-amber-800", active: "bg-sky-100 text-sky-800", completed: "bg-emerald-100 text-emerald-800", failed: "bg-red-100 text-red-800" };
+/** Active = a live two-way conversation: the PM replied, it is not a decline or an autoresponder. */
+const isActive = (c: Conversation) => c.classification !== "DECLINED" && c.classification !== "AUTO";
+const lastActivity = (c: Conversation) => [c.lastInboundAt, c.lastOutboundAt].filter(Boolean).sort().slice(-1)[0] || "";
 const fmt = (iso?: string | null) => (iso ? new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "-");
 /** default schedule slot: next weekday 9:00 local, as a datetime-local value */
 function defaultSlot(): string {
@@ -27,7 +30,7 @@ function defaultSlot(): string {
 export default function TriagePage() {
   const { data, loading, error, refetch } = useApi(() => triageService.list());
   const sched = useApi(() => triageService.scheduled());
-  const [filter, setFilter] = useState<"actionable" | "all" | Classification>("actionable");
+  const [filter, setFilter] = useState<"actionable" | "active" | "all" | Classification>("actionable");
   const [selected, setSelected] = useState<string | null>(null);
   const [thread, setThread] = useState<Conversation | null>(null);
   const [threadLoading, setThreadLoading] = useState(false);
@@ -48,7 +51,10 @@ export default function TriagePage() {
     triageService.thread(selected).then(t => { setThread(t); setDraftText(t.pendingDraft?.draft || ""); setNotes(""); }).finally(() => setThreadLoading(false));
   }, [selected]);
 
-  const rows = (data?.conversations || []).filter(c => filter === "all" ? true : filter === "actionable" ? c.awaitingReply : c.classification === filter);
+  const activeCount = (data?.conversations || []).filter(isActive).length;
+  const rows = (data?.conversations || [])
+    .filter(c => filter === "all" ? true : filter === "actionable" ? c.awaitingReply : filter === "active" ? isActive(c) : c.classification === filter)
+    .sort((a, b) => filter === "active" ? (lastActivity(b) < lastActivity(a) ? -1 : 1) : 0);
   const reloadThread = async () => { if (selected) { const t = await triageService.thread(selected); setThread(t); setDraftText(t.pendingDraft?.draft || ""); } };
 
   const act = async (fn: () => Promise<any>, ok: string, after?: (r: any) => void) => {
@@ -102,7 +108,7 @@ export default function TriagePage() {
       )}
 
       <div className="flex flex-wrap gap-2">
-        {([["actionable", `Needs reply (${data?.awaitingReply ?? 0})`], ["all", `All (${data?.count ?? 0})`], ...Object.entries(CLS).map(([k, v]) => [k, `${v.label} (${data?.counts?.[k] ?? 0})`])] as [string, string][]).map(([k, label]) => (
+        {([["actionable", `Needs reply (${data?.awaitingReply ?? 0})`], ["active", `Active (${activeCount})`], ["all", `All (${data?.count ?? 0})`], ...Object.entries(CLS).map(([k, v]) => [k, `${v.label} (${data?.counts?.[k] ?? 0})`])] as [string, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setFilter(k as any)} className={`px-3 py-1.5 text-sm rounded-md border ${filter === k ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"}`}>{label}</button>
         ))}
       </div>
@@ -120,7 +126,7 @@ export default function TriagePage() {
               <div className="text-xs text-slate-500 mt-0.5 truncate">{c.pm_email}{c.city ? ` · ${c.city}` : ""}</div>
               <div className="text-sm text-slate-600 mt-1 line-clamp-2">{c.preview}</div>
               <div className="flex items-center gap-3 text-xs text-slate-500 mt-2">
-                <span>{fmt(c.lastInboundAt)}</span>
+                <span>{filter === "active" ? `last activity ${fmt(lastActivity(c))}` : fmt(c.lastInboundAt)}</span>
                 {c.awaitingReply && <span className="text-amber-700 font-medium">awaiting reply</span>}
                 {c.pendingDraft && <span className="text-sky-700 font-medium">draft ready</span>}
                 {c.staged && <span>{c.staged.total} units staged{c.staged.needsReview ? ` (${c.staged.needsReview} review)` : ""}</span>}
