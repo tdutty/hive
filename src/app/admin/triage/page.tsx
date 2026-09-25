@@ -71,6 +71,8 @@ export default function TriagePage() {
   if (error) return <div className="space-y-8"><h1 className="text-2xl font-semibold text-slate-900">Email Triage</h1><div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700"><p className="font-medium">Failed to load</p><p className="text-sm mt-1">{error}</p><button onClick={refetch} className="mt-3 bg-red-600 text-white rounded-md px-4 py-2 text-sm">Retry</button></div></div>;
 
   const waiting = sched.data?.waiting ?? 0;
+  const nextScheduled = new Map<string, ScheduledRow>();
+  for (const r of sched.data?.rows || []) if (r.status === "waiting" || r.status === "active") { const cur = nextScheduled.get(r.pm_email); if (!cur || r.scheduledFor < cur.scheduledFor) nextScheduled.set(r.pm_email, r); }
   const schedRows = (sched.data?.rows || []).filter(r => showSched ? true : r.status === "waiting" || r.status === "active" || r.status === "failed");
 
   return (
@@ -133,6 +135,7 @@ export default function TriagePage() {
                 {c.awaitingReply && <span className="text-amber-700 font-medium">awaiting reply</span>}
                 {c.reopened && <span className="text-violet-700 font-medium">reopened</span>}
                 {c.pendingDraft && <span className="text-sky-700 font-medium">draft ready</span>}
+                {nextScheduled.has(c.pm_email) && <span className="text-sky-700 font-medium inline-flex items-center gap-1"><CalendarClock size={12} /> scheduled {fmt(nextScheduled.get(c.pm_email)!.scheduledFor)}</span>}
                 {c.staged && <span>{c.staged.total} units staged{c.staged.needsReview ? ` (${c.staged.needsReview} review)` : ""}</span>}
               </div>
             </button>
@@ -168,6 +171,11 @@ export default function TriagePage() {
                 </div>
               </div>
 
+              {nextScheduled.has(thread.pm_email) && (() => { const r = nextScheduled.get(thread.pm_email)!; return (
+                <div className="text-sm rounded-md px-3 py-2 bg-sky-50 text-sky-800 flex items-start justify-between gap-3">
+                  <div><span className="font-medium inline-flex items-center gap-1"><CalendarClock size={14} /> Message scheduled for {fmt(r.scheduledFor)}</span>{r.status === "active" ? " (sending now)" : ""}<div className="text-xs text-sky-700 mt-1 line-clamp-2">{r.text}</div></div>
+                  {r.status === "waiting" && <button disabled={busy !== null} onClick={() => act(() => triageService.cancel(r.id), "Cancelled")} className="shrink-0 text-xs border border-red-200 text-red-700 rounded-md px-2 py-1 hover:bg-red-50 disabled:opacity-50">Cancel</button>}
+                </div>); })()}
               {thread.state !== "OPEN" && <div className="text-sm rounded-md px-3 py-2 bg-slate-100 text-slate-700">{thread.state === "RESOLVED" ? "Resolved" : "Archived"} {fmt(thread.stateAt)}{thread.stateNote ? ` - ${thread.stateNote}` : ""}. Hidden from the working views; it reopens on its own if they write again.</div>}
               {thread.reopened && <div className="text-sm rounded-md px-3 py-2 bg-violet-50 text-violet-800">Reopened: they wrote again after this thread was {thread.stateNote ? `closed (${thread.stateNote})` : "closed"}.</div>}
               {flash && <div className={`text-sm rounded-md px-3 py-2 ${flash.startsWith("Error") ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-800"}`}>{flash}</div>}
