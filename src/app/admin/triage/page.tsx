@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Inbox, Send, RefreshCw, CheckCircle2, XCircle, Link2, HelpCircle, Bot, MessageSquare, Sparkles, CalendarClock, Trash2, PenLine } from "lucide-react";
+import { Inbox, Send, RefreshCw, CheckCircle2, XCircle, Link2, HelpCircle, Bot, MessageSquare, Sparkles, CalendarClock, Trash2, PenLine, Archive, CheckCheck, RotateCcw } from "lucide-react";
 import { useApi } from "@/lib/hooks";
 import { triageService, type Conversation, type Classification, type ScheduledRow } from "@/lib/services/triage";
 
@@ -30,7 +30,7 @@ function defaultSlot(): string {
 export default function TriagePage() {
   const { data, loading, error, refetch } = useApi(() => triageService.list());
   const sched = useApi(() => triageService.scheduled());
-  const [filter, setFilter] = useState<"actionable" | "active" | "all" | Classification>("actionable");
+  const [filter, setFilter] = useState<"actionable" | "active" | "all" | "resolved" | "archived" | Classification>("actionable");
   const [selected, setSelected] = useState<string | null>(null);
   const [thread, setThread] = useState<Conversation | null>(null);
   const [threadLoading, setThreadLoading] = useState(false);
@@ -44,6 +44,7 @@ export default function TriagePage() {
   const [composeText, setComposeText] = useState("");
   const [sendAt, setSendAt] = useState(defaultSlot());
   const [showSched, setShowSched] = useState(false);
+  const [stateNote, setStateNote] = useState("");
 
   useEffect(() => {
     if (!selected) { setThread(null); return; }
@@ -51,9 +52,10 @@ export default function TriagePage() {
     triageService.thread(selected).then(t => { setThread(t); setDraftText(t.pendingDraft?.draft || ""); setNotes(""); }).finally(() => setThreadLoading(false));
   }, [selected]);
 
-  const activeCount = (data?.conversations || []).filter(isActive).length;
-  const rows = (data?.conversations || [])
-    .filter(c => filter === "all" ? true : filter === "actionable" ? c.awaitingReply : filter === "active" ? isActive(c) : c.classification === filter)
+  const openConvs = (data?.conversations || []).filter(c => c.state === "OPEN");
+  const activeCount = openConvs.filter(isActive).length;
+  const rows = (filter === "resolved" || filter === "archived" ? (data?.conversations || []).filter(c => c.state === filter.toUpperCase()) : openConvs)
+    .filter(c => filter === "all" || filter === "resolved" || filter === "archived" ? true : filter === "actionable" ? c.awaitingReply : filter === "active" ? isActive(c) : c.classification === filter)
     .sort((a, b) => filter === "active" ? (lastActivity(b) < lastActivity(a) ? -1 : 1) : 0);
   const reloadThread = async () => { if (selected) { const t = await triageService.thread(selected); setThread(t); setDraftText(t.pendingDraft?.draft || ""); } };
 
@@ -108,7 +110,7 @@ export default function TriagePage() {
       )}
 
       <div className="flex flex-wrap gap-2">
-        {([["actionable", `Needs reply (${data?.awaitingReply ?? 0})`], ["active", `Active (${activeCount})`], ["all", `All (${data?.count ?? 0})`], ...Object.entries(CLS).map(([k, v]) => [k, `${v.label} (${data?.counts?.[k] ?? 0})`])] as [string, string][]).map(([k, label]) => (
+        {([["actionable", `Needs reply (${data?.awaitingReply ?? 0})`], ["active", `Active (${activeCount})`], ["all", `All (${data?.count ?? 0})`], ...Object.entries(CLS).map(([k, v]) => [k, `${v.label} (${data?.counts?.[k] ?? 0})`]), ["resolved", `Resolved (${data?.states?.RESOLVED ?? 0})`], ["archived", `Archived (${data?.states?.ARCHIVED ?? 0})`]] as [string, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setFilter(k as any)} className={`px-3 py-1.5 text-sm rounded-md border ${filter === k ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"}`}>{label}</button>
         ))}
       </div>
@@ -128,6 +130,7 @@ export default function TriagePage() {
               <div className="flex items-center gap-3 text-xs text-slate-500 mt-2">
                 <span>{filter === "active" ? `last activity ${fmt(lastActivity(c))}` : fmt(c.lastInboundAt)}</span>
                 {c.awaitingReply && <span className="text-amber-700 font-medium">awaiting reply</span>}
+                {c.reopened && <span className="text-violet-700 font-medium">reopened</span>}
                 {c.pendingDraft && <span className="text-sky-700 font-medium">draft ready</span>}
                 {c.staged && <span>{c.staged.total} units staged{c.staged.needsReview ? ` (${c.staged.needsReview} review)` : ""}</span>}
               </div>
@@ -146,7 +149,16 @@ export default function TriagePage() {
                   <h2 className="text-lg font-semibold text-slate-900">{thread.company}</h2>
                   <p className="text-sm text-slate-500">{thread.pm_email}{thread.city ? ` · ${thread.city}` : ""} · {thread.campaign} campaign</p>
                 </div>
-                <div className="text-right">
+                <div className="text-right space-y-2">
+                  <div className="flex items-center justify-end gap-2">
+                    {thread.state === "OPEN" ? (<>
+                      <input value={stateNote} onChange={e => setStateNote(e.target.value)} placeholder="note (optional)" className="text-xs border border-slate-300 rounded-md px-2 py-1 w-36" />
+                      <button disabled={busy !== null} onClick={() => act(() => triageService.setState(thread.pm_email, "RESOLVED", stateNote || undefined), "Resolved", () => setStateNote(""))} title="Done with this thread; it leaves the working views and reopens if they write again" className="inline-flex items-center gap-1 text-xs border border-emerald-300 text-emerald-800 rounded-md px-2 py-1 hover:bg-emerald-50 disabled:opacity-50"><CheckCheck size={12} /> Resolve</button>
+                      <button disabled={busy !== null} onClick={() => act(() => triageService.setState(thread.pm_email, "ARCHIVED", stateNote || undefined), "Archived", () => setStateNote(""))} title="Park it out of sight; reopens if they write again" className="inline-flex items-center gap-1 text-xs border border-slate-300 text-slate-700 rounded-md px-2 py-1 hover:bg-slate-50 disabled:opacity-50"><Archive size={12} /> Archive</button>
+                    </>) : (
+                      <button disabled={busy !== null} onClick={() => act(() => triageService.setState(thread.pm_email, "OPEN"), "Reopened")} className="inline-flex items-center gap-1 text-xs border border-slate-300 text-slate-700 rounded-md px-2 py-1 hover:bg-slate-50 disabled:opacity-50"><RotateCcw size={12} /> Reopen</button>
+                    )}
+                  </div>
                   <label className="text-xs text-slate-500 block mb-1">Consent / stage</label>
                   <select value={thread.consent || ""} disabled={!thread.pmCompanyId || busy !== null} onChange={e => act(() => triageService.consent(thread.pm_email, e.target.value), `Stage set to ${e.target.value}`)} className="text-sm border border-slate-300 rounded-md px-2 py-1">
                     <option value="" disabled>{thread.pmCompanyId ? "set stage" : "no PM record"}</option>
@@ -155,6 +167,8 @@ export default function TriagePage() {
                 </div>
               </div>
 
+              {thread.state !== "OPEN" && <div className="text-sm rounded-md px-3 py-2 bg-slate-100 text-slate-700">{thread.state === "RESOLVED" ? "Resolved" : "Archived"} {fmt(thread.stateAt)}{thread.stateNote ? ` - ${thread.stateNote}` : ""}. Hidden from the working views; it reopens on its own if they write again.</div>}
+              {thread.reopened && <div className="text-sm rounded-md px-3 py-2 bg-violet-50 text-violet-800">Reopened: they wrote again after this thread was {thread.stateNote ? `closed (${thread.stateNote})` : "closed"}.</div>}
               {flash && <div className={`text-sm rounded-md px-3 py-2 ${flash.startsWith("Error") ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-800"}`}>{flash}</div>}
 
               <div className="space-y-3">
