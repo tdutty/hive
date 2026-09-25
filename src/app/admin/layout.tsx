@@ -92,6 +92,7 @@ const navSections: NavSection[] = [
         href: "/admin/pm-port",
         icon: <Inbox size={20} />,
       },
+      { label: "Email Triage", href: "/admin/triage", icon: <Inbox size={20} /> },
       {
         label: "Negotiations",
         href: "/admin/negotiations",
