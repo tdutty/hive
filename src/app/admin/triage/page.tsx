@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Inbox, Send, RefreshCw, CheckCircle2, XCircle, Link2, HelpCircle, Bot, MessageSquare, Sparkles, CalendarClock, Trash2, PenLine, Archive, CheckCheck, RotateCcw } from "lucide-react";
+import { Inbox, Send, RefreshCw, BellRing, CheckCircle2, XCircle, Link2, HelpCircle, Bot, MessageSquare, Sparkles, CalendarClock, Trash2, PenLine, Archive, CheckCheck, RotateCcw } from "lucide-react";
 import { useApi } from "@/lib/hooks";
 import { triageService, type Conversation, type Classification, type ScheduledRow } from "@/lib/services/triage";
 
@@ -31,6 +31,7 @@ export default function TriagePage() {
   const [fresh, setFresh] = useState(false);
   const { data, loading, error, refetch } = useApi(() => triageService.list(fresh), [fresh]);
   const sched = useApi(() => triageService.scheduled());
+  const fu = useApi(() => triageService.followupPreview());
   const [filter, setFilter] = useState<"actionable" | "active" | "all" | "resolved" | "archived" | Classification>("actionable");
   const [selected, setSelected] = useState<string | null>(null);
   const [thread, setThread] = useState<Conversation | null>(null);
@@ -82,8 +83,13 @@ export default function TriagePage() {
           <h1 className="text-2xl font-semibold text-slate-900">Email Triage</h1>
           <p className="text-sm text-slate-500 mt-1">{data?.count} PM conversations · <span className="font-medium text-amber-700">{data?.awaitingReply} awaiting a reply</span>{waiting > 0 && <> · <span className="font-medium text-sky-700">{waiting} scheduled</span></>}</p>
         </div>
-        <button onClick={() => { setFresh(true); refetch(); sched.refetch(); }} className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"><RefreshCw size={16} /> Refresh</button>
+        <div className="flex items-center gap-4">
+          <button disabled={busy !== null} title={`Drafts a nudge for every interested PM quiet ${fu.data?.gapDays ?? 4}+ days after our reply (max ${fu.data?.max ?? 2} per thread). Drafts wait for your approval; nothing sends.`} onClick={() => act(() => triageService.runFollowups(), "Follow-ups drafted", r => { fu.refetch(); setFlash(`Follow-ups: ${r.queued.length} drafted for approval${r.queued.length ? " (" + r.queued.map((q: any) => q.company).join(", ") + ")" : ""}${r.skipped.length ? `, ${r.skipped.length} skipped` : ""}`); })} className="inline-flex items-center gap-2 text-sm border border-slate-300 rounded-md px-3 py-1.5 hover:border-slate-500 disabled:opacity-50"><BellRing size={14} /> {busy === "Follow-ups drafted" ? "Drafting…" : `Run follow-up sweep${fu.data?.count ? ` (${fu.data.count} due)` : ""}`}</button>
+          <button onClick={() => { setFresh(true); refetch(); sched.refetch(); fu.refetch(); }} className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"><RefreshCw size={16} /> Refresh</button>
+        </div>
       </div>
+
+      {flash && !thread && <div className={`text-sm rounded-md px-3 py-2 ${flash.startsWith("Error") ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-800"}`}>{flash}</div>}
 
       {/* scheduled sends */}
       {(schedRows.length > 0 || showSched) && (
@@ -134,7 +140,7 @@ export default function TriagePage() {
                 <span>{filter === "active" ? `last activity ${fmt(lastActivity(c))}` : fmt(c.lastInboundAt)}</span>
                 {c.awaitingReply && <span className="text-amber-700 font-medium">awaiting reply</span>}
                 {c.reopened && <span className="text-violet-700 font-medium">reopened</span>}
-                {c.pendingDraft && <span className="text-sky-700 font-medium">draft ready</span>}
+                {c.pendingDraft && <span className="text-sky-700 font-medium">{c.pendingDraft.origin === "followup" ? "follow-up ready" : "draft ready"}</span>}
                 {nextScheduled.has(c.pm_email) && <span className="text-sky-700 font-medium inline-flex items-center gap-1"><CalendarClock size={12} /> scheduled {fmt(nextScheduled.get(c.pm_email)!.scheduledFor)}</span>}
                 {c.staged && <span>{c.staged.total} units staged{c.staged.needsReview ? ` (${c.staged.needsReview} review)` : ""}</span>}
               </div>
@@ -191,7 +197,7 @@ export default function TriagePage() {
 
               {thread.pendingDraft ? (
                 <div className="border border-sky-200 rounded-lg p-4 bg-sky-50/40 space-y-3">
-                  <div className="flex items-center justify-between"><h3 className="font-medium text-slate-900">Proposed reply</h3><span className="text-xs text-slate-500">from {thread.pendingDraft.channel === "smtp" ? "tgilbert@" : "sweetleasepartners inbox"}</span></div>
+                  <div className="flex items-center justify-between"><h3 className="font-medium text-slate-900">{thread.pendingDraft.origin === "followup" ? `Proposed follow-up ${thread.pendingDraft.nth || ""}` : "Proposed reply"}</h3><span className="text-xs text-slate-500">from {thread.pendingDraft.channel === "smtp" ? "tgilbert@" : "sweetleasepartners inbox"}</span></div>
                   {thread.pendingDraft.notes_history.length > 0 && <p className="text-xs text-slate-500">Revised {thread.pendingDraft.notes_history.length}× - last note: “{thread.pendingDraft.notes_history.slice(-1)[0]}”</p>}
                   <textarea value={draftText} onChange={e => setDraftText(e.target.value)} rows={12} className="w-full text-sm border border-slate-300 rounded-md p-3 font-sans" />
                   <div className="flex flex-wrap items-center gap-3">

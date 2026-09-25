@@ -3,7 +3,7 @@ import { api } from "@/lib/api";
 export type ThreadState = "OPEN" | "RESOLVED" | "ARCHIVED";
 export type Classification = "CONSENTED" | "SENT_INVENTORY" | "INTERESTED" | "DECLINED" | "AUTO" | "OTHER";
 export interface Message { id: string; direction: "in" | "out"; from: string; to: string; subject: string; at: string; text: string; campaign: string }
-export interface Draft { token: string; status: string; channel: string; draft: string; reply_text: string; created?: string; sent_at?: string; sent_by?: string; notes_history: string[] }
+export interface Draft { token: string; status: string; channel: string; draft: string; reply_text: string; created?: string; sent_at?: string; sent_by?: string; notes_history: string[]; origin?: "reply" | "compose" | "followup"; nth?: number | null }
 export interface Conversation {
   pm_email: string; company: string; campaign: string; classification: Classification; consent: string | null;
   pmCompanyId: string | null; city: string | null; lastInboundAt: string | null; lastOutboundAt: string | null;
@@ -29,5 +29,7 @@ export const triageService = {
   sendNow: (pm: string, text: string, instructions?: string) => api.post<{ ok: boolean; sent_at?: string; error?: string }>(conv(pm), { action: "sendNow", text, instructions }),
   schedule: (pm: string, text: string, sendAt: string, instructions?: string) => api.post<{ ok: boolean; jobId?: string; scheduledFor?: string; error?: string }>(conv(pm), { action: "schedule", text, sendAt, instructions }),
   scheduled: () => api.get<ScheduledList>("/api/admin/triage/scheduled"),
+  followupPreview: () => api.get<{ gapDays: number; max: number; count: number; candidates: { pm_email: string; company: string; nth: number; quietDays: number }[]; error?: string }>("/api/admin/triage/followups"),
+  runFollowups: () => api.post<{ ok: boolean; candidates: number; queued: { company: string; nth: number }[]; skipped: { pm_email: string; reason: string }[]; error?: string }>("/api/admin/triage/followups"),
   cancel: (id: string) => api.delete<{ ok: boolean; error?: string }>(`/api/admin/triage/scheduled/${encodeURIComponent(id)}`),
 };
