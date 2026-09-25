@@ -18,7 +18,7 @@ export interface ScheduledList { count: number; waiting: number; rows: Scheduled
 const conv = (pm: string) => `/api/admin/triage/conversations/${encodeURIComponent(pm)}`;
 
 export const triageService = {
-  list: () => api.get<ConversationList>("/api/admin/triage/conversations"),
+  list: (fresh = false) => api.get<ConversationList>("/api/admin/triage/conversations", fresh ? { fresh: 1 } : undefined),
   thread: (pm: string) => api.get<Conversation>(conv(pm)),
   send: (pm: string, token: string, finalDraft?: string) => api.post<{ ok: boolean; sent_at?: string; error?: string }>(conv(pm), { action: "send", token, finalDraft }),
   redraft: (pm: string, token: string, notes: string) => api.post<{ ok: boolean; draft?: string; error?: string }>(conv(pm), { action: "redraft", token, notes }),

@@ -28,7 +28,8 @@ function defaultSlot(): string {
 }
 
 export default function TriagePage() {
-  const { data, loading, error, refetch } = useApi(() => triageService.list());
+  const [fresh, setFresh] = useState(false);
+  const { data, loading, error, refetch } = useApi(() => triageService.list(fresh), [fresh]);
   const sched = useApi(() => triageService.scheduled());
   const [filter, setFilter] = useState<"actionable" | "active" | "all" | "resolved" | "archived" | Classification>("actionable");
   const [selected, setSelected] = useState<string | null>(null);
@@ -79,7 +80,7 @@ export default function TriagePage() {
           <h1 className="text-2xl font-semibold text-slate-900">Email Triage</h1>
           <p className="text-sm text-slate-500 mt-1">{data?.count} PM conversations · <span className="font-medium text-amber-700">{data?.awaitingReply} awaiting a reply</span>{waiting > 0 && <> · <span className="font-medium text-sky-700">{waiting} scheduled</span></>}</p>
         </div>
-        <button onClick={() => { refetch(); sched.refetch(); }} className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"><RefreshCw size={16} /> Refresh</button>
+        <button onClick={() => { setFresh(true); refetch(); sched.refetch(); }} className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"><RefreshCw size={16} /> Refresh</button>
       </div>
 
       {/* scheduled sends */}
