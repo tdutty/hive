@@ -1,14 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Play, RefreshCw } from "lucide-react";
+import { Plus, Play } from "lucide-react";
+import { toast } from "sonner";
 import { useApi } from "@/lib/hooks";
 import { scrapingService } from "@/lib/services/scraping";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { DataTable } from "@/components/ui/DataTable";
 import { Modal } from "@/components/ui/Modal";
+import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
 import { formatNumber } from "@/lib/utils";
+
+// POST /api/admin/scraping/jobs has no backend handler yet (returns 405).
+const JOB_SUBMIT_UNAVAILABLE = "Job submission is not available yet: the scraping jobs endpoint has no backend handler.";
 
 
 export default function ScrapingPage() {
@@ -70,7 +75,7 @@ export default function ScrapingPage() {
   const handleSubmitJob = async () => {
     try {
       // Start job through API endpoint
-      await fetch("/api/admin/scraping/jobs", {
+      const res = await fetch("/api/admin/scraping/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -79,10 +84,12 @@ export default function ScrapingPage() {
           includeCompetitors: jobConfig.includeCompetitors,
         }),
       });
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
       setIsModalOpen(false);
+      toast.success("Scraping job started");
       await refetchJobs();
-    } catch (error) {
-      console.error("Failed to start job:", error);
+    } catch (error: any) {
+      toast.error("Job submission is not available yet", { description: error?.message });
     }
   };
 
@@ -90,8 +97,8 @@ export default function ScrapingPage() {
     try {
       await scrapingService.stopJob(jobId);
       await refetchJobs();
-    } catch (error) {
-      console.error("Failed to stop job:", error);
+    } catch (error: any) {
+      toast.error("Failed to stop job", { description: error?.message });
     }
   };
 
@@ -103,6 +110,7 @@ export default function ScrapingPage() {
 
   const isLoading = jobsLoading || sitesLoading || configLoading;
   const hasError = jobsError || sitesError || configError;
+  const errorMessage = [jobsError, sitesError, configError].filter(Boolean).join("; ");
 
   return (
     <div className="space-y-8">
@@ -124,23 +132,11 @@ export default function ScrapingPage() {
 
       {/* Error State */}
       {hasError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between">
-          <span className="text-red-900">Failed to load scraping data</span>
-          <button
-            onClick={handleRetry}
-            className="text-red-600 hover:text-red-700 font-medium"
-          >
-            Retry
-          </button>
-        </div>
+        <ErrorBanner message={`Failed to load scraping data: ${errorMessage}`} onRetry={handleRetry} />
       )}
 
       {/* Loading State */}
-      {isLoading && (
-        <div className="flex items-center justify-center py-12">
-          <RefreshCw className="animate-spin text-amber-600" size={32} />
-        </div>
-      )}
+      {isLoading && <Spinner label="Loading scraping data" />}
 
       {!isLoading && (
         <>
@@ -447,7 +443,9 @@ export default function ScrapingPage() {
           <div className="flex gap-3 pt-4">
             <button
               onClick={handleSubmitJob}
-              className="flex-1 bg-amber-600 text-white rounded-md px-4 py-2 font-medium hover:bg-amber-700 transition-colors"
+              disabled
+              title={JOB_SUBMIT_UNAVAILABLE}
+              className="flex-1 bg-amber-600 text-white rounded-md px-4 py-2 font-medium hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Start Job
             </button>

@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { sweetleaseApi } from "@/lib/api";
+import { usePolling } from "@/lib/hooks";
+import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
 import { RefreshCw, Send, MessageSquare, Phone, MapPin } from "lucide-react";
 
 interface SmsMessage {
@@ -30,6 +33,7 @@ export default function SmsInboxPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selected, setSelected] = useState<Conversation | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -38,15 +42,17 @@ export default function SmsInboxPage() {
     try {
       const data = await sweetleaseApi.get<{ conversations: Conversation[] }>("/api/admin/sms");
       setConversations(data.conversations);
-      // Update selected conversation if it exists
-      if (selected) {
+      setError(null);
+      // Update the open conversation so it picks up new messages on every poll
+      setSelected((prev) => {
+        if (!prev) return prev;
         const updated = data.conversations.find(
-          (c) => c.phone.replace(/\D/g, "").slice(-10) === selected.phone.replace(/\D/g, "").slice(-10)
+          (c) => c.phone.replace(/\D/g, "").slice(-10) === prev.phone.replace(/\D/g, "").slice(-10)
         );
-        if (updated) setSelected(updated);
-      }
-    } catch {
-      console.error("Failed to fetch SMS");
+        return updated || prev;
+      });
+    } catch (err: any) {
+      setError(err?.message || "Failed to fetch SMS conversations");
     } finally {
       setLoading(false);
     }
@@ -54,9 +60,9 @@ export default function SmsInboxPage() {
 
   useEffect(() => {
     fetchConversations();
-    const interval = setInterval(fetchConversations, 15000);
-    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  usePolling(fetchConversations, 15000);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -69,8 +75,8 @@ export default function SmsInboxPage() {
       await sweetleaseApi.post("/api/admin/sms", { to: selected.phone, body: reply });
       setReply("");
       await fetchConversations();
-    } catch (err) {
-      alert("Failed to send");
+    } catch (err: any) {
+      toast.error("Failed to send", { description: err?.data?.error || err?.message });
     } finally {
       setSending(false);
     }
@@ -88,10 +94,10 @@ export default function SmsInboxPage() {
   const unreadCount = conversations.filter((c) => c.hasUnread).length;
 
   return (
-    <div className="p-6 h-[calc(100vh-48px)]">
+    <div className="h-[calc(100dvh-7rem)]">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
             <MessageSquare size={24} className="text-amber-500" />
             SMS Inbox
             {unreadCount > 0 && (
@@ -100,25 +106,27 @@ export default function SmsInboxPage() {
               </span>
             )}
           </h1>
-          <p className="text-sm text-slate-400 mt-1">Landlord text conversations</p>
+          <p className="text-sm text-slate-500 mt-1">Landlord text conversations</p>
         </div>
         <button
           onClick={fetchConversations}
-          className="flex items-center gap-2 px-3 py-2 bg-[#2a2a3e] text-slate-400 hover:text-white rounded-lg text-sm transition"
+          className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-500 hover:text-slate-900 rounded-lg text-sm transition"
         >
           <RefreshCw size={14} />
           Refresh
         </button>
       </div>
 
+      {error && (
+        <ErrorBanner message={error} onRetry={fetchConversations} className="mb-4" />
+      )}
+
       <div className="flex gap-4 h-[calc(100%-80px)]">
         {/* Conversation List */}
-        <div className="w-80 max-w-[calc(100vw-2rem)] shrink-0 bg-[#1e1e2d] border border-[#2f2f42] rounded-xl overflow-y-auto">
+        <div className="w-80 max-w-[calc(100vw-2rem)] shrink-0 bg-white border border-slate-200 rounded-xl overflow-y-auto">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <RefreshCw className="animate-spin text-slate-500" size={20} />
-            </div>
-          ) : conversations.length === 0 ? (
+            <Spinner />
+          ) : error && conversations.length === 0 ? null : conversations.length === 0 ? (
             <div className="p-6 text-center text-slate-500 text-sm">
               No SMS conversations yet. Outreach texts will appear here when sent.
             </div>
@@ -132,14 +140,14 @@ export default function SmsInboxPage() {
                 <div
                   key={conv.phone}
                   onClick={() => setSelected(conv)}
-                  className={`px-4 py-3 border-b border-[#2f2f42] cursor-pointer transition ${
+                  className={`px-4 py-3 border-b border-slate-200 cursor-pointer transition ${
                     isSelected
-                      ? "bg-[#2a2a3e] border-l-2 border-l-amber-500"
-                      : "hover:bg-[#252538]"
+                      ? "bg-slate-50 border-l-2 border-l-amber-500"
+                      : "hover:bg-slate-50"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-white truncate flex items-center gap-2">
+                    <span className="text-sm font-medium text-slate-900 truncate flex items-center gap-2">
                       {conv.hasUnread && (
                         <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
                       )}
@@ -155,7 +163,7 @@ export default function SmsInboxPage() {
                       {conv.address}
                     </div>
                   )}
-                  <div className="text-xs text-slate-400 truncate">
+                  <div className="text-xs text-slate-500 truncate">
                     {lastMsg?.direction === "outbound" ? "You: " : ""}
                     {lastMsg?.body}
                   </div>
@@ -166,13 +174,13 @@ export default function SmsInboxPage() {
         </div>
 
         {/* Message Thread */}
-        <div className="flex-1 bg-[#1e1e2d] border border-[#2f2f42] rounded-xl flex flex-col">
+        <div className="flex-1 bg-white border border-slate-200 rounded-xl flex flex-col">
           {selected ? (
             <>
               {/* Thread Header */}
-              <div className="px-6 py-4 border-b border-[#2f2f42] flex items-center justify-between">
+              <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
                 <div>
-                  <div className="text-white font-medium">
+                  <div className="text-slate-900 font-medium">
                     {selected.ownerName || selected.phone}
                   </div>
                   <div className="text-xs text-slate-500 flex items-center gap-3">
@@ -201,7 +209,7 @@ export default function SmsInboxPage() {
                       className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm ${
                         msg.direction === "outbound"
                           ? "bg-amber-600 text-white rounded-br-sm"
-                          : "bg-[#2a2a3e] text-slate-200 rounded-bl-sm"
+                          : "bg-slate-50 text-slate-700 rounded-bl-sm"
                       }`}
                     >
                       <div>{msg.body}</div>
@@ -224,7 +232,7 @@ export default function SmsInboxPage() {
               </div>
 
               {/* Reply Input */}
-              <div className="px-4 py-3 border-t border-[#2f2f42]">
+              <div className="px-4 py-3 border-t border-slate-200">
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -232,7 +240,7 @@ export default function SmsInboxPage() {
                     onChange={(e) => setReply(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendReply()}
                     placeholder="Type a reply..."
-                    className="flex-1 px-4 py-2.5 bg-[#2a2a3e] border border-[#3f3f52] rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                    className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500"
                   />
                   <button
                     onClick={handleSendReply}

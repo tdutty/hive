@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
 import { RefreshCw, Search, Phone, Mail, MapPin, ChevronDown, ChevronUp } from "lucide-react";
 
 interface CityScore {
@@ -44,14 +46,16 @@ export default function CityScanPage() {
   const [scanCity, setScanCity] = useState("");
   const [scanState, setScanState] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchScans = async () => {
     setLoading(true);
     try {
       const data = await api.get<{ scans: CityScore[] }>("/api/admin/city-scans");
       setScans(data.scans || []);
-    } catch {
-      console.error("Failed to load scans");
+      setError(null);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load scans");
     } finally {
       setLoading(false);
     }
@@ -65,8 +69,8 @@ export default function CityScanPage() {
       );
       setLandlords(data.landlords || []);
       setSelectedCity({ city, state });
-    } catch {
-      console.error("Failed to load landlords");
+    } catch (err: any) {
+      toast.error(`Failed to load landlords for ${city}, ${state}`, { description: err?.message });
     }
   };
 
@@ -82,8 +86,8 @@ export default function CityScanPage() {
       setScanCity("");
       setScanState("");
       fetchScans();
-    } catch (err) {
-      console.error("Scan failed:", err);
+    } catch (err: any) {
+      toast.error("Scan failed", { description: err?.data?.error || err?.message });
     } finally {
       setScanning(false);
     }
@@ -166,9 +170,9 @@ export default function CityScanPage() {
 
       {/* Scanned Cities */}
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <RefreshCw className="animate-spin text-amber-600" size={32} />
-        </div>
+        <Spinner />
+      ) : error ? (
+        <ErrorBanner message={error} onRetry={fetchScans} />
       ) : scans.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-lg p-12 text-center text-slate-500">
           No cities scanned yet. Use the form above to scan a market.

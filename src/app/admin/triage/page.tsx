@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Inbox, Send, RefreshCw, BellRing, ArrowLeft, CheckCircle2, XCircle, Link2, HelpCircle, Bot, MessageSquare, Sparkles, CalendarClock, Trash2, PenLine, Archive, CheckCheck, RotateCcw } from "lucide-react";
-import { useApi } from "@/lib/hooks";
+import { useApi, useUrlState } from "@/lib/hooks";
 import { triageService, type Conversation, type Classification, type ScheduledRow } from "@/lib/services/triage";
 
 const CLS: Record<Classification, { label: string; cls: string; icon: JSX.Element }> = {
@@ -32,8 +32,8 @@ export default function TriagePage() {
   const { data, loading, error, refetch } = useApi(() => triageService.list(fresh), [fresh]);
   const sched = useApi(() => triageService.scheduled());
   const fu = useApi(() => triageService.followupPreview());
-  const [filter, setFilter] = useState<"actionable" | "active" | "all" | "resolved" | "archived" | Classification>("actionable");
-  const [selected, setSelected] = useState<string | null>(null);
+  const [filter, setFilter] = useUrlState<"actionable" | "active" | "all" | "resolved" | "archived" | Classification>("filter", "actionable");
+  const [selected, setSelected] = useUrlState<string>("pm", "");
   const [thread, setThread] = useState<Conversation | null>(null);
   const [threadLoading, setThreadLoading] = useState(false);
   const [draftText, setDraftText] = useState("");
@@ -150,7 +150,7 @@ export default function TriagePage() {
 
         {/* thread + actions */}
         <div className={`lg:col-span-3 bg-white border border-slate-200 rounded-lg p-4 sm:p-5 lg:max-h-[75vh] lg:overflow-y-auto ${selected ? "" : "hidden lg:block"}`}>
-          {selected && <button onClick={() => setSelected(null)} className="lg:hidden mb-3 inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900"><ArrowLeft size={16} /> All conversations</button>}
+          {selected && <button onClick={() => setSelected("")} className="lg:hidden mb-3 inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900"><ArrowLeft size={16} /> All conversations</button>}
           {!selected && <div className="text-slate-500 text-sm py-20 text-center">Select a conversation to read the full thread and act on it.</div>}
           {selected && threadLoading && <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" /></div>}
           {thread && !threadLoading && (

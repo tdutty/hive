@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { sweetleaseApi } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
+import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
+import { toast } from "sonner";
 import {
   Users,
   Building2,
@@ -95,15 +98,6 @@ function daysUntil(dateStr: string | null): number | null {
   return diff;
 }
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "-";
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
 function formatCurrency(amount: number | null): string {
   if (amount === null || amount === undefined) return "-";
   return `$${amount.toLocaleString()}`;
@@ -136,6 +130,7 @@ function statusBg(status: "green" | "amber" | "red") {
 export default function MarketIntelligencePage() {
   const [report, setReport] = useState<MarketReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [matching, setMatching] = useState(false);
   const [generatingCity, setGeneratingCity] = useState<string | null>(null);
   const [expandedCity, setExpandedCity] = useState<string | null>(null);
@@ -147,8 +142,9 @@ export default function MarketIntelligencePage() {
         "/api/admin/concierge/demand-supply"
       );
       setReport(data);
-    } catch (err) {
-      console.error("Failed to fetch market report:", err);
+      setError(null);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load market report");
     } finally {
       setLoading(false);
     }
@@ -163,8 +159,8 @@ export default function MarketIntelligencePage() {
     try {
       await sweetleaseApi.post("/api/admin/concierge/demand-supply");
       await fetchReport();
-    } catch (err) {
-      console.error("Matching failed:", err);
+    } catch (err: any) {
+      toast.error("Matching failed", { description: err?.message });
     } finally {
       setMatching(false);
     }
@@ -175,8 +171,8 @@ export default function MarketIntelligencePage() {
     try {
       await sweetleaseApi.post("/api/admin/concierge/demand-supply", { city });
       await fetchReport();
-    } catch (err) {
-      console.error("Draft generation failed:", err);
+    } catch (err: any) {
+      toast.error("Draft generation failed", { description: err?.message });
     } finally {
       setGeneratingCity(null);
     }
@@ -264,10 +260,11 @@ export default function MarketIntelligencePage() {
 
       {/* Market Grid */}
       {loading ? (
-        <div className="bg-white rounded-xl border border-slate-200 flex items-center justify-center py-20">
-          <Loader2 size={24} className="animate-spin text-slate-400" />
-          <span className="ml-2 text-sm text-slate-500">Loading market data...</span>
+        <div className="bg-white rounded-xl border border-slate-200">
+          <Spinner label="Loading market data..." />
         </div>
+      ) : error ? (
+        <ErrorBanner message={error} onRetry={fetchReport} />
       ) : cities.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 flex flex-col items-center justify-center py-20 text-slate-400">
           <BarChart3 size={40} className="mb-3" />
@@ -397,7 +394,7 @@ export default function MarketIntelligencePage() {
                                   <div className="flex items-center gap-1 mt-1 text-xs">
                                     <Calendar size={12} className={urgent ? "text-red-500" : "text-slate-400"} />
                                     <span className={urgent ? "text-red-600 font-medium" : "text-slate-500"}>
-                                      {formatDate(r.moveInDate)}
+                                      {r.moveInDate ? formatDate(r.moveInDate) : "-"}
                                       {days !== null && ` (${days}d)`}
                                     </span>
                                   </div>

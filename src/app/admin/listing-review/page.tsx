@@ -166,10 +166,15 @@ function CityPicker({
     </div>
   );
 }
+import { toast } from "sonner";
 import { useApi } from "@/lib/hooks";
 import { api } from "@/lib/api";
 import { MetricCard } from "@/components/ui/MetricCard";
+import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
 import { formatCurrency, formatDate } from "@/lib/utils";
+
+/** Prefer the API's own error text, then the thrown message. */
+const errMsg = (err: any) => err?.data?.error || err?.message || "Unknown error";
 
 interface ListingAddress {
   street: string;
@@ -286,8 +291,8 @@ export default function ListingReviewPage() {
       const result = await api.post<{ processed: number; avgScore: number; distribution: Record<string, number> }>("/api/admin/listings/score", {});
       setScoreResult(result);
       refetch();
-    } catch (err) {
-      console.error("Scoring failed:", err);
+    } catch (err: any) {
+      toast.error("Scoring failed", { description: errMsg(err) });
     } finally {
       setScoring(false);
     }
@@ -304,8 +309,8 @@ export default function ListingReviewPage() {
       );
       setAutoApproveResult(result);
       if (!dryRun) refetch();
-    } catch (err) {
-      console.error("Auto-approve failed:", err);
+    } catch (err: any) {
+      toast.error("Auto-approve failed", { description: errMsg(err) });
     } finally {
       setAutoApproving(false);
     }
@@ -315,10 +320,10 @@ export default function ListingReviewPage() {
     setSendingMatches(city);
     try {
       const result = await api.post<{ notified: number; message: string }>("/api/admin/listings/send-matches", { city });
-      alert(result.message || `Sent matches to ${result.notified} tenant(s) in ${city}`);
+      toast.success(result.message || `Sent matches to ${result.notified} tenant(s) in ${city}`);
       refetch();
     } catch (err: any) {
-      alert(err?.data?.error || "Failed to send matches");
+      toast.error("Failed to send matches", { description: errMsg(err) });
     } finally {
       setSendingMatches(null);
     }
@@ -330,7 +335,9 @@ export default function ListingReviewPage() {
     try {
       const data = await api.get<{ cities: typeof importCities }>("/api/admin/listings/import-city");
       setImportCities(data.cities || []);
-    } catch {}
+    } catch (err: any) {
+      toast.error("Could not load cities with tenant demand", { description: errMsg(err) });
+    }
   };
 
   const triggerImport = async () => {
@@ -402,7 +409,7 @@ export default function ListingReviewPage() {
       });
       refetch();
     } catch (err: any) {
-      alert(err?.data?.error || "Review failed");
+      toast.error("Review failed", { description: errMsg(err) });
     } finally {
       setActionLoading((prev) => ({ ...prev, [id]: false }));
     }
@@ -417,7 +424,7 @@ export default function ListingReviewPage() {
       });
       refetch();
     } catch (err: any) {
-      alert(err?.data?.error || "Boost failed");
+      toast.error("Boost failed", { description: errMsg(err) });
     } finally {
       setActionLoading((prev) => ({ ...prev, [id]: false }));
     }
@@ -432,19 +439,28 @@ export default function ListingReviewPage() {
       return next;
     });
     try {
-      await Promise.allSettled(
+      const results = await Promise.allSettled(
         ids.map((id) =>
           api.post(`/api/admin/listings/${id}/review`, {
             action,
             notes: bulkNotes || undefined,
-          }).catch(() => {}) // Skip already-approved or other errors
+          })
         )
       );
+      const failedIds = ids.filter((_, i) => results[i].status === "rejected");
+      const okCount = ids.length - failedIds.length;
+      const verb = action === "approve" ? "approved" : "rejected";
+      if (failedIds.length === 0) {
+        toast.success(`${okCount} ${verb}`);
+      } else {
+        const firstReason = (results.find((r) => r.status === "rejected") as PromiseRejectedResult | undefined)?.reason;
+        toast.error(`${okCount} ${verb}, ${failedIds.length} failed`, {
+          description: `${errMsg(firstReason)}. Failed: ${failedIds.join(", ")}`,
+        });
+      }
       setSelectedIds(new Set());
       setBulkNotes("");
       refetch();
-    } catch (err) {
-      console.error("Bulk review failed:", err);
     } finally {
       setActionLoading({});
     }
@@ -480,9 +496,7 @@ export default function ListingReviewPage() {
           <h1 className="text-2xl font-semibold text-slate-900">Listing Review</h1>
           <p className="text-slate-500">Review and approve tenant-match listings</p>
         </div>
-        <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
-        </div>
+        <Spinner label="Loading review queue" />
       </div>
     );
   }
@@ -493,16 +507,7 @@ export default function ListingReviewPage() {
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Listing Review</h1>
         </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700">
-          <p className="font-medium">Failed to load review queue</p>
-          <p className="text-sm mt-1">{error}</p>
-          <button
-            onClick={refetch}
-            className="mt-3 bg-red-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-red-700"
-          >
-            Retry
-          </button>
-        </div>
+        <ErrorBanner message={`Failed to load review queue: ${error}`} onRetry={refetch} />
       </div>
     );
   }

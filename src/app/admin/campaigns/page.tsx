@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
 import {
   RefreshCw,
   TrendingUp,
@@ -65,6 +66,7 @@ export default function CampaignsPage() {
   const [data, setData] = useState<CampaignData | null>(null);
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(90);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
@@ -74,8 +76,9 @@ export default function CampaignsPage() {
         { days }
       );
       setData(result);
-    } catch (err) {
-      console.error("Failed to load campaign data:", err);
+      setError(null);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load campaign data");
     } finally {
       setLoading(false);
     }
@@ -117,6 +120,9 @@ export default function CampaignsPage() {
           </button>
         </div>
       </div>
+
+      {error && <ErrorBanner message={error} onRetry={fetchData} />}
+      {loading && !data && !error && <Spinner />}
 
       {data && (
         <>

@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
 
 interface CounteredOffer {
   id: string;
@@ -28,6 +30,7 @@ export default function NegotiationsPage() {
   const [counterAmounts, setCounterAmounts] = useState<Record<string, number>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<{ offerId: string; message: string; type: 'success' | 'error' } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchOffers = async () => {
     try {
@@ -43,8 +46,9 @@ export default function NegotiationsPage() {
         }
       }
       setCounterAmounts(amounts);
-    } catch (err) {
-      console.error("Failed to load negotiations:", err);
+      setError(null);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load negotiations");
     } finally {
       setLoading(false);
     }
@@ -73,28 +77,27 @@ export default function NegotiationsPage() {
       setConfirmation({ offerId, message: messages[action], type: 'success' });
       setTimeout(() => setConfirmation(null), 5000);
       await fetchOffers();
-    } catch (err) {
-      console.error("Action failed:", err);
-      setConfirmation({ offerId, message: "Action failed — check console", type: 'error' });
-      setTimeout(() => setConfirmation(null), 5000);
+    } catch (err: any) {
+      const labels: Record<string, string> = {
+        accept: "Failed to accept counter",
+        counter: "Failed to send counter-offer",
+        reject: "Failed to reject offer",
+      };
+      toast.error(labels[action], { description: err?.data?.error || err?.message });
     } finally {
       setActionLoading(null);
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-400">Loading negotiations...</div>
-      </div>
-    );
+    return <Spinner label="Loading negotiations" />;
   }
 
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Negotiations</h1>
-        <p className="text-gray-400 mt-1">
+        <h1 className="text-2xl font-bold text-slate-900">Negotiations</h1>
+        <p className="text-slate-500 mt-1">
           Landlord counter offers requiring your response
         </p>
       </div>
@@ -105,10 +108,12 @@ export default function NegotiationsPage() {
         </div>
       )}
 
-      {offers.length === 0 ? (
-        <div className="bg-[#2a2a3d] border border-[#3a3a4d] rounded-lg p-12 text-center">
-          <p className="text-gray-400 text-lg">No active counter offers</p>
-          <p className="text-gray-500 text-sm mt-2">
+      {error ? (
+        <ErrorBanner message={error} onRetry={fetchOffers} />
+      ) : offers.length === 0 ? (
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-12 text-center">
+          <p className="text-slate-500 text-lg">No active counter offers</p>
+          <p className="text-slate-500 text-sm mt-2">
             Counter offers from landlords will appear here for you to review
           </p>
         </div>
@@ -128,11 +133,11 @@ export default function NegotiationsPage() {
             return (
               <div
                 key={offer.id}
-                className="bg-[#2a2a3d] border border-[#3a3a4d] rounded-lg overflow-hidden"
+                className="bg-slate-50 border border-slate-200 rounded-lg overflow-hidden"
               >
                 {/* Header Row */}
                 <div
-                  className="p-6 cursor-pointer hover:bg-[#2e2e42] transition-colors"
+                  className="p-6 cursor-pointer hover:bg-slate-100 transition-colors"
                   onClick={() =>
                     setExpandedId(isExpanded ? null : offer.id)
                   }
@@ -140,7 +145,7 @@ export default function NegotiationsPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
-                        <h3 className="text-white font-semibold text-lg">
+                        <h3 className="text-slate-900 font-semibold text-lg">
                           {offer.propertyTitle ||
                             offer.propertyAddress?.street ||
                             "Unknown Property"}
@@ -149,7 +154,7 @@ export default function NegotiationsPage() {
                           COUNTERED
                         </span>
                       </div>
-                      <p className="text-gray-400 text-sm mt-1">
+                      <p className="text-slate-500 text-sm mt-1">
                         {offer.landlordName || "Unknown Landlord"} &middot;{" "}
                         {offer.tenantCount} tenant(s) &middot;{" "}
                         {offer.leaseTermMonths}mo lease
@@ -158,12 +163,12 @@ export default function NegotiationsPage() {
                     <div className="text-right">
                       <div className="flex items-center gap-4">
                         <div>
-                          <div className="text-gray-500 text-xs">Our Offer</div>
-                          <div className="text-gray-300 font-medium">
+                          <div className="text-slate-500 text-xs">Our Offer</div>
+                          <div className="text-slate-600 font-medium">
                             ${offer.finalRentPerUnit.toLocaleString()}/mo
                           </div>
                         </div>
-                        <div className="text-gray-500">&rarr;</div>
+                        <div className="text-slate-500">&rarr;</div>
                         <div>
                           <div className="text-amber-400 text-xs">
                             Their Counter
@@ -189,16 +194,16 @@ export default function NegotiationsPage() {
 
                 {/* Expanded Actions */}
                 {isExpanded && (
-                  <div className="border-t border-[#3a3a4d] p-6 bg-[#252538]">
+                  <div className="border-t border-slate-200 p-6 bg-slate-50">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
                       <div>
-                        <div className="text-gray-500 text-xs uppercase tracking-wider">
+                        <div className="text-slate-500 text-xs uppercase tracking-wider">
                           Landlord
                         </div>
-                        <div className="text-white mt-1">
+                        <div className="text-slate-900 mt-1">
                           {offer.landlordName}
                         </div>
-                        <div className="text-gray-400 text-sm">
+                        <div className="text-slate-500 text-sm">
                           {offer.landlordEmail}
                         </div>
                         {offer.landlordPhone && (
@@ -208,10 +213,10 @@ export default function NegotiationsPage() {
                         )}
                       </div>
                       <div>
-                        <div className="text-gray-500 text-xs uppercase tracking-wider">
+                        <div className="text-slate-500 text-xs uppercase tracking-wider">
                           Annual Value
                         </div>
-                        <div className="text-white mt-1">
+                        <div className="text-slate-900 mt-1">
                           $
                           {(
                             (offer.counterAmount || offer.finalRentPerUnit) *
@@ -221,10 +226,10 @@ export default function NegotiationsPage() {
                         </div>
                       </div>
                       <div>
-                        <div className="text-gray-500 text-xs uppercase tracking-wider">
+                        <div className="text-slate-500 text-xs uppercase tracking-wider">
                           Countered
                         </div>
-                        <div className="text-white mt-1">
+                        <div className="text-slate-900 mt-1">
                           {offer.counteredAt
                             ? new Date(offer.counteredAt).toLocaleDateString()
                             : "Unknown"}
@@ -243,8 +248,8 @@ export default function NegotiationsPage() {
                       </button>
 
                       {/* Counter Back */}
-                      <div className="flex items-center border border-[#3a3a4d] rounded overflow-hidden">
-                        <span className="px-3 py-3 bg-[#1e1e2d] text-gray-500 text-sm border-r border-[#3a3a4d]">
+                      <div className="flex items-center border border-slate-200 rounded overflow-hidden">
+                        <span className="px-3 py-3 bg-white text-slate-500 text-sm border-r border-slate-200">
                           $
                         </span>
                         <input
@@ -256,7 +261,7 @@ export default function NegotiationsPage() {
                               [offer.id]: Number(e.target.value),
                             }))
                           }
-                          className="w-28 px-3 py-3 bg-[#1e1e2d] text-white text-sm focus:outline-none"
+                          className="w-28 px-3 py-3 bg-white text-slate-900 text-sm focus:outline-none"
                           placeholder="Amount"
                         />
                         <button
@@ -275,7 +280,7 @@ export default function NegotiationsPage() {
                       <button
                         onClick={() => handleAction(offer.id, "reject")}
                         disabled={actionLoading === offer.id}
-                        className="px-6 py-3 text-gray-400 hover:text-red-400 text-sm font-medium transition-colors disabled:opacity-50"
+                        className="px-6 py-3 text-slate-500 hover:text-red-400 text-sm font-medium transition-colors disabled:opacity-50"
                       >
                         {actionLoading === offer.id ? 'Processing...' : 'Walk Away'}
                       </button>

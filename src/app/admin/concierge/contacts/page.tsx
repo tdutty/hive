@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { sweetleaseApi } from "@/lib/api";
+import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
+import { toast } from "sonner";
 import {
   Users,
   Building2,
@@ -86,6 +88,7 @@ export default function ConciergeContactsPage() {
   const [stats, setStats] = useState({ total: 0, landlords: 0, residents: 0, withEmail: 0 });
   const [markets, setMarkets] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -120,8 +123,9 @@ export default function ConciergeContactsPage() {
       setMarkets(data.markets);
       setTotal(data.total);
       setTotalPages(data.totalPages);
-    } catch (err) {
-      console.error("Failed to fetch concierge contacts:", err);
+      setError(null);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load contacts");
     } finally {
       setLoading(false);
     }
@@ -141,8 +145,8 @@ export default function ConciergeContactsPage() {
     try {
       await sweetleaseApi.post("/api/admin/concierge/contacts/sync");
       await fetchContacts();
-    } catch (err) {
-      console.error("Sync failed:", err);
+    } catch (err: any) {
+      toast.error("Sync failed", { description: err?.message });
     } finally {
       setSyncing(false);
     }
@@ -244,9 +248,10 @@ export default function ConciergeContactsPage() {
       {/* Table */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 size={24} className="animate-spin text-slate-400" />
-            <span className="ml-2 text-sm text-slate-500">Loading contacts...</span>
+          <Spinner label="Loading contacts..." />
+        ) : error ? (
+          <div className="p-4">
+            <ErrorBanner message={error} onRetry={fetchContacts} />
           </div>
         ) : contacts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">

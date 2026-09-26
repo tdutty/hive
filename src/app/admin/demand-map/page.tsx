@@ -67,20 +67,20 @@ export default function DemandMapPage() {
   };
 
   return (
-    <div className="p-6">
+    <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
             <MapPin size={24} className="text-amber-500" />
             Demand Map
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             Active tenants by city with high-pain landlord call targets
           </p>
         </div>
         <button
           onClick={fetchData}
-          className="flex items-center gap-2 px-3 py-2 bg-[#2a2a3e] text-slate-400 hover:text-white rounded-lg text-sm transition"
+          className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-500 hover:text-slate-900 rounded-lg text-sm transition"
         >
           <RefreshCw size={14} />
           Refresh
@@ -96,10 +96,10 @@ export default function DemandMapPage() {
       ) : (
         <div className="space-y-4">
           {data.map((city) => (
-            <div key={city.city} className="bg-[#1e1e2d] border border-[#2f2f42] rounded-xl overflow-hidden">
+            <div key={city.city} className="bg-white border border-slate-200 rounded-xl overflow-hidden">
               {/* City Header */}
               <div
-                className="px-6 py-4 cursor-pointer hover:bg-[#252538] transition flex items-center justify-between"
+                className="px-6 py-4 cursor-pointer hover:bg-slate-50 transition flex items-center justify-between"
                 onClick={() => setExpanded(expanded === city.city ? null : city.city)}
               >
                 <div className="flex items-center gap-4">
@@ -107,8 +107,8 @@ export default function DemandMapPage() {
                     {city.tenants.length}
                   </div>
                   <div>
-                    <div className="text-white font-semibold text-lg">{city.city}, {city.state}</div>
-                    <div className="text-xs text-slate-400 flex items-center gap-3">
+                    <div className="text-slate-900 font-semibold text-lg">{city.city}, {city.state}</div>
+                    <div className="text-xs text-slate-500 flex items-center gap-3">
                       <span className="flex items-center gap-1"><Users size={10} /> {city.tenants.length} tenant{city.tenants.length !== 1 ? 's' : ''}</span>
                       <span className="flex items-center gap-1"><Home size={10} /> {city.approvedListings} listings</span>
                       <span className="flex items-center gap-1"><Phone size={10} /> {city.highPainLandlords.length} call targets</span>
@@ -128,21 +128,21 @@ export default function DemandMapPage() {
 
               {/* Expanded */}
               {expanded === city.city && (
-                <div className="border-t border-[#2f2f42]">
+                <div className="border-t border-slate-200">
                   {/* Tenants */}
                   <div className="px-6 py-4">
                     <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-3 font-medium">Active Tenants</div>
                     <div className="space-y-2">
                       {city.tenants.map((t, i) => (
-                        <div key={i} className="flex items-center justify-between py-2 px-3 bg-[#252538] rounded-lg">
+                        <div key={i} className="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg">
                           <div className="flex items-center gap-3">
                             <div className={`w-2 h-2 rounded-full ${STATUS_COLORS[t.status] || "bg-gray-400"}`} />
                             <div>
-                              <span className="text-sm font-medium text-white">{t.name}</span>
+                              <span className="text-sm font-medium text-slate-900">{t.name}</span>
                               <span className="text-xs text-slate-500 ml-2">{t.email}</span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-4 text-xs text-slate-400">
+                          <div className="flex items-center gap-4 text-xs text-slate-500">
                             <span className="flex items-center gap-1"><DollarSign size={10} />${t.budgetMax.toLocaleString()}</span>
                             <span>{t.bedrooms}BR</span>
                             <span className="flex items-center gap-1"><Calendar size={10} />{t.moveInDate}</span>
@@ -150,7 +150,7 @@ export default function DemandMapPage() {
                               t.status === 'outreach' ? 'bg-purple-900 text-purple-300' :
                               t.status === 'selections_confirmed' ? 'bg-emerald-900 text-emerald-300' :
                               t.status === 'matched' ? 'bg-blue-900 text-blue-300' :
-                              'bg-slate-700 text-slate-300'
+                              'bg-slate-700 text-slate-600'
                             }`}>
                               {t.status}
                             </span>
@@ -162,25 +162,25 @@ export default function DemandMapPage() {
 
                   {/* High Pain Landlords */}
                   {city.highPainLandlords.length > 0 && (
-                    <div className="px-6 py-4 border-t border-[#2f2f42]">
+                    <div className="px-6 py-4 border-t border-slate-200">
                       <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-3 font-medium flex items-center gap-2">
                         <Phone size={10} className="text-amber-500" />
                         Cold Call Targets (High DOM + Portfolio)
                       </div>
                       <div className="space-y-2">
                         {city.highPainLandlords.map((l, i) => (
-                          <div key={i} className="flex items-center justify-between py-2.5 px-3 bg-[#252538] rounded-lg border border-[#2f2f42] hover:border-amber-500/30 transition">
+                          <div key={i} className="flex items-center justify-between py-2.5 px-3 bg-slate-50 rounded-lg border border-slate-200 hover:border-amber-500/30 transition">
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 bg-amber-600/20 text-amber-500 flex items-center justify-center rounded text-[10px] font-bold">
                                 {l.daysOnMarket > 0 ? l.daysOnMarket + 'd' : l.unitCount + 'u'}
                               </div>
                               <div>
-                                <div className="text-sm font-medium text-white">{l.ownerName}</div>
+                                <div className="text-sm font-medium text-slate-900">{l.ownerName}</div>
                                 <div className="text-xs text-slate-500">{l.address}</div>
                               </div>
                             </div>
                             <div className="flex items-center gap-4 text-xs">
-                              <span className="text-slate-400">${l.price.toLocaleString()}/mo</span>
+                              <span className="text-slate-500">${l.price.toLocaleString()}/mo</span>
                               {l.unitCount > 1 && (
                                 <span className="text-amber-400 font-medium">{l.unitCount} units</span>
                               )}

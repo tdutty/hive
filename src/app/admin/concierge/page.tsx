@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { sweetleaseApi } from "@/lib/api";
+import { usePolling } from "@/lib/hooks";
+import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
+import { toast } from "sonner";
 import {
   RefreshCw,
   Inbox,
@@ -117,7 +120,7 @@ function contactTypeBadge(type: string) {
     PARTNER: "bg-purple-500/20 text-purple-400",
   };
   return (
-    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${styles[type] || "bg-slate-500/20 text-slate-400"}`}>
+    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${styles[type] || "bg-slate-500/20 text-slate-500"}`}>
       {type}
     </span>
   );
@@ -130,14 +133,14 @@ function intentBadge(intent: string | null | undefined) {
     ready_to_proceed: "bg-green-500/20 text-green-400",
     objection: "bg-red-500/20 text-red-400",
     scheduling: "bg-blue-500/20 text-blue-400",
-    general_inquiry: "bg-slate-500/20 text-slate-400",
+    general_inquiry: "bg-slate-500/20 text-slate-500",
     follow_up: "bg-cyan-500/20 text-cyan-400",
     complaint: "bg-red-500/20 text-red-400",
     information_request: "bg-indigo-500/20 text-indigo-400",
   };
   const label = intent.replace(/_/g, " ");
   return (
-    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded capitalize ${styles[intent] || "bg-slate-500/20 text-slate-400"}`}>
+    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded capitalize ${styles[intent] || "bg-slate-500/20 text-slate-500"}`}>
       {label}
     </span>
   );
@@ -173,6 +176,7 @@ export default function ConciergeInboxPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<ThreadDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [polling, setPolling] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -190,8 +194,9 @@ export default function ConciergeInboxPage() {
         needsReply: data.needsReplyCount,
         unread: data.unreadCount,
       });
-    } catch (err) {
-      console.error("Failed to fetch threads:", err);
+      setError(null);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load threads");
     } finally {
       setLoading(false);
     }
@@ -203,8 +208,8 @@ export default function ConciergeInboxPage() {
     try {
       const data = await sweetleaseApi.get<ThreadDetail>(`/api/admin/concierge/threads/${id}`);
       setDetail(data);
-    } catch (err) {
-      console.error("Failed to fetch thread detail:", err);
+    } catch (err: any) {
+      toast.error("Failed to load thread", { description: err?.message });
     } finally {
       setDetailLoading(false);
     }
@@ -216,8 +221,8 @@ export default function ConciergeInboxPage() {
     try {
       await sweetleaseApi.post("/api/admin/concierge/ingest/poll");
       await fetchThreads();
-    } catch (err) {
-      console.error("Poll failed:", err);
+    } catch (err: any) {
+      toast.error("Poll failed", { description: err?.message });
     } finally {
       setPolling(false);
     }
@@ -233,8 +238,8 @@ export default function ConciergeInboxPage() {
       });
       // Refresh detail to show pending draft
       await fetchDetail(selectedId);
-    } catch (err) {
-      console.error("Draft generation failed:", err);
+    } catch (err: any) {
+      toast.error("Draft generation failed", { description: err?.message });
     } finally {
       setGenerating(false);
     }
@@ -242,9 +247,9 @@ export default function ConciergeInboxPage() {
 
   useEffect(() => {
     fetchThreads();
-    const interval = setInterval(fetchThreads, 30000);
-    return () => clearInterval(interval);
   }, []);
+
+  usePolling(fetchThreads, 30000);
 
   useEffect(() => {
     if (selectedId) {
@@ -267,11 +272,11 @@ export default function ConciergeInboxPage() {
   });
 
   return (
-    <div className="p-6 h-[calc(100vh-48px)]">
+    <div className="h-[calc(100vh-48px)]">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
             <Inbox size={24} className="text-amber-500" />
             Concierge Inbox
             {stats.needsReply > 0 && (
@@ -280,14 +285,14 @@ export default function ConciergeInboxPage() {
               </span>
             )}
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             {stats.total} threads - {stats.needsReply} needs reply - {stats.unread} unread
           </p>
         </div>
         <button
           onClick={handlePoll}
           disabled={polling}
-          className="flex items-center gap-2 px-3 py-2 bg-[#2a2a3e] text-slate-400 hover:text-white rounded-lg text-sm transition disabled:opacity-50"
+          className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-500 hover:text-slate-900 rounded-lg text-sm transition disabled:opacity-50"
         >
           <RefreshCw size={14} className={polling ? "animate-spin" : ""} />
           {polling ? "Polling..." : "Poll Now"}
@@ -309,7 +314,7 @@ export default function ConciergeInboxPage() {
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
               filter === tab.key
                 ? "bg-amber-600 text-white"
-                : "bg-[#2a2a3e] text-slate-400 hover:text-white"
+                : "bg-slate-50 text-slate-500 hover:text-slate-900"
             }`}
           >
             {tab.label}
@@ -319,11 +324,14 @@ export default function ConciergeInboxPage() {
 
       <div className="flex gap-4 h-[calc(100%-120px)]">
         {/* Left Panel - Thread List */}
-        <div className="w-96 max-w-[calc(100vw-2rem)] shrink-0 bg-[#1e1e2d] border border-[#2f2f42] rounded-xl overflow-y-auto">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <RefreshCw className="animate-spin text-slate-500" size={20} />
+        <div className="w-96 max-w-[calc(100vw-2rem)] shrink-0 bg-white border border-slate-200 rounded-xl overflow-y-auto">
+          {error && (
+            <div className="p-3">
+              <ErrorBanner message={error} onRetry={fetchThreads} />
             </div>
+          )}
+          {loading ? (
+            <Spinner />
           ) : filteredThreads.length === 0 ? (
             <div className="p-6 text-center text-slate-500 text-sm">
               {filter === "all"
@@ -342,10 +350,10 @@ export default function ConciergeInboxPage() {
                 <div
                   key={thread.id}
                   onClick={() => setSelectedId(thread.id)}
-                  className={`px-4 py-3 border-b border-[#2f2f42] cursor-pointer transition ${
+                  className={`px-4 py-3 border-b border-slate-200 cursor-pointer transition ${
                     isSelected
-                      ? "bg-[#2a2a3e] border-l-2 border-l-amber-500"
-                      : "hover:bg-[#252538]"
+                      ? "bg-slate-50 border-l-2 border-l-amber-500"
+                      : "hover:bg-slate-50"
                   }`}
                 >
                   {/* Row 1: Name + type badge + time */}
@@ -354,7 +362,7 @@ export default function ConciergeInboxPage() {
                       {thread.needsReply && urgencyDot(urgency || "medium")}
                       <span
                         className={`text-sm truncate ${
-                          thread.needsReply ? "font-semibold text-white" : "font-medium text-slate-300"
+                          thread.needsReply ? "font-semibold text-slate-900" : "font-medium text-slate-600"
                         }`}
                       >
                         {thread.contact.name}
@@ -367,7 +375,7 @@ export default function ConciergeInboxPage() {
                   </div>
 
                   {/* Row 2: Subject */}
-                  <div className="text-xs text-slate-400 truncate mb-1">
+                  <div className="text-xs text-slate-500 truncate mb-1">
                     {thread.subject || "(no subject)"}
                   </div>
 
@@ -394,20 +402,20 @@ export default function ConciergeInboxPage() {
         </div>
 
         {/* Right Panel - Thread Detail */}
-        <div className="flex-1 bg-[#1e1e2d] border border-[#2f2f42] rounded-xl flex flex-col">
+        <div className="flex-1 bg-white border border-slate-200 rounded-xl flex flex-col">
           {selectedId && detail ? (
             detailLoading ? (
               <div className="flex-1 flex items-center justify-center">
-                <RefreshCw className="animate-spin text-slate-500" size={20} />
+                <Spinner />
               </div>
             ) : (
               <>
                 {/* Thread Header */}
-                <div className="px-6 py-4 border-b border-[#2f2f42]">
+                <div className="px-6 py-4 border-b border-slate-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-white font-medium text-lg">
+                        <span className="text-slate-900 font-medium text-lg">
                           {detail.contact.name}
                         </span>
                         {contactTypeBadge(detail.contact.type)}
@@ -436,7 +444,7 @@ export default function ConciergeInboxPage() {
                     </div>
                   </div>
                   {detail.subject && (
-                    <div className="text-sm text-slate-300 mt-2">
+                    <div className="text-sm text-slate-600 mt-2">
                       Subject: {detail.subject}
                     </div>
                   )}
@@ -450,13 +458,13 @@ export default function ConciergeInboxPage() {
                         className={`rounded-lg px-4 py-3 text-sm ${
                           msg.direction === "OUTBOUND"
                             ? "bg-amber-600/20 border border-amber-600/30"
-                            : "bg-[#2a2a3e] border border-[#3f3f52]"
+                            : "bg-slate-50 border border-slate-200"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
                           <span
                             className={`text-xs font-medium ${
-                              msg.direction === "OUTBOUND" ? "text-amber-400" : "text-slate-400"
+                              msg.direction === "OUTBOUND" ? "text-amber-400" : "text-slate-500"
                             }`}
                           >
                             {msg.direction === "OUTBOUND" ? "SweetLease" : detail.contact.name}
@@ -465,7 +473,7 @@ export default function ConciergeInboxPage() {
                             {formatDate(msg.sentAt || msg.receivedAt || msg.createdAt)}
                           </span>
                         </div>
-                        <div className="text-slate-200 whitespace-pre-wrap leading-relaxed">
+                        <div className="text-slate-700 whitespace-pre-wrap leading-relaxed">
                           {msg.body}
                         </div>
                       </div>
@@ -476,10 +484,10 @@ export default function ConciergeInboxPage() {
 
                 {/* Classification Panel (collapsible) */}
                 {detail.classification && typeof detail.classification === "object" && (
-                  <div className="border-t border-[#2f2f42]">
+                  <div className="border-t border-slate-200">
                     <button
                       onClick={() => setClassificationOpen(!classificationOpen)}
-                      className="w-full flex items-center justify-between px-6 py-3 text-sm text-slate-400 hover:text-white transition"
+                      className="w-full flex items-center justify-between px-6 py-3 text-sm text-slate-500 hover:text-slate-900 transition"
                     >
                       <span className="flex items-center gap-2">
                         <Sparkles size={14} className="text-amber-500" />
@@ -492,7 +500,7 @@ export default function ConciergeInboxPage() {
                         {(detail.classification as Record<string, any>).sender_type && (
                           <div>
                             <span className="text-slate-500">Sender Type</span>
-                            <div className="text-slate-200 mt-0.5">
+                            <div className="text-slate-700 mt-0.5">
                               {(detail.classification as Record<string, any>).sender_type}
                             </div>
                           </div>
@@ -508,7 +516,7 @@ export default function ConciergeInboxPage() {
                         {(detail.classification as Record<string, any>).urgency && (
                           <div>
                             <span className="text-slate-500">Urgency</span>
-                            <div className="text-slate-200 mt-0.5 flex items-center gap-1.5">
+                            <div className="text-slate-700 mt-0.5 flex items-center gap-1.5">
                               {urgencyDot((detail.classification as Record<string, any>).urgency)}
                               <span className="capitalize">
                                 {(detail.classification as Record<string, any>).urgency}
@@ -519,7 +527,7 @@ export default function ConciergeInboxPage() {
                         {(detail.classification as Record<string, any>).confidence !== undefined && (
                           <div>
                             <span className="text-slate-500">Confidence</span>
-                            <div className="text-slate-200 mt-0.5">
+                            <div className="text-slate-700 mt-0.5">
                               {Math.round(
                                 ((detail.classification as Record<string, any>).confidence || 0) * 100
                               )}
@@ -530,7 +538,7 @@ export default function ConciergeInboxPage() {
                         {(detail.classification as Record<string, any>).summary && (
                           <div className="col-span-2">
                             <span className="text-slate-500">AI Summary</span>
-                            <div className="text-slate-300 mt-0.5">
+                            <div className="text-slate-600 mt-0.5">
                               {(detail.classification as Record<string, any>).summary}
                             </div>
                           </div>
@@ -541,7 +549,7 @@ export default function ConciergeInboxPage() {
                 )}
 
                 {/* Quick Actions */}
-                <div className="px-4 py-3 border-t border-[#2f2f42] flex items-center gap-3">
+                <div className="px-4 py-3 border-t border-slate-200 flex items-center gap-3">
                   <button
                     onClick={handleGenerateDraft}
                     disabled={generating}
@@ -552,7 +560,7 @@ export default function ConciergeInboxPage() {
                   </button>
                   <a
                     href="/admin/concierge/contacts"
-                    className="flex items-center gap-2 px-4 py-2.5 bg-[#2a2a3e] text-slate-400 hover:text-white rounded-lg transition text-sm"
+                    className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 text-slate-500 hover:text-slate-900 rounded-lg transition text-sm"
                   >
                     <ExternalLink size={14} />
                     View Contact
@@ -568,7 +576,7 @@ export default function ConciergeInboxPage() {
             )
           ) : selectedId && detailLoading ? (
             <div className="flex-1 flex items-center justify-center">
-              <RefreshCw className="animate-spin text-slate-500" size={20} />
+              <Spinner />
             </div>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-slate-500 text-sm gap-2">

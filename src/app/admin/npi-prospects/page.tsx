@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
+import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
 import {
   RefreshCw,
   Search,
@@ -74,6 +76,7 @@ export default function NpiProspectsPage() {
   const [credentialFilter, setCredentialFilter] = useState("");
   const [page, setPage] = useState(0);
   const pageSize = 50;
+  const [error, setError] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -89,8 +92,9 @@ export default function NpiProspectsPage() {
         }
       );
       setData(result);
-    } catch (err) {
-      console.error("Failed to load NPI prospects:", err);
+      setError(null);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load NPI prospects");
     } finally {
       setLoading(false);
     }
@@ -114,14 +118,6 @@ export default function NpiProspectsPage() {
     }) || [];
 
   const totalPages = data ? Math.ceil(data.total / pageSize) : 0;
-
-  const formatDate = (d: string) => {
-    return new Date(d).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
 
   const formatPhone = (phone: string | null) => {
     if (!phone) return null;
@@ -154,6 +150,10 @@ export default function NpiProspectsPage() {
           Refresh
         </button>
       </div>
+
+      {error && (
+        <ErrorBanner message={error} onRetry={fetchData} className="mb-6" />
+      )}
 
       {/* Stats Cards */}
       {data && (
@@ -306,12 +306,8 @@ export default function NpiProspectsPage() {
             <tbody className="divide-y divide-slate-100">
               {loading && !data ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center">
-                    <RefreshCw
-                      size={20}
-                      className="animate-spin mx-auto text-slate-400"
-                    />
-                    <p className="text-sm text-slate-500 mt-2">Loading...</p>
+                  <td colSpan={7} className="px-4">
+                    <Spinner label="Loading prospects" />
                   </td>
                 </tr>
               ) : filteredProspects.length === 0 ? (

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import { usePolling } from "@/lib/hooks";
+import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
 import {
   RefreshCw,
   AlertTriangle,
@@ -93,8 +95,8 @@ export default function SigningPipelinePage() {
       setData(result);
       setLastRefresh(new Date());
       setError("");
-    } catch (err) {
-      setError("Failed to load signing pipeline data");
+    } catch (err: any) {
+      setError(err?.message ? `Failed to load signing pipeline data: ${err.message}` : "Failed to load signing pipeline data");
     } finally {
       setLoading(false);
     }
@@ -102,9 +104,8 @@ export default function SigningPipelinePage() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
   }, []);
+  usePolling(fetchData, 30000);
 
   const statusBadge = (status: string) => {
     const styles: Record<string, string> = {
@@ -151,11 +152,9 @@ export default function SigningPipelinePage() {
         </div>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={fetchData} />}
+
+      {loading && !data && <Spinner label="Loading signing pipeline" />}
 
       {/* Summary Cards */}
       {data && (

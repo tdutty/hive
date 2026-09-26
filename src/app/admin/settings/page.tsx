@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { LogOut, Trash2, Lock, RefreshCw } from "lucide-react";
+import { LogOut, Lock, RefreshCw } from "lucide-react";
+import { signOut } from "next-auth/react";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { useApi } from "@/lib/hooks";
 import { settingsService } from "@/lib/services/settings";
 
@@ -18,6 +20,7 @@ interface Settings {
 }
 
 export default function SettingsPage() {
+  const { confirm, dialog } = useConfirm();
   const [changedSettings, setChangedSettings] = useState<Settings>({});
   const [saveMessage, setSaveMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -86,16 +89,9 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSignOut = () => {
-    if (confirm("Are you sure you want to sign out?")) {
-      alert("Signed out successfully");
-    }
-  };
-
-  const handleClearCache = () => {
-    if (confirm("This will clear all application cache. Continue?")) {
-      alert("Cache cleared successfully");
-    }
+  const handleSignOut = async () => {
+    if (!(await confirm({ title: "Sign out of Hive?", confirmLabel: "Sign out", danger: true }))) return;
+    await signOut({ callbackUrl: "/login" });
   };
 
   const isLoading = settingsLoading || twoFALoading;
@@ -103,6 +99,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-8">
+      {dialog}
       {/* Page Title */}
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 mb-2">Settings</h1>
@@ -363,13 +360,6 @@ export default function SettingsPage() {
                 Sign Out
               </button>
 
-              <button
-                onClick={handleClearCache}
-                className="w-full bg-white border border-red-200 rounded-md text-red-900 px-4 py-3 font-medium flex items-center justify-center gap-2 hover:bg-red-50 transition-colors"
-              >
-                <Trash2 size={20} />
-                Clear All Cache
-              </button>
             </div>
           </div>
 

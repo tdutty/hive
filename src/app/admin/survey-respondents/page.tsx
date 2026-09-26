@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
 import { RefreshCw, MapPin, Calendar, Users, Search, ChevronDown, ChevronUp, DollarSign, Bed, Home, UserCheck } from "lucide-react";
 
 interface Respondent {
@@ -58,6 +59,7 @@ const statusColors: Record<string, string> = {
 export default function SurveyRespondentsPage() {
   const [data, setData] = useState<SurveyData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [cityFilter, setCityFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -66,6 +68,7 @@ export default function SurveyRespondentsPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const params: Record<string, string> = {};
       if (cityFilter) params.city = cityFilter;
       if (statusFilter) params.status = statusFilter;
@@ -74,8 +77,8 @@ export default function SurveyRespondentsPage() {
         params
       );
       setData(result);
-    } catch (err) {
-      console.error("Failed to load survey data:", err);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load survey data");
     } finally {
       setLoading(false);
     }
@@ -118,6 +121,10 @@ export default function SurveyRespondentsPage() {
           Refresh
         </button>
       </div>
+
+      {error && <ErrorBanner message={error} onRetry={fetchData} />}
+
+      {loading && !data && <Spinner label="Loading survey respondents" />}
 
       {data && (
         <>

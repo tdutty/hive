@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { RefreshCw, AlertTriangle, CheckCircle, XCircle, HelpCircle } from "lucide-react";
+import { usePolling } from "@/lib/hooks";
+import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
 
 interface CreditInfo {
   credits: number | null;
@@ -25,9 +27,9 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; border: string;
   low: { color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/30", icon: <AlertTriangle size={20} />, label: "Low" },
   critical: { color: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/30", icon: <AlertTriangle size={20} />, label: "Critical" },
   depleted: { color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/30", icon: <XCircle size={20} />, label: "Depleted" },
-  error: { color: "text-gray-400", bg: "bg-gray-500/10", border: "border-gray-500/30", icon: <HelpCircle size={20} />, label: "Error" },
-  no_key: { color: "text-gray-500", bg: "bg-gray-500/10", border: "border-gray-500/20", icon: <HelpCircle size={20} />, label: "No API Key" },
-  unknown: { color: "text-gray-500", bg: "bg-gray-500/10", border: "border-gray-500/20", icon: <HelpCircle size={20} />, label: "Unknown" },
+  error: { color: "text-slate-500", bg: "bg-gray-500/10", border: "border-gray-500/30", icon: <HelpCircle size={20} />, label: "Error" },
+  no_key: { color: "text-slate-500", bg: "bg-gray-500/10", border: "border-gray-500/20", icon: <HelpCircle size={20} />, label: "No API Key" },
+  unknown: { color: "text-slate-500", bg: "bg-gray-500/10", border: "border-gray-500/20", icon: <HelpCircle size={20} />, label: "Unknown" },
 };
 
 export default function CreditStatusPage() {
@@ -52,21 +54,20 @@ export default function CreditStatusPage() {
 
   useEffect(() => {
     fetchStatus();
-    const interval = setInterval(fetchStatus, 60000); // Refresh every minute
-    return () => clearInterval(interval);
   }, []);
+  usePolling(fetchStatus, 60000); // Refresh every minute
 
   const services = ["hasdata", "anthropic", "batchdata", "apollo", "scrapeak"];
   const depleted = status ? services.filter(s => status[s]?.status === "depleted").length : 0;
   const warnings = status ? services.filter(s => ["low", "critical"].includes(status[s]?.status)).length : 0;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">API Credit Status</h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <h1 className="text-2xl font-bold text-slate-900">API Credit Status</h1>
+          <p className="text-sm text-slate-500 mt-1">
             Monitor credit balances across all external API services
           </p>
         </div>
@@ -105,11 +106,7 @@ export default function CreditStatusPage() {
       )}
 
       {/* Error */}
-      {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={fetchStatus} />}
 
       {/* Credit Cards */}
       {status && (
@@ -126,8 +123,8 @@ export default function CreditStatusPage() {
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h3 className="text-white font-semibold text-lg">{meta.name}</h3>
-                    <span className="text-xs text-gray-500">{meta.costPer}</span>
+                    <h3 className="text-slate-900 font-semibold text-lg">{meta.name}</h3>
+                    <span className="text-xs text-slate-500">{meta.costPer}</span>
                   </div>
                   <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.bg} ${cfg.color} border ${cfg.border}`}>
                     {cfg.icon}
@@ -143,12 +140,12 @@ export default function CreditStatusPage() {
                           ? `$${info.credits.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                           : info.credits.toLocaleString()}
                       </span>
-                      <span className="text-gray-500 text-sm ml-2">
+                      <span className="text-slate-500 text-sm ml-2">
                         {key === "anthropic" ? "spent this month" : meta.unit}
                       </span>
                     </div>
                   ) : (
-                    <span className="text-gray-500 text-sm">
+                    <span className="text-slate-500 text-sm">
                       {info.status === "ok" ? "Active (balance not reported)" : info.status === "no_key" ? "API key not configured" : "Balance unknown"}
                     </span>
                   )}
@@ -159,7 +156,7 @@ export default function CreditStatusPage() {
                 )}
 
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-600">
+                  <span className="text-xs text-slate-600">
                     {info.lastChecked
                       ? `Checked ${new Date(info.lastChecked).toLocaleTimeString()}`
                       : "Not checked yet"}
@@ -180,12 +177,7 @@ export default function CreditStatusPage() {
       )}
 
       {/* Loading */}
-      {loading && !status && (
-        <div className="flex items-center justify-center py-20">
-          <RefreshCw size={24} className="animate-spin text-amber-400" />
-          <span className="ml-3 text-gray-400">Checking credit balances...</span>
-        </div>
-      )}
+      {loading && !status && <Spinner label="Checking credit balances" />}
     </div>
   );
 }

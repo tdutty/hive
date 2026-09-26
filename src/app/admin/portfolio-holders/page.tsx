@@ -142,12 +142,12 @@ export default function PortfolioHoldersPage() {
     "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Portfolio Holders</h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <h1 className="text-2xl font-bold text-slate-900">Portfolio Holders</h1>
+          <p className="text-sm text-slate-500 mt-1">
             Property managers and brokers across your listings — ranked by portfolio size
           </p>
         </div>
@@ -198,25 +198,25 @@ export default function PortfolioHoldersPage() {
       )}
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 bg-[#2a2a3d] p-4 rounded-xl border border-[#3a3a52]">
+      <div className="flex flex-wrap items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
         <div className="relative flex-1 min-w-[200px]">
           <Search
             size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
           />
           <input
             type="text"
             placeholder="Search broker or agent name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-[#1e1e2d] border border-[#3a3a52] rounded-lg text-white text-sm placeholder:text-gray-500 focus:outline-none focus:border-amber-500"
+            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm placeholder:text-slate-500 focus:outline-none focus:border-amber-500"
           />
         </div>
 
         <select
           value={cityFilter}
           onChange={(e) => setCityFilter(e.target.value)}
-          className="px-3 py-2 bg-[#1e1e2d] border border-[#3a3a52] rounded-lg text-white text-sm focus:outline-none focus:border-amber-500"
+          className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-amber-500"
         >
           <option value="">All Markets</option>
           {data?.cities.map((c) => (
@@ -229,7 +229,7 @@ export default function PortfolioHoldersPage() {
         <select
           value={minUnits}
           onChange={(e) => setMinUnits(e.target.value)}
-          className="px-3 py-2 bg-[#1e1e2d] border border-[#3a3a52] rounded-lg text-white text-sm focus:outline-none focus:border-amber-500"
+          className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-amber-500"
         >
           <option value="2">2+ units</option>
           <option value="5">5+ units</option>
@@ -241,7 +241,7 @@ export default function PortfolioHoldersPage() {
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value)}
-          className="px-3 py-2 bg-[#1e1e2d] border border-[#3a3a52] rounded-lg text-white text-sm focus:outline-none focus:border-amber-500"
+          className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-amber-500"
         >
           <option value="units_desc">Most Units</option>
           <option value="units_asc">Fewest Units</option>
@@ -257,7 +257,7 @@ export default function PortfolioHoldersPage() {
           className={`px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-amber-500 ${
             demandFilter === "with_demand"
               ? "bg-amber-500/20 border-amber-500/50 text-amber-300"
-              : "bg-[#1e1e2d] border-[#3a3a52] text-white"
+              : "bg-white border-slate-200 text-slate-900"
           }`}
         >
           <option value="all">All Holders</option>
@@ -275,9 +275,9 @@ export default function PortfolioHoldersPage() {
 
       {/* Table */}
       {data && (
-        <div className="bg-[#2a2a3d] rounded-xl border border-[#3a3a52] overflow-hidden">
+        <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
           {/* Table Header */}
-          <div className="grid grid-cols-[2fr_1fr_80px_100px_120px_140px_160px] gap-2 px-4 py-3 border-b border-[#3a3a52] text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          <div className="grid grid-cols-[2fr_1fr_80px_100px_120px_140px_160px] gap-2 px-4 py-3 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
             <span>Broker / Property Manager</span>
             <span>Markets</span>
             <span className="text-right">Units</span>
@@ -289,7 +289,7 @@ export default function PortfolioHoldersPage() {
 
           {/* Rows */}
           {filteredHolders.length === 0 && (
-            <div className="px-4 py-8 text-center text-gray-500">
+            <div className="px-4 py-8 text-center text-slate-500">
               No portfolio holders found with current filters.
             </div>
           )}
@@ -306,21 +306,21 @@ export default function PortfolioHoldersPage() {
                   onClick={() =>
                     setExpandedBroker(isExpanded ? null : holder.brokerName)
                   }
-                  className={`grid grid-cols-[2fr_1fr_80px_100px_120px_140px_160px] gap-2 px-4 py-3 cursor-pointer transition hover:bg-[#32324a] ${
-                    isExpanded ? "bg-[#32324a]" : ""
+                  className={`grid grid-cols-[2fr_1fr_80px_100px_120px_140px_160px] gap-2 px-4 py-3 cursor-pointer transition hover:bg-slate-100 ${
+                    isExpanded ? "bg-slate-100" : ""
                   } ${
                     hasDemand ? "border-l-4 border-l-amber-400 bg-amber-500/5" : ""
-                  } border-b border-[#3a3a52]/50`}
+                  } border-b border-slate-200/50`}
                 >
                   <div className="flex items-center gap-2">
                     {isExpanded ? (
                       <ChevronDown size={16} className="text-amber-400 shrink-0" />
                     ) : (
-                      <ChevronRight size={16} className="text-gray-500 shrink-0" />
+                      <ChevronRight size={16} className="text-slate-500 shrink-0" />
                     )}
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-white font-medium text-sm truncate">
+                        <span className="text-slate-900 font-medium text-sm truncate">
                           {holder.brokerName}
                         </span>
                         {hasDemand && (
@@ -331,7 +331,7 @@ export default function PortfolioHoldersPage() {
                         )}
                       </div>
                       {holder.primaryContact && (
-                        <div className="text-gray-500 text-xs truncate">
+                        <div className="text-slate-500 text-xs truncate">
                           {holder.primaryContact}
                         </div>
                       )}
@@ -349,14 +349,14 @@ export default function PortfolioHoldersPage() {
                         </span>
                       ))}
                       {holder.markets.length > 3 && (
-                        <span className="px-1.5 py-0.5 bg-gray-500/10 text-gray-400 text-[10px] rounded">
+                        <span className="px-1.5 py-0.5 bg-gray-500/10 text-slate-500 text-[10px] rounded">
                           +{holder.markets.length - 3}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <div className="text-right text-white font-semibold text-sm flex items-center justify-end">
+                  <div className="text-right text-slate-900 font-semibold text-sm flex items-center justify-end">
                     {holder.totalUnits}
                   </div>
 
@@ -379,7 +379,7 @@ export default function PortfolioHoldersPage() {
                         <span className="truncate">{holder.email}</span>
                       </a>
                     ) : (
-                      <span className="text-gray-600 text-xs">No email</span>
+                      <span className="text-slate-600 text-xs">No email</span>
                     )}
                   </div>
 
@@ -394,7 +394,7 @@ export default function PortfolioHoldersPage() {
                         {holder.phone}
                       </a>
                     ) : (
-                      <span className="text-gray-600 text-xs">No phone</span>
+                      <span className="text-slate-600 text-xs">No phone</span>
                     )}
                   </div>
                 </div>
@@ -416,8 +416,8 @@ export default function PortfolioHoldersPage() {
                             {t.name.charAt(0)}
                           </div>
                           <div>
-                            <div className="text-white text-xs font-medium">{t.name}</div>
-                            <div className="text-gray-400 text-[10px]">
+                            <div className="text-slate-900 text-xs font-medium">{t.name}</div>
+                            <div className="text-slate-500 text-[10px]">
                               {t.city} &middot;{" "}
                               <span
                                 className={
@@ -427,7 +427,7 @@ export default function PortfolioHoldersPage() {
                                     ? "text-green-400"
                                     : t.status === "negotiating"
                                     ? "text-amber-400"
-                                    : "text-gray-400"
+                                    : "text-slate-500"
                                 }
                               >
                                 {t.status.replace(/_/g, " ")}
@@ -437,7 +437,7 @@ export default function PortfolioHoldersPage() {
                         </div>
                       ))}
                     </div>
-                    <div className="mt-2 text-[10px] text-gray-500">
+                    <div className="mt-2 text-[10px] text-slate-500">
                       {holder.demand!.selectedListingIds.length} listing{holder.demand!.selectedListingIds.length !== 1 ? "s" : ""} selected across{" "}
                       {holder.demand!.activeCities.join(", ")}
                     </div>
@@ -446,17 +446,17 @@ export default function PortfolioHoldersPage() {
 
                 {/* Expanded: Individual Listings */}
                 {isExpanded && holderListings.length > 0 && (
-                  <div className="bg-[#1e1e2d] border-b border-[#3a3a52]">
-                    <div className="px-6 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-[#2a2a3d]">
+                  <div className="bg-white border-b border-slate-200">
+                    <div className="px-6 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">
                       {holderListings.length} Listings
                     </div>
                     <div className="max-h-[400px] overflow-y-auto">
                       {holderListings.map((l, i) => (
                         <div
                           key={i}
-                          className="grid grid-cols-[2fr_100px_60px_60px_100px_140px_120px] gap-2 px-6 py-2 text-xs border-b border-[#2a2a3d]/50 hover:bg-[#25253a]"
+                          className="grid grid-cols-[2fr_100px_60px_60px_100px_140px_120px] gap-2 px-6 py-2 text-xs border-b border-slate-200/50 hover:bg-slate-100"
                         >
-                          <div className="text-gray-300 truncate flex items-center gap-1">
+                          <div className="text-slate-600 truncate flex items-center gap-1">
                             {l.zillowUrl ? (
                               <a
                                 href={l.zillowUrl}
@@ -471,19 +471,19 @@ export default function PortfolioHoldersPage() {
                               l.address
                             )}
                           </div>
-                          <div className="text-gray-400">
+                          <div className="text-slate-500">
                             {l.city}, {l.state}
                           </div>
                           <div className="text-green-400 text-right">
                             {l.price ? fmt(l.price) : "-"}
                           </div>
-                          <div className="text-gray-400 text-center">
+                          <div className="text-slate-500 text-center">
                             {l.bedrooms ?? "-"}bd / {l.bathrooms ?? "-"}ba
                           </div>
-                          <div className="text-gray-500">
+                          <div className="text-slate-500">
                             {l.agentName || "-"}
                           </div>
-                          <div className="text-gray-500">
+                          <div className="text-slate-500">
                             {l.agentPhone ? (
                               <a
                                 href={`tel:${l.agentPhone}`}
@@ -495,7 +495,7 @@ export default function PortfolioHoldersPage() {
                               "-"
                             )}
                           </div>
-                          <div className="text-gray-500 truncate">
+                          <div className="text-slate-500 truncate">
                             {l.ownerEmail ? (
                               <a
                                 href={`mailto:${l.ownerEmail}`}
@@ -514,7 +514,7 @@ export default function PortfolioHoldersPage() {
                 )}
 
                 {isExpanded && holderListings.length === 0 && (
-                  <div className="bg-[#1e1e2d] border-b border-[#3a3a52] px-6 py-4 text-xs text-gray-500">
+                  <div className="bg-white border-b border-slate-200 px-6 py-4 text-xs text-slate-500">
                     Listings not loaded for this broker. Try filtering by their market.
                   </div>
                 )}
@@ -528,7 +528,7 @@ export default function PortfolioHoldersPage() {
       {loading && !data && (
         <div className="flex items-center justify-center py-20">
           <RefreshCw size={24} className="animate-spin text-amber-400" />
-          <span className="ml-3 text-gray-400">Loading portfolio holders...</span>
+          <span className="ml-3 text-slate-500">Loading portfolio holders...</span>
         </div>
       )}
     </div>
@@ -558,7 +558,7 @@ function StatCard({
       className={`rounded-xl border p-4 ${colors[color] || colors.blue}`}
     >
       <div className="flex items-center gap-2 mb-2 opacity-70">{icon}</div>
-      <div className="text-2xl font-bold text-white">{value}</div>
+      <div className="text-2xl font-bold text-slate-900">{value}</div>
       <div className="text-xs mt-1 opacity-60">{label}</div>
     </div>
   );

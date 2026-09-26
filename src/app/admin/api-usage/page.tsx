@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { RefreshCw, Edit2, Save, X, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { MetricCard } from "@/components/ui/MetricCard";
+import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
 import { formatCurrency } from "@/lib/utils";
 import { DollarSign, Zap } from "lucide-react";
 
@@ -66,18 +68,20 @@ const EMPTY_SUB: ManualSubscription = {
 export default function APIUsagePage() {
   const [data, setData] = useState<BillingData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [editSubs, setEditSubs] = useState<ManualSubscription[]>([]);
   const [saving, setSaving] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
+    setError(null);
     try {
       const result = await api.get<BillingData>("/api/admin/billing");
       setData(result);
       setEditSubs(result.manualSubscriptions);
-    } catch (err) {
-      console.error("Failed to load billing data:", err);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load billing data");
     } finally {
       setLoading(false);
     }
@@ -92,9 +96,10 @@ export default function APIUsagePage() {
     try {
       await api.post("/api/admin/billing", { subscriptions: editSubs });
       setEditing(false);
+      toast.success("Subscriptions saved");
       fetchData();
-    } catch (err) {
-      console.error("Failed to save:", err);
+    } catch (err: any) {
+      toast.error("Failed to save subscriptions", { description: err?.message });
     } finally {
       setSaving(false);
     }
@@ -117,9 +122,18 @@ export default function APIUsagePage() {
   };
 
   if (loading) {
+    return <Spinner label="Loading billing data" />;
+  }
+
+  if (error && !data) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <RefreshCw className="animate-spin text-amber-600" size={32} />
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900 mb-2">
+            API Usage &amp; Costs
+          </h1>
+        </div>
+        <ErrorBanner message={error} onRetry={fetchData} />
       </div>
     );
   }
@@ -154,6 +168,8 @@ export default function APIUsagePage() {
           Refresh
         </button>
       </div>
+
+      {error && <ErrorBanner message={error} onRetry={fetchData} />}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

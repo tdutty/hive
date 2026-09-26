@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { toast } from "sonner";
 import { sweetleaseApi } from "@/lib/api";
+import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
 import {
   Building2,
   Plus,
@@ -843,6 +845,7 @@ export default function PMPipelinePage() {
   const [allPms, setAllPms] = useState<PMCompany[]>([]);
   const [stats, setStats] = useState<Stats>({ total: 0, totalDoors: 0, totalPlacements: 0, stageCounts: {} });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filterCity, setFilterCity] = useState<string>("All");
   const [filterStage, setFilterStage] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -858,12 +861,15 @@ export default function PMPipelinePage() {
       });
       setAllPms(data.pms);
       setStats(data.stats);
-    } catch (err) {
-      console.error("Failed to fetch PM pipeline:", err);
+      setError(null);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load PM pipeline");
     } finally {
       setLoading(false);
     }
   }, [filterCity, filterStage]);
+
+  const reload = () => { setLoading(true); fetchData(); };
 
   useEffect(() => {
     fetchData();
@@ -898,8 +904,8 @@ export default function PMPipelinePage() {
     try {
       await sweetleaseApi.patch("/api/admin/pm-pipeline", { id, stage });
       fetchData();
-    } catch (err) {
-      console.error("Failed to update stage:", err);
+    } catch (err: any) {
+      toast.error("Failed to update stage", { description: err?.message });
       fetchData();
     }
   };
@@ -908,8 +914,8 @@ export default function PMPipelinePage() {
     setAllPms((prev) => prev.map((pm) => pm.id === id ? { ...pm, notes } : pm));
     try {
       await sweetleaseApi.patch("/api/admin/pm-pipeline", { id, notes });
-    } catch (err) {
-      console.error("Failed to update notes:", err);
+    } catch (err: any) {
+      toast.error("Failed to update notes", { description: err?.message });
       fetchData();
     }
   };
@@ -917,9 +923,10 @@ export default function PMPipelinePage() {
   const addPM = async (data: Record<string, unknown>) => {
     try {
       await sweetleaseApi.post("/api/admin/pm-pipeline", data);
+      toast.success("Property manager added");
       fetchData();
-    } catch (err) {
-      console.error("Failed to add PM:", err);
+    } catch (err: any) {
+      toast.error("Failed to add PM", { description: err?.message });
     }
   };
 
@@ -932,10 +939,16 @@ export default function PMPipelinePage() {
   const hasFilters = filterCity !== "All" || filterStage !== "All" || searchQuery.trim() !== "";
 
   if (loading) {
+    return <Spinner label="Loading pipeline" />;
+  }
+
+  if (error && allPms.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
-        <Loader2 size={32} className="animate-spin text-amber-500" />
-        <span className="text-sm text-slate-500">Loading pipeline...</span>
+      <div className="space-y-5 max-w-[1400px]">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">PM Pipeline</h1>
+        </div>
+        <ErrorBanner message={error} onRetry={reload} />
       </div>
     );
   }
@@ -952,7 +965,7 @@ export default function PMPipelinePage() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => { setLoading(true); fetchData(); }}
+            onClick={reload}
             className="flex items-center gap-2 px-3 py-2 text-sm text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"
           >
             <RefreshCw size={14} /> Refresh
@@ -965,6 +978,8 @@ export default function PMPipelinePage() {
           </button>
         </div>
       </div>
+
+      {error && <ErrorBanner message={error} onRetry={reload} />}
 
       {/* Pipeline Funnel */}
       <PipelineFunnel

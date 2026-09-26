@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { sweetleaseApi } from "@/lib/api";
+import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import {
   RefreshCw,
   Search,
@@ -112,14 +115,17 @@ export default function TenantPipelinePage() {
   const [outreachLoading, setOutreachLoading] = useState<string | null>(null);
   const [pauseLoading, setPauseLoading] = useState<string | null>(null);
   const [smsLoading, setSmsLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const { confirm, dialog } = useConfirm();
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const result = await sweetleaseApi.get<PipelineData>("/api/admin/tenant-match/pipeline");
       setData(result);
-    } catch (err) {
-      console.error("Failed to load pipeline:", err);
+      setError(null);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load pipeline");
     } finally {
       setLoading(false);
     }
@@ -127,15 +133,77 @@ export default function TenantPipelinePage() {
 
   useEffect(() => { fetchData(); }, []);
 
+  const actionError = (err: any) => err?.data?.error || err?.message;
+
+  const triggerOutreach = async (r: PipelineData["recentRequests"][number]) => {
+    setOutreachLoading(r.id);
+    try {
+      const res: any = await sweetleaseApi.post("/api/admin/tenant-match/trigger-outreach", { matchRequestId: r.id });
+      toast.success(res?.message || `Outreach triggered for ${r.selections?.length || 0} listings`);
+      fetchData();
+    } catch (err: any) {
+      toast.error("Outreach failed", { description: actionError(err) });
+    } finally {
+      setOutreachLoading(null);
+    }
+  };
+
+  const sendTexts = async (r: PipelineData["recentRequests"][number]) => {
+    const ok = await confirm({
+      title: "Send texts to landlords?",
+      message: `Send SMS to landlords with phone numbers for ${r.name}'s selections?`,
+      confirmLabel: "Send Texts",
+    });
+    if (!ok) return;
+    setSmsLoading(r.id);
+    try {
+      const res: any = await sweetleaseApi.post("/api/admin/tenant-match/sms-outreach", { matchRequestId: r.id });
+      toast.success(res?.message || `SMS sent to ${res?.sent || 0} landlords`);
+      fetchData();
+    } catch (err: any) {
+      toast.error("SMS failed", { description: actionError(err) });
+    } finally {
+      setSmsLoading(null);
+    }
+  };
+
+  const togglePause = async (r: PipelineData["recentRequests"][number]) => {
+    const newPaused = !r.communicationsPaused;
+    if (newPaused) {
+      const ok = await confirm({
+        title: `Pause all communications for ${r.name}?`,
+        message: "No emails or outreach will be sent until resumed.",
+        confirmLabel: "Pause",
+        danger: true,
+      });
+      if (!ok) return;
+    }
+    setPauseLoading(r.id);
+    try {
+      const res: any = await sweetleaseApi.post("/api/admin/tenant-match/pause", { matchRequestId: r.id, paused: newPaused });
+      toast.success(res?.message || `${newPaused ? "Paused" : "Resumed"}`);
+      fetchData();
+    } catch (err: any) {
+      toast.error(newPaused ? "Failed to pause" : "Failed to resume", { description: actionError(err) });
+    } finally {
+      setPauseLoading(null);
+    }
+  };
+
   if (loading && !data) {
+    return <Spinner />;
+  }
+
+  if (!data) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw size={24} className="animate-spin text-amber-600" />
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900">Tenant Pipeline</h1>
+        </div>
+        <ErrorBanner message={error || "Failed to load pipeline"} onRetry={fetchData} />
       </div>
     );
   }
-
-  if (!data) return null;
 
   const filteredRequests = data.recentRequests.filter((r) => {
     if (!searchQuery) return true;
@@ -150,6 +218,8 @@ export default function TenantPipelinePage() {
 
   return (
     <div className="space-y-6">
+      {dialog}
+      {error && <ErrorBanner message={error} onRetry={fetchData} />}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -294,14 +364,7 @@ export default function TenantPipelinePage() {
                                   disabled={outreachLoading === r.id}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setOutreachLoading(r.id);
-                                    sweetleaseApi.post("/api/admin/tenant-match/trigger-outreach", { matchRequestId: r.id })
-                                      .then((res: any) => {
-                                        alert(res.message || `Outreach triggered for ${r.selections?.length || 0} listings`);
-                                        fetchData();
-                                      })
-                                      .catch((err: any) => alert(err?.data?.error || "Outreach failed"))
-                                      .finally(() => setOutreachLoading(null));
+                                    triggerOutreach(r);
                                   }}
                                   className="px-2.5 py-1 text-[11px] font-medium bg-purple-600 text-white rounded hover:bg-purple-700 transition disabled:opacity-50"
                                 >
@@ -313,15 +376,7 @@ export default function TenantPipelinePage() {
                                   disabled={smsLoading === r.id}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    if (!confirm(`Send SMS to landlords with phone numbers for ${r.name}'s selections?`)) return;
-                                    setSmsLoading(r.id);
-                                    sweetleaseApi.post("/api/admin/tenant-match/sms-outreach", { matchRequestId: r.id })
-                                      .then((res: any) => {
-                                        alert(res.message || `SMS sent to ${res.sent || 0} landlords`);
-                                        fetchData();
-                                      })
-                                      .catch((err: any) => alert(err?.data?.error || "SMS failed"))
-                                      .finally(() => setSmsLoading(null));
+                                    sendTexts(r);
                                   }}
                                   className="px-2.5 py-1 text-[11px] font-medium bg-green-600 text-white rounded hover:bg-green-700 transition disabled:opacity-50"
                                 >
@@ -354,16 +409,7 @@ export default function TenantPipelinePage() {
                                 disabled={pauseLoading === r.id}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  const newPaused = !r.communicationsPaused;
-                                  if (newPaused && !confirm(`Pause ALL communications for ${r.name}? No emails or outreach will be sent.`)) return;
-                                  setPauseLoading(r.id);
-                                  sweetleaseApi.post("/api/admin/tenant-match/pause", { matchRequestId: r.id, paused: newPaused })
-                                    .then((res: any) => {
-                                      alert(res.message || `${newPaused ? 'Paused' : 'Resumed'}`);
-                                      fetchData();
-                                    })
-                                    .catch((err: any) => alert(err?.data?.error || "Failed"))
-                                    .finally(() => setPauseLoading(null));
+                                  togglePause(r);
                                 }}
                                 className={`px-2.5 py-1 text-[11px] font-medium rounded transition disabled:opacity-50 ${
                                   r.communicationsPaused

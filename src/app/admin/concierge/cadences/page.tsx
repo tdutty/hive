@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { sweetleaseApi } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
+import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
+import { toast } from "sonner";
 import {
   GitBranch,
   Plus,
@@ -84,16 +87,6 @@ interface ContactsResponse {
   contacts: ConciergeContact[];
 }
 
-// --- Helpers ---
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
 // --- Page Component ---
 
 export default function CadencesPage() {
@@ -108,7 +101,9 @@ export default function CadencesPage() {
     stepsExecutedToday: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [initiativesLoading, setInitiativesLoading] = useState(true);
+  const [initiativesError, setInitiativesError] = useState<string | null>(null);
 
   // UI state
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -139,6 +134,7 @@ export default function CadencesPage() {
   const [enrollSearch, setEnrollSearch] = useState("");
   const [enrollSelected, setEnrollSelected] = useState<Set<string>>(new Set());
   const [enrollLoading, setEnrollLoading] = useState(false);
+  const [enrollError, setEnrollError] = useState<string | null>(null);
   const [enrolling, setEnrolling] = useState(false);
 
   // --- Fetch ---
@@ -151,8 +147,9 @@ export default function CadencesPage() {
       );
       setCadences(data.cadences);
       setStats(data.stats);
-    } catch (err) {
-      console.error("Failed to fetch cadences:", err);
+      setError(null);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load cadences");
     } finally {
       setLoading(false);
     }
@@ -165,8 +162,9 @@ export default function CadencesPage() {
         "/api/admin/concierge/initiatives"
       );
       setInitiatives(data.initiatives);
-    } catch (err) {
-      console.error("Failed to fetch initiatives:", err);
+      setInitiativesError(null);
+    } catch (err: any) {
+      setInitiativesError(err?.message || "Failed to load initiatives");
     } finally {
       setInitiativesLoading(false);
     }
@@ -182,8 +180,9 @@ export default function CadencesPage() {
         params
       );
       setEnrollContacts(data.contacts);
-    } catch (err) {
-      console.error("Failed to fetch contacts:", err);
+      setEnrollError(null);
+    } catch (err: any) {
+      setEnrollError(err?.message || "Failed to load contacts");
     } finally {
       setEnrollLoading(false);
     }
@@ -213,8 +212,8 @@ export default function CadencesPage() {
         active: !cadence.active,
       });
       await fetchCadences();
-    } catch (err) {
-      console.error("Failed to toggle cadence:", err);
+    } catch (err: any) {
+      toast.error("Failed to toggle cadence", { description: err?.message });
     }
   };
 
@@ -225,8 +224,8 @@ export default function CadencesPage() {
         active: !initiative.active,
       });
       await fetchInitiatives();
-    } catch (err) {
-      console.error("Failed to toggle initiative:", err);
+    } catch (err: any) {
+      toast.error("Failed to toggle initiative", { description: err?.message });
     }
   };
 
@@ -250,8 +249,8 @@ export default function CadencesPage() {
       setShowNewCadenceModal(false);
       resetCadenceForm();
       await fetchCadences();
-    } catch (err) {
-      console.error("Failed to create cadence:", err);
+    } catch (err: any) {
+      toast.error("Failed to create cadence", { description: err?.message });
     } finally {
       setSaving(false);
     }
@@ -279,8 +278,8 @@ export default function CadencesPage() {
       setShowNewCadenceModal(false);
       resetCadenceForm();
       await fetchCadences();
-    } catch (err) {
-      console.error("Failed to update cadence:", err);
+    } catch (err: any) {
+      toast.error("Failed to update cadence", { description: err?.message });
     } finally {
       setSaving(false);
     }
@@ -310,8 +309,8 @@ export default function CadencesPage() {
       setShowNewInitiativeModal(false);
       resetInitiativeForm();
       await fetchInitiatives();
-    } catch (err) {
-      console.error("Failed to create initiative:", err);
+    } catch (err: any) {
+      toast.error("Failed to create initiative", { description: err?.message });
     } finally {
       setSaving(false);
     }
@@ -329,8 +328,8 @@ export default function CadencesPage() {
       setEnrollSelected(new Set());
       setEnrollSearch("");
       await fetchCadences();
-    } catch (err) {
-      console.error("Failed to enroll contacts:", err);
+    } catch (err: any) {
+      toast.error("Failed to enroll contacts", { description: err?.message });
     } finally {
       setEnrolling(false);
     }
@@ -488,9 +487,9 @@ export default function CadencesPage() {
         </div>
 
         {initiativesLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 size={20} className="animate-spin text-slate-400" />
-          </div>
+          <Spinner />
+        ) : initiativesError ? (
+          <ErrorBanner message={initiativesError} onRetry={fetchInitiatives} />
         ) : initiatives.length === 0 ? (
           <p className="text-sm text-slate-400 text-center py-8">
             No initiatives yet. Create one to boost cadence performance.
@@ -555,10 +554,11 @@ export default function CadencesPage() {
         <h2 className="text-lg font-semibold text-slate-900">All Cadences</h2>
 
         {loading ? (
-          <div className="bg-white rounded-xl border border-slate-200 flex items-center justify-center py-20">
-            <Loader2 size={24} className="animate-spin text-slate-400" />
-            <span className="ml-2 text-sm text-slate-500">Loading cadences...</span>
+          <div className="bg-white rounded-xl border border-slate-200">
+            <Spinner label="Loading cadences..." />
           </div>
+        ) : error ? (
+          <ErrorBanner message={error} onRetry={fetchCadences} />
         ) : cadences.length === 0 ? (
           <div className="bg-white rounded-xl border border-slate-200 flex flex-col items-center justify-center py-20 text-slate-400">
             <GitBranch size={40} className="mb-3" />
@@ -1094,8 +1094,10 @@ export default function CadencesPage() {
 
             <div className="max-h-[400px] overflow-y-auto">
               {enrollLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 size={20} className="animate-spin text-slate-400" />
+                <Spinner />
+              ) : enrollError ? (
+                <div className="p-4">
+                  <ErrorBanner message={enrollError} onRetry={fetchEnrollContacts} />
                 </div>
               ) : enrollContacts.length === 0 ? (
                 <div className="text-center py-12 text-sm text-slate-400">
