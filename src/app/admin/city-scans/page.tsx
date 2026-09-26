@@ -178,7 +178,7 @@ export default function CityScanPage() {
           <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">
             Scanned Markets
           </h2>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {scans.map((scan) => (
               <button
                 key={scan.id}
@@ -352,7 +352,7 @@ export default function CityScanPage() {
                       {isExpanded && (
                         <tr key={`${l.id}-detail`} className="border-b border-slate-100 bg-slate-50">
                           <td colSpan={6} className="px-5 py-4">
-                            <div className="grid grid-cols-4 gap-4 text-sm">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                               <div>
                                 <div className="text-xs text-slate-400 uppercase tracking-wider">
                                   Owner

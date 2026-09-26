@@ -449,7 +449,7 @@ export default function CadencesPage() {
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {statCards.map((card) => (
           <div
             key={card.label}

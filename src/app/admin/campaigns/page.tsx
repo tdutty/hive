@@ -121,7 +121,7 @@ export default function CampaignsPage() {
       {data && (
         <>
           {/* Summary Cards */}
-          <div className="grid grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
             <SummaryCard
               icon={<Users size={20} className="text-blue-600" />}
               bg="bg-blue-100"
@@ -222,7 +222,7 @@ export default function CampaignsPage() {
                   Referral Performance
                 </h3>
               </div>
-              <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                 <div className="text-center p-4 bg-pink-50 rounded-lg">
                   <div className="text-2xl font-bold text-gray-900">
                     {data.referrals.signups}

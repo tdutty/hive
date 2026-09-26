@@ -80,6 +80,39 @@ const CITY_COLORS: Record<string, { bg: string; text: string }> = {
   Detroit: { bg: "bg-stone-100", text: "text-stone-700" },
   "Winston-Salem": { bg: "bg-zinc-100", text: "text-zinc-700" },
   "Danville PA": { bg: "bg-slate-100", text: "text-slate-700" },
+  "Travel Nurse": { bg: "bg-red-100", text: "text-red-700" },
+  Medical: { bg: "bg-emerald-100", text: "text-emerald-700" },
+  "East Tennessee": { bg: "bg-amber-100", text: "text-amber-700" },
+  Connecticut: { bg: "bg-indigo-100", text: "text-indigo-700" },
+  Oakland: { bg: "bg-stone-100", text: "text-stone-700" },
+  Florida: { bg: "bg-orange-100", text: "text-orange-700" },
+  "New Haven": { bg: "bg-blue-100", text: "text-blue-700" },
+  Albany: { bg: "bg-purple-100", text: "text-purple-700" },
+  "Burlington VT": { bg: "bg-green-100", text: "text-green-700" },
+  Richmond: { bg: "bg-red-100", text: "text-red-700" },
+  "Columbus OH": { bg: "bg-rose-100", text: "text-rose-700" },
+  "St. Louis": { bg: "bg-sky-100", text: "text-sky-700" },
+  Milwaukee: { bg: "bg-amber-100", text: "text-amber-700" },
+  "East Lansing": { bg: "bg-green-100", text: "text-green-700" },
+  Orlando: { bg: "bg-orange-100", text: "text-orange-700" },
+  Louisville: { bg: "bg-red-100", text: "text-red-700" },
+  Sacramento: { bg: "bg-yellow-100", text: "text-yellow-700" },
+  "San Antonio": { bg: "bg-teal-100", text: "text-teal-700" },
+  Austin: { bg: "bg-violet-100", text: "text-violet-700" },
+  "San Diego": { bg: "bg-cyan-100", text: "text-cyan-700" },
+  Irvine: { bg: "bg-blue-100", text: "text-blue-700" },
+  Portland: { bg: "bg-emerald-100", text: "text-emerald-700" },
+  Tucson: { bg: "bg-orange-100", text: "text-orange-700" },
+  "Salt Lake City": { bg: "bg-sky-100", text: "text-sky-700" },
+  Albuquerque: { bg: "bg-rose-100", text: "text-rose-700" },
+  "Oklahoma City": { bg: "bg-red-100", text: "text-red-700" },
+  Galveston: { bg: "bg-teal-100", text: "text-teal-700" },
+  Aurora: { bg: "bg-indigo-100", text: "text-indigo-700" },
+  Toledo: { bg: "bg-amber-100", text: "text-amber-700" },
+  "Loma Linda": { bg: "bg-purple-100", text: "text-purple-700" },
+  Tallahassee: { bg: "bg-fuchsia-100", text: "text-fuchsia-700" },
+  Augusta: { bg: "bg-lime-100", text: "text-lime-700" },
+  "Columbia SC": { bg: "bg-green-100", text: "text-green-700" },
 };
 
 const GROUPS: GroupData[] = [
@@ -236,6 +269,121 @@ const GROUPS: GroupData[] = [
   { name: "Georgetown University Housing", url: "https://facebook.com/groups/georgetownhousing/", city: "Washington DC" },
   // Additional National
   { name: "Medical Residency Housing Exchange", url: "https://facebook.com/groups/residencyhousing/", city: "National" },
+  // --- NEW: Medical-Specific Groups ---
+  { name: "Medical Sublets", url: "https://facebook.com/groups/MedicalSublets/", city: "Medical" },
+  { name: "Medical Student Rotation Housing", url: "https://facebook.com/groups/1084955423211801/", city: "Medical" },
+  { name: "USMLE Residency Match 2026/2027 IMGs", url: "https://facebook.com/groups/409576406099887/", city: "Medical" },
+  { name: "PA Students and New Grads", url: "https://facebook.com/groups/PAStudentsandNewGrads/", city: "Medical" },
+  { name: "Columbia University Medical Center Sublets", url: "https://facebook.com/groups/1952394528216508/", city: "NYC" },
+  { name: "UCHC Housing - Medical Professionals", url: "https://facebook.com/groups/589195334545336/", city: "Connecticut" },
+  { name: "ETSU/Quillen Medical Student Housing", url: "https://facebook.com/groups/1534917810700667/", city: "East Tennessee" },
+  // --- NEW: Travel Nurse / Healthcare Housing (High Volume) ---
+  { name: "Travel Housing - Gypsy Nurses (144K)", url: "https://facebook.com/groups/travelnursehousing/", city: "Travel Nurse" },
+  { name: "Travel Nurse Housing USA", url: "https://facebook.com/groups/TravelNurseHousingUSA/", city: "Travel Nurse" },
+  { name: "Travel Nurse Housing Rentals by Landlords", url: "https://facebook.com/groups/Travel.Nurse.Landlords/", city: "Travel Nurse" },
+  { name: "Furnished Finder Monthly Rentals", url: "https://facebook.com/groups/furnishedfinder.travelnursehousing/", city: "Travel Nurse" },
+  { name: "Travel Nurse and Remote Worker Housing", url: "https://facebook.com/groups/temphousing/", city: "Travel Nurse" },
+  { name: "Monthly Furnished Housing - Med Pros", url: "https://facebook.com/groups/414305935358576/", city: "Travel Nurse" },
+  { name: "Flexible Furnished Rental - Med Pros USA", url: "https://facebook.com/groups/flexiblefurnishedhousingfortravelnursesmedprosusa/", city: "Travel Nurse" },
+  { name: "Travel Nurse Housing - Pet Friendly", url: "https://facebook.com/groups/423336735045219/", city: "Travel Nurse" },
+  { name: "Gypsy Nurse Network", url: "https://facebook.com/groups/TheGypsyNurseNetwork/", city: "Travel Nurse" },
+  // --- NEW: City-Specific Travel Nurse ---
+  { name: "Boston Travel Nurses Furnished Housing", url: "https://facebook.com/groups/569576773896827/", city: "Boston" },
+  { name: "Seattle Travel Nurses Furnished Rentals", url: "https://facebook.com/groups/furnishedtravel/", city: "Seattle" },
+  { name: "Travel Nurse Housing - SF Bay Area", url: "https://facebook.com/groups/2705438979684399/", city: "San Francisco" },
+  { name: "Florida Travel Nurse/Medical Housing", url: "https://facebook.com/groups/185260041339600/", city: "Florida" },
+  // --- NEW: Additional City Groups ---
+  { name: "NYC Housing, Rooms, Apartments, Sublets", url: "https://facebook.com/groups/1225966920763001/", city: "NYC" },
+  { name: "NYU Housing, Rooms, Apartments", url: "https://facebook.com/groups/1416151198490459/", city: "NYC" },
+  { name: "Boston Housing, Rooms, Apartments", url: "https://facebook.com/groups/673389662794979/", city: "Boston" },
+  { name: "LA Housing, Rooms, Apartments", url: "https://facebook.com/groups/1621705121404017/", city: "Los Angeles" },
+  { name: "Philadelphia Housing, Rooms, Apartments", url: "https://facebook.com/groups/453686588142698/", city: "Philadelphia" },
+  { name: "Minneapolis Housing, Rooms, Apartments", url: "https://facebook.com/groups/439773589790851/", city: "Minneapolis" },
+  { name: "Oakland Housing, Rooms, Apartments", url: "https://facebook.com/groups/351534728678089/", city: "Oakland" },
+  // --- NEW: Med-School-Specific Groups (highest value) ---
+  { name: "GUSOM For Sale & Housing (Georgetown Med)", url: "https://facebook.com/groups/268311666836371/", city: "Washington DC" },
+  { name: "MCW Student Housing Forum", url: "https://facebook.com/groups/251243402542476/", city: "Milwaukee" },
+  { name: "LMU-DCOM Housing (Osteopathic)", url: "https://facebook.com/groups/418600281894750/", city: "East Tennessee" },
+  { name: "UTMB Student Housing & Roommate Forum", url: "https://facebook.com/groups/utmbhousingforum/", city: "Galveston" },
+  { name: "Living Near Anschutz (CU Med Campus)", url: "https://facebook.com/groups/1082164362967453/", city: "Aurora" },
+  { name: "Anschutz Medical Campus Students", url: "https://facebook.com/groups/1423838631165735/", city: "Aurora" },
+  { name: "UC Davis Medical Center Housing", url: "https://facebook.com/groups/249683679083782/", city: "Sacramento" },
+  { name: "UT Health Roommates / Housing Finder SA", url: "https://facebook.com/groups/275833972993673/", city: "San Antonio" },
+  { name: "Rocky Vista University Housing (DO)", url: "https://facebook.com/groups/1359601104663444/", city: "Aurora" },
+  { name: "Midwestern University Housing (DO)", url: "https://facebook.com/groups/464312248661727/", city: "Chicago" },
+  { name: "Loma Linda Home Rentals", url: "https://facebook.com/groups/lomalindahomerentals/", city: "Loma Linda" },
+  { name: "UCR & Loma Linda Housing", url: "https://facebook.com/groups/938298827783344/", city: "Loma Linda" },
+  // --- NEW: Northeast (new cities) ---
+  { name: "Albany Student Off Campus Housing", url: "https://facebook.com/groups/221312825264729/", city: "Albany" },
+  { name: "Yale Off-Campus Housing", url: "https://facebook.com/groups/yalehousing/", city: "New Haven" },
+  { name: "Yale Student Housing & Apartments", url: "https://facebook.com/groups/apartments.yale/", city: "New Haven" },
+  { name: "Tufts Off-Campus Housing", url: "https://facebook.com/groups/1262397437215154/", city: "Boston" },
+  { name: "UVM Housing, Room Rental, Sublet", url: "https://facebook.com/groups/vermont.uvm.housing.burlington.rentals/", city: "Burlington VT" },
+  { name: "BU Housing, Rooms, Apartments", url: "https://facebook.com/groups/684464255694512/", city: "Boston" },
+  { name: "Stony Brook Off-Campus Housing", url: "https://facebook.com/groups/sbuoffcampushousing/", city: "NYC" },
+  { name: "Cornell Housing, Sublets & Roommates", url: "https://facebook.com/groups/1567221950234112/", city: "NYC" },
+  { name: "Drexel Housing, Sublets & Roommates", url: "https://facebook.com/groups/1126607547359578/", city: "Philadelphia" },
+  { name: "Penn State Apartments, Sublets", url: "https://facebook.com/groups/184555275349889/", city: "Philadelphia" },
+  { name: "Rutgers Newark Apartments", url: "https://facebook.com/groups/apartments.rutgersnewark/", city: "NYC" },
+  // --- NEW: Mid-Atlantic / DC ---
+  { name: "GWU Housing, Sublets & Roommates", url: "https://facebook.com/groups/gwuhousing/", city: "Washington DC" },
+  { name: "Howard University Off Campus Housing", url: "https://facebook.com/groups/howarduniversityhousing/", city: "Washington DC" },
+  { name: "VCU Off Campus Housing", url: "https://facebook.com/groups/VCUSubleasesRoommates/", city: "Richmond" },
+  { name: "VCU Housing, Sublets", url: "https://facebook.com/groups/1557593587828161/", city: "Richmond" },
+  { name: "UMD Baltimore Housing, Sublets", url: "https://facebook.com/groups/1947340111964457/", city: "Baltimore" },
+  { name: "WVU Apartments and Housing", url: "https://facebook.com/groups/westvirginiau/", city: "Charleston" },
+  { name: "Virginia Tech Housing, Sublets", url: "https://facebook.com/groups/virginiatechhousing/", city: "Charlottesville" },
+  // --- NEW: Southeast (new cities) ---
+  { name: "FSU Off-Campus Housing & Subleases", url: "https://facebook.com/groups/299577247580116/", city: "Tallahassee" },
+  { name: "UCF Housing and Subleases", url: "https://facebook.com/groups/ucfhousingandsubleases/", city: "Orlando" },
+  { name: "UCF Housing Moderated", url: "https://facebook.com/groups/UCFHousing/", city: "Orlando" },
+  { name: "UofL Housing, Sublets", url: "https://facebook.com/groups/1449203208726729/", city: "Louisville" },
+  { name: "UofL Apartments and Housing", url: "https://facebook.com/groups/ulouisville/", city: "Louisville" },
+  { name: "Augusta Rentals, Housing, Rooms", url: "https://facebook.com/groups/2282167541996842/", city: "Augusta" },
+  { name: "USC Columbia Housing, Sublets", url: "https://facebook.com/groups/uofschousingsubleasesroommates/", city: "Columbia SC" },
+  { name: "NSU Housing, Room Rentals (Nova SE)", url: "https://facebook.com/groups/nova.southeastern.housing.nsu.rentals/", city: "Miami" },
+  { name: "Mercer University Off-Campus Housing", url: "https://facebook.com/groups/364459032677554/", city: "Atlanta" },
+  { name: "CofC and MUSC Off Campus Housing", url: "https://facebook.com/groups/1564910317000364/", city: "Charleston" },
+  { name: "Emory & Georgia Tech Subleases", url: "https://facebook.com/groups/EmorySubleasesRoommates/", city: "Atlanta" },
+  { name: "FAU Off Campus Housing", url: "https://facebook.com/groups/fausubleasesapartmentsroommates/", city: "Miami" },
+  { name: "Liberty University Off-Campus Housing", url: "https://facebook.com/groups/861578711350181/", city: "Charlottesville" },
+  // --- NEW: Midwest (new cities) ---
+  { name: "Case Western Apartments and Housing", url: "https://facebook.com/groups/caseu/", city: "Cleveland" },
+  { name: "Ohio State Housing, Sublets & Roommates", url: "https://facebook.com/groups/379832262202968/", city: "Columbus OH" },
+  { name: "OSU Columbus Housing, Rooms, Apartments", url: "https://facebook.com/groups/196003857628784/", city: "Columbus OH" },
+  { name: "WashU Housing, Sublets", url: "https://facebook.com/groups/450924321750119/", city: "St. Louis" },
+  { name: "WashU Apartments and Housing", url: "https://facebook.com/groups/washingtonstlouis/", city: "St. Louis" },
+  { name: "SLU Housing, Sublets & Roommates", url: "https://facebook.com/groups/1578990435708366/", city: "St. Louis" },
+  { name: "MSU Housing, Sublets & Roommates", url: "https://facebook.com/groups/1381472642168689/", city: "East Lansing" },
+  { name: "MSU Off-Campus Housing", url: "https://facebook.com/groups/267114047031859/", city: "East Lansing" },
+  { name: "Wayne State Off-Campus Housing", url: "https://facebook.com/groups/1397778240282664/", city: "Detroit" },
+  { name: "IU Housing, Sublets & Roommates", url: "https://facebook.com/groups/907726415914493/", city: "Indianapolis" },
+  { name: "Loyola Chicago Housing, Sublets", url: "https://facebook.com/groups/888435001217763/", city: "Chicago" },
+  { name: "UIC Housing, Rooms", url: "https://facebook.com/groups/3144810932263925/", city: "Chicago" },
+  { name: "U of Toledo Off-Campus Housing", url: "https://facebook.com/groups/835168386563949/", city: "Toledo" },
+  { name: "Ohio University Heritage COM Housing", url: "https://facebook.com/groups/383151271869688/", city: "Columbus OH" },
+  // --- NEW: South / Texas / Plains ---
+  { name: "Texas A&M Student Housing", url: "https://facebook.com/groups/tamu.apartments/", city: "Houston" },
+  { name: "UT Austin Housing, Rooms, Apartments", url: "https://facebook.com/groups/1522076437888048/", city: "Austin" },
+  { name: "UT Austin Housing, Sublets & Roommates", url: "https://facebook.com/groups/819571114777811/", city: "Austin" },
+  { name: "OU Off-Campus Student Housing", url: "https://facebook.com/groups/457164348513299/", city: "Oklahoma City" },
+  { name: "NOLA Housing and Roommates", url: "https://facebook.com/groups/new.orleans.housing.and.roommates/", city: "New Orleans" },
+  // --- NEW: Mountain West ---
+  { name: "University of Utah Housing, Sublets", url: "https://facebook.com/groups/675656609223294/", city: "Salt Lake City" },
+  { name: "UNM Housing, Sublets & Roommates", url: "https://facebook.com/groups/341549776055685/", city: "Albuquerque" },
+  { name: "University of Arizona Housing", url: "https://facebook.com/groups/universityofarizonahousing/", city: "Tucson" },
+  { name: "UNR Housing, Sublets & Roommates", url: "https://facebook.com/groups/1474955982726870/", city: "Tucson" },
+  // --- NEW: West Coast / Pacific ---
+  { name: "USC Homes (Keck School area)", url: "https://facebook.com/groups/usc.homes/", city: "Los Angeles" },
+  { name: "UCLA Graduate Student Housing", url: "https://facebook.com/groups/332091610661275/", city: "Los Angeles" },
+  { name: "UC Irvine Housing", url: "https://facebook.com/groups/UCIrvineHousing/", city: "Irvine" },
+  { name: "UCSD Student Off-Campus Housing", url: "https://facebook.com/groups/2387457222/", city: "San Diego" },
+  { name: "UCSD Student Off-Campus Housing 2.0", url: "https://facebook.com/groups/ucsd.student.off.campus.housing/", city: "San Diego" },
+  { name: "UCR Housing / Sublets / Rentals", url: "https://facebook.com/groups/UCRHousing/", city: "Loma Linda" },
+  { name: "UC Davis Housing - Grad/Professional", url: "https://facebook.com/groups/286762898448011/", city: "Sacramento" },
+  { name: "UW Seattle Housing - Roommates, Sublets", url: "https://facebook.com/groups/UWSeattleHousing/", city: "Seattle" },
+  { name: "Stanford Palo Alto Housing, Roommates", url: "https://facebook.com/groups/3995541210514696/", city: "San Francisco" },
+  { name: "OHSU School of Medicine Students", url: "https://facebook.com/groups/228714883908836/", city: "Portland" },
 ];
 
 const CITY_HOSPITALS: Record<string, string> = {
@@ -279,11 +427,88 @@ const CITY_HOSPITALS: Record<string, string> = {
   Detroit: "Henry Ford Hospital and Detroit Medical Center",
   "Winston-Salem": "Wake Forest Baptist Medical Center",
   "Danville PA": "Geisinger Medical Center",
+  "Travel Nurse": "hospitals nationwide",
+  Medical: "teaching hospitals and medical centers nationwide",
+  "East Tennessee": "ETSU/Quillen College of Medicine",
+  Connecticut: "UConn Health Center",
+  Oakland: "Highland Hospital, Kaiser Oakland, and UCSF-affiliated sites",
+  Florida: "hospitals across Florida",
+  "New Haven": "Yale-New Haven Hospital",
+  Albany: "Albany Medical Center",
+  "Burlington VT": "UVM Medical Center",
+  Richmond: "VCU Medical Center and McGuire VA",
+  "Columbus OH": "Ohio State Wexner Medical Center and Nationwide Children's",
+  "St. Louis": "Barnes-Jewish Hospital, St. Louis University Hospital, and Washington University",
+  Milwaukee: "Froedtert Hospital and Medical College of Wisconsin",
+  "East Lansing": "Sparrow Hospital and MSU affiliated sites",
+  Orlando: "Orlando Health, AdventHealth, and Nemours Children's",
+  Louisville: "UofL Hospital, Norton Healthcare, and Baptist Health",
+  Sacramento: "UC Davis Medical Center and Sutter Medical Center",
+  "San Antonio": "UT Health San Antonio, University Hospital, and Brooke Army Medical Center",
+  Austin: "Dell Seton Medical Center and Ascension Seton",
+  "San Diego": "UC San Diego Health and Scripps Health",
+  Irvine: "UC Irvine Medical Center and CHOC",
+  Portland: "OHSU Hospital and Providence Portland",
+  Tucson: "Banner University Medical Center Tucson",
+  "Salt Lake City": "University of Utah Hospital and Intermountain Health",
+  Albuquerque: "UNM Hospital",
+  "Oklahoma City": "OU Medical Center and Oklahoma Children's",
+  Galveston: "UTMB Health",
+  Aurora: "University of Colorado Hospital (Anschutz Medical Campus)",
+  Toledo: "University of Toledo Medical Center and ProMedica",
+  "Loma Linda": "Loma Linda University Medical Center",
+  Tallahassee: "Tallahassee Memorial and FSU-affiliated sites",
+  Augusta: "Augusta University Medical Center (MCG)",
+  "Columbia SC": "Prisma Health Richland and USC School of Medicine",
 };
 
 const GROUP_LINK_FOOTER = `\nAlso join our Medical Resident Housing group for more resources and to connect with other relocating residents: ${SWEETLEASE_GROUP_SHORT}`;
 
+function getUtmLink(city: string): string {
+  const slug = city.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  return `sweetlease.io?utm_source=facebook&utm_medium=social&utm_campaign=group-outreach&utm_content=${slug}`;
+}
+
 function getCityPost(city: string): string {
+  const link = getUtmLink(city);
+
+  if (city === "Travel Nurse") {
+    return `Hey everyone! If you are relocating for an assignment and need furnished housing near the hospital, check out SweetLease.
+
+We are a free service that negotiates rent on your behalf with property managers near major medical centers. We cover 12+ cities including Houston, Nashville, Pittsburgh, Cleveland, Boston, Miami, and more.
+
+How it works:
+- Tell us your budget, bedrooms, and assignment dates
+- We match you to furnished properties within 15 min of the hospital
+- We negotiate rent using group demand - typically 10-35% below listed rent
+- Virtual tours so you can decide before arriving
+- Sign your lease remotely
+- 100% free for healthcare workers
+
+${link}
+
+Happy to answer any questions!${GROUP_LINK_FOOTER}`;
+  }
+
+  if (city === "Medical") {
+    return `Hey everyone! If you are starting rotations or residency and need to find housing in a new city, check out SweetLease.
+
+We are a free service built specifically for medical trainees relocating for residency or clinical rotations. We negotiate rent on your behalf with property managers near teaching hospitals.
+
+We cover 12+ cities including Houston, Nashville, Pittsburgh, Cleveland, Boston, Miami, and more.
+
+How it works:
+- Tell us your budget, bedrooms, and move-in date
+- We match you to properties within 15 min of the hospital
+- We negotiate rent using group demand - typically 10-35% below listed rent
+- Virtual tours, remote lease signing, the whole process handled for you
+- 100% free for medical trainees
+
+${link}
+
+Happy to answer questions!${GROUP_LINK_FOOTER}`;
+  }
+
   if (city === "National") {
     return `Hey everyone! Congrats on matching!
 
@@ -293,7 +518,7 @@ We cover 12+ cities including Houston, Nashville, Columbus, Pittsburgh, Clevelan
 
 Residents typically save 10-35% below listed rent. We handle everything remotely - virtual tours, lease signing, the whole process.
 
-sweetlease.io - completely free for residents.
+${link} - completely free for residents.
 
 Happy to answer questions!${GROUP_LINK_FOOTER}`;
   }
@@ -316,7 +541,7 @@ How it works:
 
 We are already working with property managers in ${city} and have placed residents sight unseen.
 
-Check us out at sweetlease.io
+Check us out at ${link}
 
 Happy to answer any questions!${GROUP_LINK_FOOTER}`;
 }

@@ -118,7 +118,7 @@ export default function UsersPage() {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         <MetricCard
           title="Total Users"
           value={totalUsers.toString()}

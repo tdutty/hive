@@ -61,3 +61,16 @@ body {
 .badge {
   @apply inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full;
 }
+
+/* Mobile: any table that is not already inside an overflow-x-auto wrapper scrolls
+   horizontally within itself instead of stretching the page. Desktop unaffected. */
+@media (max-width: 1023px) {
+  :not(.overflow-x-auto) > table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* inputs on iOS zoom the page when font-size < 16px; keep them at 16px on phones */
+  input, select, textarea { font-size: 16px; }
+}

@@ -363,7 +363,7 @@ export default function ConciergeDraftsPage() {
 
       <div className="flex gap-4 h-[calc(100%-80px)]">
         {/* Left Panel - Draft Queue */}
-        <div className="w-96 shrink-0 bg-[#1e1e2d] border border-[#2f2f42] rounded-xl overflow-y-auto">
+        <div className="w-96 max-w-[calc(100vw-2rem)] shrink-0 bg-[#1e1e2d] border border-[#2f2f42] rounded-xl overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <RefreshCw className="animate-spin text-slate-500" size={20} />

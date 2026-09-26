@@ -106,7 +106,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Row 1: Key Metrics */}
-      <div className="grid grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         <MetricCard
           title="Total Revenue"
           value={formatCurrency(totalRevenue)}
@@ -202,7 +202,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Row 4: Quick Stats */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
           <div className="flex items-start justify-between">
             <div>

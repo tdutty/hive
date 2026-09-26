@@ -82,7 +82,7 @@ function CityPicker({
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 w-80 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
+        <div className="absolute top-full left-0 mt-1 w-80 max-w-[calc(100vw-2rem)] bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
           {/* Search */}
           <div className="p-2 border-b border-slate-100">
             <div className="relative">
@@ -520,7 +520,7 @@ export default function ListingReviewPage() {
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
         <MetricCard
           title="Pending Review"
           value={counts.pending.toString()}

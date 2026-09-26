@@ -103,7 +103,7 @@ export default function FinancialPage() {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         <MetricCard
           title="Total Revenue"
           value={formatCurrency(totalRevenue)}
@@ -319,7 +319,7 @@ export default function FinancialPage() {
             <h3 className="text-lg font-semibold text-slate-900 mb-4">
               Payment Security Overview
             </h3>
-            <div className="grid grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div>
                 <p className="text-xs font-semibold text-slate-500 mb-2">
                   Suspicious Payments
@@ -426,7 +426,7 @@ export default function FinancialPage() {
           </div>
 
           {/* Regional Summary Stats */}
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
             {[
               {
                 region: "New York",

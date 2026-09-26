@@ -611,7 +611,7 @@ function ExpandedRow({ pm, onUpdateStage, onUpdateNotes }: {
             {/* Stats Card */}
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
               <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Activity</h4>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <div className="text-center">
                   <p className="text-xl font-bold text-slate-900">{pm.tenantsMatched}</p>
                   <p className="text-[10px] text-slate-500 uppercase tracking-wider mt-0.5">Matched</p>

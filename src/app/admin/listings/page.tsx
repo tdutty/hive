@@ -113,7 +113,7 @@ export default function ListingsPage() {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         <MetricCard
           title="Total Listings"
           value={totalListings.toString()}
@@ -271,7 +271,7 @@ export default function ListingsPage() {
           color="#D97706"
           height={320}
         />
-        <div className="grid grid-cols-3 gap-6 mt-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mt-6">
           {sponsoredComparisonData.map((data: any) => (
             <div
               key={data.name}

@@ -159,7 +159,7 @@ export default function SigningPipelinePage() {
 
       {/* Summary Cards */}
       {data && (
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="bg-white border border-gray-200 rounded-lg p-5">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">

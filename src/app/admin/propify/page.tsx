@@ -201,7 +201,7 @@ export default function PropifyPage() {
       </div>
 
       {/* Status Cards */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-white rounded-lg border border-slate-200 p-4">
           <p className="text-xs text-slate-500 mb-1">Integration Status</p>
           <StatusBadge label="Planning" color="yellow" />

@@ -190,7 +190,7 @@ export default function NegotiationsPage() {
                 {/* Expanded Actions */}
                 {isExpanded && (
                   <div className="border-t border-[#3a3a4d] p-6 bg-[#252538]">
-                    <div className="grid grid-cols-3 gap-6 mb-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
                       <div>
                         <div className="text-gray-500 text-xs uppercase tracking-wider">
                           Landlord

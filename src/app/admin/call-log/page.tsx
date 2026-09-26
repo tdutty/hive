@@ -87,7 +87,7 @@ export default function CallLogPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[
           { label: "Total Calls", value: calls.length, color: "text-white" },
           { label: "Interested", value: calls.filter(c => c.outcome === "interested").length, color: "text-emerald-400" },

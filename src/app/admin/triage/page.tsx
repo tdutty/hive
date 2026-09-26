@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Inbox, Send, RefreshCw, BellRing, CheckCircle2, XCircle, Link2, HelpCircle, Bot, MessageSquare, Sparkles, CalendarClock, Trash2, PenLine, Archive, CheckCheck, RotateCcw } from "lucide-react";
+import { Inbox, Send, RefreshCw, BellRing, ArrowLeft, CheckCircle2, XCircle, Link2, HelpCircle, Bot, MessageSquare, Sparkles, CalendarClock, Trash2, PenLine, Archive, CheckCheck, RotateCcw } from "lucide-react";
 import { useApi } from "@/lib/hooks";
 import { triageService, type Conversation, type Classification, type ScheduledRow } from "@/lib/services/triage";
 
@@ -78,12 +78,12 @@ export default function TriagePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Email Triage</h1>
           <p className="text-sm text-slate-500 mt-1">{data?.count} PM conversations · <span className="font-medium text-amber-700">{data?.awaitingReply} awaiting a reply</span>{waiting > 0 && <> · <span className="font-medium text-sky-700">{waiting} scheduled</span></>}</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           <button disabled={busy !== null} title={`Drafts a nudge for every interested PM quiet ${fu.data?.gapDays ?? 4}+ days after our reply (max ${fu.data?.max ?? 2} per thread). Drafts wait for your approval; nothing sends.`} onClick={() => act(() => triageService.runFollowups(), "Follow-ups drafted", r => { fu.refetch(); setFlash(`Follow-ups: ${r.queued.length} drafted for approval${r.queued.length ? " (" + r.queued.map((q: any) => q.company).join(", ") + ")" : ""}${r.skipped.length ? `, ${r.skipped.length} skipped` : ""}`); })} className="inline-flex items-center gap-2 text-sm border border-slate-300 rounded-md px-3 py-1.5 hover:border-slate-500 disabled:opacity-50"><BellRing size={14} /> {busy === "Follow-ups drafted" ? "Drafting…" : `Run follow-up sweep${fu.data?.count ? ` (${fu.data.count} due)` : ""}`}</button>
           <button onClick={() => { setFresh(true); refetch(); sched.refetch(); fu.refetch(); }} className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"><RefreshCw size={16} /> Refresh</button>
         </div>
@@ -101,7 +101,7 @@ export default function TriagePage() {
           <div className="divide-y divide-slate-100">
             {schedRows.length === 0 && <div className="px-4 py-3 text-sm text-slate-500">Nothing scheduled.</div>}
             {schedRows.map(r => (
-              <div key={r.id} className="px-4 py-3 flex items-start gap-4">
+              <div key={r.id} className="px-4 py-3 flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 text-sm"><span className="font-medium text-slate-900 truncate">{r.company || r.pm_email}</span><span className={`text-xs px-2 py-0.5 rounded-full ${JOB[r.status]}`}>{r.status}</span></div>
                   <div className="text-xs text-slate-500 mt-0.5">{r.pm_email} · {r.status === "completed" ? "sent" : "sends"} {fmt(r.scheduledFor)}{r.attempts > 0 && r.status !== "completed" ? ` · ${r.attempts} attempt${r.attempts > 1 ? "s" : ""}` : ""}</div>
@@ -126,7 +126,7 @@ export default function TriagePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* list */}
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-lg divide-y divide-slate-100 max-h-[75vh] overflow-y-auto">
+        <div className={`lg:col-span-2 bg-white border border-slate-200 rounded-lg divide-y divide-slate-100 lg:max-h-[75vh] lg:overflow-y-auto ${selected ? "hidden lg:block" : ""}`}>
           {rows.length === 0 && <div className="p-8 text-center text-slate-500 text-sm"><Inbox className="mx-auto mb-2" size={24} />Nothing here.</div>}
           {rows.map(c => (
             <button key={c.pm_email} onClick={() => setSelected(c.pm_email)} className={`w-full text-left p-4 hover:bg-slate-50 ${selected === c.pm_email ? "bg-amber-50" : ""}`}>
@@ -149,18 +149,19 @@ export default function TriagePage() {
         </div>
 
         {/* thread + actions */}
-        <div className="lg:col-span-3 bg-white border border-slate-200 rounded-lg p-5 max-h-[75vh] overflow-y-auto">
+        <div className={`lg:col-span-3 bg-white border border-slate-200 rounded-lg p-4 sm:p-5 lg:max-h-[75vh] lg:overflow-y-auto ${selected ? "" : "hidden lg:block"}`}>
+          {selected && <button onClick={() => setSelected(null)} className="lg:hidden mb-3 inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900"><ArrowLeft size={16} /> All conversations</button>}
           {!selected && <div className="text-slate-500 text-sm py-20 text-center">Select a conversation to read the full thread and act on it.</div>}
           {selected && threadLoading && <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" /></div>}
           {thread && !threadLoading && (
             <div className="space-y-5">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-lg font-semibold text-slate-900">{thread.company}</h2>
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                <div className="min-w-0">
+                  <h2 className="text-lg font-semibold text-slate-900 break-words">{thread.company}</h2>
                   <p className="text-sm text-slate-500">{thread.pm_email}{thread.city ? ` · ${thread.city}` : ""} · {thread.campaign} campaign</p>
                 </div>
-                <div className="text-right space-y-2">
-                  <div className="flex items-center justify-end gap-2">
+                <div className="sm:text-right space-y-2">
+                  <div className="flex flex-wrap items-center sm:justify-end gap-2">
                     {thread.state === "OPEN" ? (<>
                       <input value={stateNote} onChange={e => setStateNote(e.target.value)} placeholder="note (optional)" className="text-xs border border-slate-300 rounded-md px-2 py-1 w-36" />
                       <button disabled={busy !== null} onClick={() => act(() => triageService.setState(thread.pm_email, "RESOLVED", stateNote || undefined), "Resolved", () => setStateNote(""))} title="Done with this thread; it leaves the working views and reopens if they write again" className="inline-flex items-center gap-1 text-xs border border-emerald-300 text-emerald-800 rounded-md px-2 py-1 hover:bg-emerald-50 disabled:opacity-50"><CheckCheck size={12} /> Resolve</button>
@@ -188,7 +189,7 @@ export default function TriagePage() {
 
               <div className="space-y-3">
                 {thread.messages?.map(m => (
-                  <div key={m.id} className={`rounded-lg p-3 text-sm ${m.direction === "in" ? "bg-slate-50 border border-slate-200" : "bg-amber-50 border border-amber-100 ml-8"}`}>
+                  <div key={m.id} className={`rounded-lg p-3 text-sm ${m.direction === "in" ? "bg-slate-50 border border-slate-200" : "bg-amber-50 border border-amber-100 ml-3 sm:ml-8"}`}>
                     <div className="flex justify-between text-xs text-slate-500 mb-1"><span className="font-medium">{m.direction === "in" ? thread.company : "Robert (us)"}</span><span>{fmt(m.at)}</span></div>
                     <div className="whitespace-pre-wrap text-slate-800">{m.direction === "in" ? m.text : m.text.slice(0, 600) + (m.text.length > 600 ? " […]" : "")}</div>
                   </div>
@@ -218,7 +219,7 @@ export default function TriagePage() {
               ) : (
                 <div className="border border-violet-200 rounded-lg p-4 bg-violet-50/30 space-y-3">
                   <div className="flex items-center justify-between"><h3 className="font-medium text-slate-900">New message</h3><span className="text-xs text-slate-500">sends in this thread from the sweetleasepartners inbox, as Robert</span></div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <input value={instructions} onChange={e => setInstructions(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && instructions.trim() && busy === null) act(() => triageService.compose(thread.pm_email, instructions, composeText || undefined), composeText ? "Redrafted" : "Drafted", r => setComposeText(r.draft || "")); }} placeholder='Tell the AI what to say, e.g. "check in on the March units, ask if the 2-beds are still open"' className="flex-1 text-sm border border-slate-300 rounded-md px-3 py-2" />
                     <button disabled={busy !== null || !instructions.trim()} onClick={() => act(() => triageService.compose(thread.pm_email, instructions, composeText || undefined), composeText ? "Redrafted" : "Drafted", r => setComposeText(r.draft || ""))} className="inline-flex items-center gap-2 bg-violet-700 text-white rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"><Sparkles size={14} /> {busy === "Drafted" || busy === "Redrafted" ? "Drafting…" : composeText ? "Redraft" : "Draft with AI"}</button>
                   </div>
@@ -226,7 +227,7 @@ export default function TriagePage() {
                   <div className="flex flex-wrap items-center gap-3">
                     <button disabled={busy !== null || !composeText.trim()} onClick={() => act(() => triageService.sendNow(thread.pm_email, composeText, instructions || undefined), "Sent", () => { setComposeText(""); setComposeOpen(false); })} className="inline-flex items-center gap-2 bg-slate-900 text-white rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"><Send size={14} /> {busy === "Sent" ? "Sending…" : "Send now"}</button>
                     <span className="text-xs text-slate-500">or</span>
-                    <input type="datetime-local" value={sendAt} onChange={e => setSendAt(e.target.value)} className="text-sm border border-slate-300 rounded-md px-3 py-2" />
+                    <input type="datetime-local" value={sendAt} onChange={e => setSendAt(e.target.value)} className="text-sm border border-slate-300 rounded-md px-3 py-2 max-w-full" />
                     <button disabled={busy !== null || !composeText.trim() || !sendAt} onClick={() => act(() => triageService.schedule(thread.pm_email, composeText, new Date(sendAt).toISOString(), instructions || undefined), "Scheduled", () => { setComposeText(""); setComposeOpen(false); })} className="inline-flex items-center gap-2 border border-slate-900 text-slate-900 rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"><CalendarClock size={14} /> {busy === "Scheduled" ? "Scheduling…" : "Schedule"}</button>
                     <button onClick={() => { setComposeOpen(false); setComposeText(""); }} className="text-sm text-slate-500 hover:text-slate-900 ml-auto">Cancel</button>
                   </div>

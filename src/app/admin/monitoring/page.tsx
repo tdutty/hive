@@ -195,7 +195,7 @@ export default function MonitoringPage() {
           <h2 className="text-lg font-semibold text-slate-900 mb-4">
             Service Status
           </h2>
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
             {services.map((service) => (
               <div
                 key={service.name}
@@ -242,7 +242,7 @@ export default function MonitoringPage() {
           <h2 className="text-lg font-semibold text-slate-900 mb-4">
             System Metrics
           </h2>
-          <div className="grid grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {metrics.map((metric, idx) => (
               <div key={idx} className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
                 <label className="text-sm font-semibold text-slate-700 mb-3 block">

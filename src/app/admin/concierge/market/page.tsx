@@ -243,7 +243,7 @@ export default function MarketIntelligencePage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {statCards.map((card) => (
           <div
             key={card.label}
@@ -359,7 +359,7 @@ export default function MarketIntelligencePage() {
                 {/* Expanded Detail */}
                 {isExpanded && (
                   <div className="border-t border-slate-100 px-6 py-5">
-                    <div className="grid grid-cols-3 gap-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                       {/* DEMAND Column */}
                       <div>
                         <h4 className="text-xs font-semibold uppercase tracking-wider text-blue-600 mb-3 flex items-center gap-2">

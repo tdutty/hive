@@ -122,7 +122,7 @@ export default function SurveyRespondentsPage() {
       {data && (
         <>
           {/* Summary Cards */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white border border-gray-200 rounded-lg p-5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -332,7 +332,7 @@ export default function SurveyRespondentsPage() {
                       {isExpanded && (
                         <tr>
                           <td colSpan={7} className="px-5 py-4 bg-gray-50/50">
-                            <div className="grid grid-cols-4 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                               <div className="bg-white border border-gray-200 rounded-lg p-3">
                                 <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
                                   <DollarSign size={12} />

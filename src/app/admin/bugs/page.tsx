@@ -248,7 +248,7 @@ export default function BugsPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <div className="bg-white border border-slate-200 rounded-lg p-4">
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
             Total Issues

@@ -169,7 +169,7 @@ export default function TenantPipelinePage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <StatCard icon={<Users size={18} />} label="Total Tenants" value={data.total} color="blue" />
         <StatCard icon={<TrendingUp size={18} />} label="Active Pipeline" value={totalActive} color="purple" />
         <StatCard icon={<DollarSign size={18} />} label="Monthly Rent" value={`$${data.revenue.totalMonthlyRent.toLocaleString()}`} color="green" />

@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, createContext, useContext } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -44,6 +44,7 @@ import {
   MessageCircle,
   Inbox,
   Share2,
+  Menu,
 } from "lucide-react";
 import {
   useNotifications,
@@ -285,10 +286,18 @@ const navSections: NavSection[] = [
   },
 ];
 
+// Mobile drawer state shared between the header (hamburger) and the sidebar.
+const DrawerCtx = createContext<{ open: boolean; setOpen: (v: boolean) => void }>({ open: false, setOpen: () => {} });
+
 function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
+  const { open, setOpen } = useContext(DrawerCtx);
+
+  // close the drawer on navigation and lock body scroll while it is open
+  useEffect(() => { setOpen(false); }, [pathname, setOpen]);
+  useEffect(() => { document.body.style.overflow = open ? "hidden" : ""; return () => { document.body.style.overflow = ""; }; }, [open]);
 
   const isActive = (href: string) => {
     if (href === "/admin") {
@@ -311,9 +320,13 @@ function Sidebar() {
     .slice(0, 2);
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 border-r border-[#2f2f42] bg-[#1e1e2d] text-white pt-6 flex flex-col">
+    <>
+      {/* backdrop (mobile only) */}
+      {open && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setOpen(false)} aria-hidden />}
+      <aside className={`fixed left-0 top-0 h-[100dvh] w-64 max-w-[85vw] border-r border-[#2f2f42] bg-[#1e1e2d] text-white pt-6 flex flex-col z-50 transition-transform duration-200 lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`} aria-label="Navigation">
       {/* Logo */}
-      <div className="px-6 mb-12 flex items-center gap-3">
+      <div className="px-6 mb-8 lg:mb-12 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
         <div className="w-8 h-8 flex items-center justify-center">
           <svg
             width="32"
@@ -332,6 +345,8 @@ function Sidebar() {
           </svg>
         </div>
         <span className="text-xl font-bold tracking-tight">HIVE</span>
+        </div>
+        <button onClick={() => setOpen(false)} className="lg:hidden p-2 -mr-2 text-[#a0a3b1] hover:text-white" aria-label="Close menu"><X size={20} /></button>
       </div>
 
       {/* Navigation */}
@@ -384,7 +399,8 @@ function Sidebar() {
           <span>Sign out</span>
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }
 
@@ -474,7 +490,7 @@ function NotificationDropdown() {
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div className="absolute right-0 top-12 w-96 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 overflow-hidden">
+        <div className="fixed inset-x-3 top-16 sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 sm:w-96 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
             <h3 className="text-sm font-semibold text-slate-900">
@@ -587,18 +603,20 @@ function NotificationDropdown() {
 
 function TopHeader() {
   const { data: session } = useSession();
+  const { setOpen } = useContext(DrawerCtx);
 
   return (
-    <header className="fixed top-0 left-64 right-0 h-16 border-b border-slate-200 bg-white flex items-center justify-between px-8 z-40">
-      <div className="text-sm text-gray-600">
+    <header className="fixed top-0 left-0 lg:left-64 right-0 h-16 border-b border-slate-200 bg-white flex items-center justify-between px-4 sm:px-6 lg:px-8 z-30">
+      <div className="flex items-center gap-3 text-sm text-gray-600">
+        <button onClick={() => setOpen(true)} className="lg:hidden p-2 -ml-2 rounded-md hover:bg-slate-100 text-slate-700" aria-label="Open menu"><Menu size={22} /></button>
         <span className="font-semibold text-sm">Admin Dashboard</span>
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-3 sm:gap-6">
         <NotificationDropdown />
 
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold text-sm">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold text-sm">
             {(session?.user?.name || "A")
               .split(" ")
               .map((n: string) => n[0])
@@ -606,7 +624,7 @@ function TopHeader() {
               .toUpperCase()
               .slice(0, 2)}
           </div>
-          <span className="text-sm font-medium text-gray-700">
+          <span className="hidden sm:inline text-sm font-medium text-gray-700">
             {session?.user?.name || "Admin"}
           </span>
         </div>
@@ -620,13 +638,17 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [open, setOpen] = useState(false);
   return (
     <NotificationProvider>
-      <div className="min-h-screen bg-slate-50">
-        <Sidebar />
-        <TopHeader />
-        <main className="ml-64 pt-16 p-8 min-h-screen">{children}</main>
-      </div>
+      <DrawerCtx.Provider value={{ open, setOpen }}>
+        <div className="min-h-screen bg-slate-50">
+          <Sidebar />
+          <TopHeader />
+          {/* min-w-0 + overflow-x-hidden: wide tables scroll inside their own wrapper, never the page */}
+          <main className="lg:ml-64 pt-16 min-h-screen min-w-0 overflow-x-hidden"><div className="p-4 sm:p-6 lg:p-8">{children}</div></main>
+        </div>
+      </DrawerCtx.Provider>
     </NotificationProvider>
   );
 }
