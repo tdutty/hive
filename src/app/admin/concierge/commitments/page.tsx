@@ -2,15 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { sweetleaseApi } from "@/lib/api";
-import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
+import { Button, Card, Badge, statusTone, PageHeader, FilterChips, type Chip, Table, THead, TH, TBody, TR, TD } from "@/components/kit";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
 import { toast } from "sonner";
-import {
-  RefreshCw,
-  CheckCheck,
-  Clock,
-  AlertTriangle,
-  XCircle,
-} from "lucide-react";
+import { RefreshCw, CheckCheck } from "lucide-react";
 
 // --- Types ---
 
@@ -40,27 +35,10 @@ function isOverdue(c: Commitment): boolean {
   return new Date(c.dueDate) < new Date();
 }
 
-function statusBadge(status: string, overdue: boolean) {
-  if (overdue || status === "OVERDUE") {
-    return (
-      <span className="text-xs font-medium px-2 py-0.5 rounded bg-red-500/20 text-red-400 flex items-center gap-1">
-        <AlertTriangle size={10} />
-        Overdue
-      </span>
-    );
-  }
-  const styles: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
-    OPEN: { bg: "bg-blue-500/20", text: "text-blue-400", icon: <Clock size={10} /> },
-    FULFILLED: { bg: "bg-green-500/20", text: "text-green-400", icon: <CheckCheck size={10} /> },
-    MISSED: { bg: "bg-red-500/20", text: "text-red-400", icon: <XCircle size={10} /> },
-  };
-  const s = styles[status] || styles.OPEN;
-  return (
-    <span className={`text-xs font-medium px-2 py-0.5 rounded ${s.bg} ${s.text} flex items-center gap-1`}>
-      {s.icon}
-      {status}
-    </span>
-  );
+/** Overdue is derived (open past its due date), so it is not in the shared status map; everything else goes through statusTone. */
+function statusBadge(status: Commitment["status"], overdue: boolean) {
+  if (overdue || status === "OVERDUE") return <Badge tone="danger" dot>Overdue</Badge>;
+  return <Badge tone={statusTone(status)} dot>{status}</Badge>;
 }
 
 // --- Component ---
@@ -80,7 +58,7 @@ export default function CommitmentsPage() {
         params.status = filter;
       }
       const data = await sweetleaseApi.get<CommitmentsResponse>(
- "/api/admin/concierge/commitments",
+        "/api/admin/concierge/commitments",
         params
       );
       setCommitments(data.commitments);
@@ -111,9 +89,10 @@ export default function CommitmentsPage() {
   useEffect(() => {
     setLoading(true);
     fetchCommitments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
-  const filters: { key: FilterKey; label: string }[] = [
+  const filters: Chip<FilterKey>[] = [
     { key: "ALL", label: "All" },
     { key: "OPEN", label: "Open" },
     { key: "OVERDUE", label: "Overdue" },
@@ -121,120 +100,75 @@ export default function CommitmentsPage() {
     { key: "MISSED", label: "Missed" },
   ];
 
+  const reload = () => { setLoading(true); fetchCommitments(); };
+
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900 flex items-center gap-3">
-            <CheckCheck size={24} className="text-amber-500" />
+      <PageHeader
+        title={
+          <span className="inline-flex items-center gap-2">
             Commitments
-            {total > 0 && (
-              <span className="px-2.5 py-0.5 text-xs font-bold bg-slate-600 text-slate-900 rounded-full">
-                {total}
-              </span>
-            )}
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Track promises made to and by contacts
-          </p>
-        </div>
-        <button
-          onClick={() => { setLoading(true); fetchCommitments(); }}
-          className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-500 hover:text-slate-900 rounded-lg text-sm transition"
-        >
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          Refresh
-        </button>
-      </div>
+            {total > 0 && <Badge tone="neutral">{total}</Badge>}
+          </span>
+        }
+        description="Track promises made to and by contacts"
+        actions={
+          <Button variant="secondary" onClick={reload} loading={loading} icon={<RefreshCw size={14} aria-hidden />}>
+            Refresh
+          </Button>
+        }
+      />
 
-      {/* Filter Tabs */}
-      <div className="flex gap-1 mb-4">
-        {filters.map((f) => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
-              filter === f.key
-                ? "bg-amber-600 text-white"
-                : "bg-slate-50 text-slate-500 hover:text-slate-900"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
+      <FilterChips items={filters} value={filter} onChange={setFilter} className="mb-4" />
 
-      {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <Card className="overflow-hidden">
         {loading ? (
           <Spinner />
         ) : error ? (
           <div className="p-4">
-            <ErrorBanner message={error} onRetry={() => { setLoading(true); fetchCommitments(); }} />
+            <ErrorBanner message={error} onRetry={reload} />
           </div>
         ) : commitments.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 text-sm">
-            No commitments found for this filter.
-          </div>
+          <EmptyState
+            title="No commitments found"
+            hint="Nothing matches this filter."
+            icon={<CheckCheck size={28} className="mx-auto" aria-hidden />}
+          />
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 text-left">
-                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Contact
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Description
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Owner
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Due Date
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Action
-                </th>
+          <Table>
+            <THead>
+              <tr>
+                <TH>Contact</TH>
+                <TH>Description</TH>
+                <TH>Owner</TH>
+                <TH>Due Date</TH>
+                <TH>Status</TH>
+                <TH>Action</TH>
               </tr>
-            </thead>
-            <tbody>
+            </THead>
+            <TBody>
               {commitments.map((c) => {
                 const overdue = isOverdue(c);
                 const isTerminal = c.status === "FULFILLED" || c.status === "MISSED";
                 return (
-                  <tr
-                    key={c.id}
-                    className={`border-b border-slate-200 hover:bg-slate-50 transition ${
-                      overdue ? "border-l-2 border-l-red-500" : ""
-                    }`}
-                  >
-                    <td className="px-4 py-3 text-slate-900 font-medium">
+                  <TR key={c.id} className="hover:bg-slate-50">
+                    <TD className="font-medium text-slate-900">
                       <a
                         href={`/admin/concierge/contacts/${c.contactId}`}
-                        className="hover:text-amber-400 transition"
+                        className="hover:text-amber-700 transition-colors"
                       >
                         {c.contactName}
                       </a>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 max-w-xs truncate">
+                    </TD>
+                    <TD muted className="max-w-xs truncate">
                       {c.description}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`text-xs font-medium px-2 py-0.5 rounded ${
-                          c.owner === "US"
-                            ? "bg-amber-500/20 text-amber-400"
-                            : "bg-blue-500/20 text-blue-400"
-                        }`}
-                      >
+                    </TD>
+                    <TD>
+                      <Badge tone={c.owner === "US" ? "warning" : "info"}>
                         {c.owner === "US" ? "Us" : "Them"}
-                      </span>
-                    </td>
-                    <td className={`px-4 py-3 text-xs ${overdue ? "text-red-400 font-medium" : "text-slate-500"}`}>
+                      </Badge>
+                    </TD>
+                    <TD muted className={overdue ? "font-medium" : undefined}>
                       {c.dueDate
                         ? new Date(c.dueDate).toLocaleDateString([], {
                             month: "short",
@@ -242,37 +176,37 @@ export default function CommitmentsPage() {
                             year: "numeric",
                           })
                         : "-"}
-                    </td>
-                    <td className="px-4 py-3">
-                      {statusBadge(c.status, overdue)}
-                    </td>
-                    <td className="px-4 py-3">
+                    </TD>
+                    <TD>{statusBadge(c.status, overdue)}</TD>
+                    <TD>
                       {!isTerminal && (
                         <div className="flex items-center gap-1.5">
-                          <button
+                          <Button
+                            variant="secondary"
+                            size="sm"
                             onClick={() => handleMarkStatus(c.id, "FULFILLED")}
-                            disabled={actionLoading === c.id}
-                            className="text-xs font-medium px-2 py-1 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 transition disabled:opacity-50"
+                            loading={actionLoading === c.id}
                           >
-                            {actionLoading === c.id ? "..." : "Fulfilled"}
-                          </button>
-                          <button
+                            Fulfilled
+                          </Button>
+                          <Button
+                            variant="dangerOutline"
+                            size="sm"
                             onClick={() => handleMarkStatus(c.id, "MISSED")}
                             disabled={actionLoading === c.id}
-                            className="text-xs font-medium px-2 py-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition disabled:opacity-50"
                           >
-                            {actionLoading === c.id ? "..." : "Missed"}
-                          </button>
+                            Missed
+                          </Button>
                         </div>
                       )}
-                    </td>
-                  </tr>
+                    </TD>
+                  </TR>
                 );
               })}
-            </tbody>
-          </table>
+            </TBody>
+          </Table>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

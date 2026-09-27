@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { LogOut, Lock, RefreshCw } from "lucide-react";
+import { LogOut, Lock } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
+import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
+import { Button, Card, CardHeader, CardBody, Badge, statusTone, PageHeader, Field, Input, Select } from "@/components/kit";
 import { useApi } from "@/lib/hooks";
 import { settingsService } from "@/lib/services/settings";
+import { cn } from "@/lib/utils";
 
 interface Settings {
   siteTitle?: string;
@@ -17,6 +20,37 @@ interface Settings {
   emailNotifications?: boolean;
   alertsOnCritical?: boolean;
   [key: string]: any;
+}
+
+/** Accessible on/off switch. The kit has no switch yet, so this stays local to settings. */
+function Toggle({ checked, onChange, label, danger }: { checked: boolean; onChange: (v: boolean) => void; label: string; danger?: boolean }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1",
+        checked ? (danger ? "bg-red-600" : "bg-amber-600") : "bg-slate-300"
+      )}
+    >
+      <span className={cn("inline-block h-4 w-4 rounded-full bg-white transition-transform", checked ? "translate-x-4" : "translate-x-0.5")} aria-hidden />
+    </button>
+  );
+}
+
+function Row({ title, description, children, last }: { title: string; description?: string; children?: React.ReactNode; last?: boolean }) {
+  return (
+    <div className={cn("flex items-center justify-between gap-4 py-3", !last && "border-b border-slate-200")}>
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-slate-900">{title}</p>
+        {description && <p className="text-xs text-slate-500 mt-0.5">{description}</p>}
+      </div>
+      {children && <div className="shrink-0">{children}</div>}
+    </div>
+  );
 }
 
 export default function SettingsPage() {
@@ -98,306 +132,157 @@ export default function SettingsPage() {
   const hasError = settingsError || twoFAError;
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-3xl">
       {dialog}
-      {/* Page Title */}
-      <div>
-        <h1 className="text-lg font-semibold text-slate-900 mb-2">Settings</h1>
-        <p className="text-slate-500">Manage your admin account and system configuration</p>
-      </div>
+      <PageHeader title="Settings" description="Manage your admin account and system configuration" />
 
       {/* Error State */}
       {hasError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between">
-          <span className="text-red-900">Failed to load settings</span>
-          <button
-            onClick={() => {
-              refetchSettings();
-              refetch2FA();
-            }}
-            className="text-red-600 hover:text-red-700 font-medium"
-          >
-            Retry
-          </button>
-        </div>
+        <ErrorBanner
+          className="mb-5"
+          message="Failed to load settings"
+          onRetry={() => {
+            refetchSettings();
+            refetch2FA();
+          }}
+        />
       )}
 
       {/* Loading State */}
-      {isLoading && (
-        <div className="flex items-center justify-center py-12">
-          <RefreshCw className="animate-spin text-amber-600" size={32} />
-        </div>
-      )}
+      {isLoading && <Spinner label="Loading settings" />}
 
       {!isLoading && (
-        <>
+        <div className="space-y-5">
           {/* Account Section */}
-          <div className="bg-white border border-slate-200 rounded-lg  p-6 space-y-6">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">
-                Account
-              </h2>
-
-              <div className="space-y-4">
-                <div className="flex items-start justify-between pb-4 border-b border-slate-200">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-600 mb-1">
-                      Admin Name
-                    </p>
-                    <p className="text-lg font-semibold text-slate-900">{settings?.settings?.adminName || "Admin User"}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start justify-between pb-4 border-b border-slate-200">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-600 mb-1">
-                      Email
-                    </p>
-                    <p className="text-lg text-slate-900">{settings?.settings?.adminEmail || "admin@sweetlease.com"}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-600 mb-1">
-                      Role
-                    </p>
-                    <span className="inline-block border border-slate-200 rounded-md bg-white px-3 py-1 text-sm font-semibold text-slate-900">
-                      ADMIN
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <Card>
+            <CardHeader title="Account" />
+            <CardBody className="pt-1 pb-1">
+              <Row title="Admin Name" description={settings?.settings?.adminName || "Admin User"} />
+              <Row title="Email" description={settings?.settings?.adminEmail || "admin@sweetlease.com"} />
+              <Row title="Role" last>
+                <Badge tone={statusTone("ADMIN")}>ADMIN</Badge>
+              </Row>
+            </CardBody>
+          </Card>
 
           {/* Security Section */}
-          <div className="bg-white border border-slate-200 rounded-lg  p-6 space-y-6">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Security
-            </h2>
-
-            <div className="space-y-4">
-              {/* Two-Factor Authentication */}
-              <div className="flex items-center justify-between pb-4 border-b border-slate-200">
-                <div>
-                  <p className="font-semibold text-slate-900">Two-Factor Authentication</p>
-                  <p className="text-sm text-slate-500">
-                    {twoFAStatus?.enabled ? "Enabled" : "Disabled"}
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleToggle("twoFactorEnabled", !changedSettings.twoFactorEnabled)}
-                  className={`w-12 h-6 rounded-full border border-slate-300 transition-colors ${
-                    changedSettings.twoFactorEnabled ? "bg-green-500" : "bg-slate-300"
-                  }`}
-                />
-              </div>
-
-              {/* Change Password */}
-              <div className="flex items-center justify-between pb-4 border-b border-slate-200">
-                <div>
-                  <p className="font-semibold text-slate-900">Change Password</p>
-                  <p className="text-sm text-slate-500">
-                    Last changed {settings?.settings?.passwordLastChanged || "3 months ago"}
-                  </p>
-                </div>
-                <button className="border border-slate-200 rounded-md bg-white text-slate-700 px-4 py-2 font-medium hover:bg-slate-50 transition-colors flex items-center gap-2">
-                  <Lock size={16} />
-                  Change
-                </button>
-              </div>
-
-              {/* Session Timeout */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold text-slate-900">Session Timeout</p>
-                  <p className="text-sm text-slate-500">
-                    Automatically log out after inactivity
-                  </p>
-                </div>
-                <select
+          <Card>
+            <CardHeader title="Security" />
+            <CardBody className="pt-1 pb-1">
+              <Row title="Two-Factor Authentication" description={twoFAStatus?.enabled ? "Enabled" : "Disabled"}>
+                <Toggle label="Two-Factor Authentication" checked={!!changedSettings.twoFactorEnabled} onChange={(v) => handleToggle("twoFactorEnabled", v)} />
+              </Row>
+              <Row title="Change Password" description={`Last changed ${settings?.settings?.passwordLastChanged || "3 months ago"}`}>
+                <Button size="sm" icon={<Lock size={14} />}>Change</Button>
+              </Row>
+              <Row title="Session Timeout" description="Automatically log out after inactivity" last>
+                <Select
+                  aria-label="Session timeout"
+                  className="w-auto"
                   value={changedSettings.sessionTimeout?.toString() || "30"}
                   onChange={(e) => handleSelectChange("sessionTimeout", e.target.value)}
-                  className="border border-slate-200 rounded-md px-4 py-2 text-slate-900 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 bg-white font-medium"
                 >
                   <option value="15">15 minutes</option>
                   <option value="30">30 minutes</option>
                   <option value="60">1 hour</option>
                   <option value="240">4 hours</option>
-                </select>
-              </div>
-            </div>
-          </div>
+                </Select>
+              </Row>
+            </CardBody>
+          </Card>
 
           {/* Notifications Section */}
-          <div className="bg-white border border-slate-200 rounded-lg  p-6 space-y-6">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Notifications
-            </h2>
-
-            <div className="space-y-4">
-              <label className="flex items-center justify-between cursor-pointer pb-4 border-b border-slate-200">
-                <span className="font-semibold text-slate-900">
-                  Push Notifications
-                </span>
-                <button
-                  onClick={() => handleToggle("pushNotifications", !changedSettings.pushNotifications)}
-                  className={`w-12 h-6 rounded-full border border-slate-300 transition-colors ${
-                    changedSettings.pushNotifications ? "bg-green-500" : "bg-slate-300"
-                  }`}
-                />
-              </label>
-
-              <label className="flex items-center justify-between cursor-pointer pb-4 border-b border-slate-200">
-                <span className="font-semibold text-slate-900">
-                  Email Notifications
-                </span>
-                <button
-                  onClick={() => handleToggle("emailNotifications", !changedSettings.emailNotifications)}
-                  className={`w-12 h-6 rounded-full border border-slate-300 transition-colors ${
-                    changedSettings.emailNotifications ? "bg-green-500" : "bg-slate-300"
-                  }`}
-                />
-              </label>
-
-              <label className="flex items-center justify-between cursor-pointer">
-                <span className="font-semibold text-slate-900">
-                  Alert on Critical Events
-                </span>
-                <button
-                  onClick={() => handleToggle("alertsOnCritical", !changedSettings.alertsOnCritical)}
-                  className={`w-12 h-6 rounded-full border border-slate-300 transition-colors ${
-                    changedSettings.alertsOnCritical ? "bg-green-500" : "bg-slate-300"
-                  }`}
-                />
-              </label>
-            </div>
-          </div>
+          <Card>
+            <CardHeader title="Notifications" />
+            <CardBody className="pt-1 pb-1">
+              <Row title="Push Notifications">
+                <Toggle label="Push Notifications" checked={!!changedSettings.pushNotifications} onChange={(v) => handleToggle("pushNotifications", v)} />
+              </Row>
+              <Row title="Email Notifications">
+                <Toggle label="Email Notifications" checked={!!changedSettings.emailNotifications} onChange={(v) => handleToggle("emailNotifications", v)} />
+              </Row>
+              <Row title="Alert on Critical Events" last>
+                <Toggle label="Alert on Critical Events" checked={!!changedSettings.alertsOnCritical} onChange={(v) => handleToggle("alertsOnCritical", v)} />
+              </Row>
+            </CardBody>
+          </Card>
 
           {/* System Configuration Section */}
-          <div className="bg-white border border-slate-200 rounded-lg  p-6 space-y-6">
-            <h2 className="text-lg font-semibold text-slate-900">
-              System Configuration
-            </h2>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-2">
-                  Site Title
-                </label>
-                <input
+          <Card>
+            <CardHeader title="System Configuration" />
+            <CardBody className="space-y-4">
+              <Field label="Site Title">
+                <Input
                   type="text"
                   value={changedSettings.siteTitle || ""}
                   onChange={(e) => handleInputChange("siteTitle", e.target.value)}
-                  className="w-full border border-slate-200 rounded-md px-4 py-2 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
                 />
-              </div>
+              </Field>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-2">
-                  Support Email
-                </label>
-                <input
+              <Field label="Support Email">
+                <Input
                   type="email"
                   value={changedSettings.supportEmail || ""}
                   onChange={(e) => handleInputChange("supportEmail", e.target.value)}
-                  className="w-full border border-slate-200 rounded-md px-4 py-2 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
                 />
-              </div>
+              </Field>
 
-              <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-                <div>
-                  <p className="font-semibold text-slate-900">Maintenance Mode</p>
-                  <p className="text-sm text-slate-500">
-                    Disable public access for maintenance
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleToggle("maintenanceMode", !changedSettings.maintenanceMode)}
-                  className={`w-12 h-6 rounded-full border border-slate-300 transition-colors ${
-                    changedSettings.maintenanceMode ? "bg-red-500" : "bg-slate-300"
-                  }`}
-                />
+              <div className="border-t border-slate-200">
+                <Row title="Maintenance Mode" description="Disable public access for maintenance" last>
+                  <Toggle label="Maintenance Mode" danger checked={!!changedSettings.maintenanceMode} onChange={(v) => handleToggle("maintenanceMode", v)} />
+                </Row>
               </div>
 
               {/* Save Button */}
-              <div className="pt-4 border-t border-slate-200">
-                <button
-                  onClick={handleSaveSettings}
-                  disabled={isSaving}
-                  className="w-full bg-amber-600 text-white rounded-md px-4 py-3 font-medium hover:bg-amber-700 transition-colors disabled:opacity-50"
-                >
+              <div className="pt-4 border-t border-slate-200 space-y-3">
+                <Button variant="primary" className="w-full" onClick={handleSaveSettings} loading={isSaving}>
                   {isSaving ? "Saving..." : "Save Settings"}
-                </button>
+                </Button>
                 {saveMessage && (
-                  <div
-                    className={`mt-4 border rounded-lg p-4 text-sm ${
-                      saveMessage.includes("successfully")
-                        ? "bg-green-50 border-green-200 text-green-900"
-                        : "bg-red-50 border-red-200 text-red-900"
-                    }`}
-                  >
-                    {saveMessage}
-                  </div>
+                  saveMessage.includes("successfully") ? (
+                    <div role="status" className="rounded-sm border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{saveMessage}</div>
+                  ) : (
+                    <ErrorBanner message={saveMessage} />
+                  )
                 )}
               </div>
-            </div>
-          </div>
+            </CardBody>
+          </Card>
 
           {/* Danger Zone */}
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 space-y-6">
-            <h2 className="text-lg font-semibold text-red-900">
-              Danger Zone
-            </h2>
-
-            <div className="space-y-3">
-              <button
-                onClick={handleSignOut}
-                className="w-full bg-red-600 text-white rounded-md px-4 py-3 font-medium flex items-center justify-center gap-2 hover:bg-red-700 transition-colors"
-              >
-                <LogOut size={20} />
+          <Card className="border-red-200">
+            <CardHeader title={<span className="text-red-900">Danger Zone</span>} />
+            <CardBody>
+              <Button variant="danger" className="w-full" icon={<LogOut size={14} />} onClick={handleSignOut}>
                 Sign Out
-              </button>
-
-            </div>
-          </div>
+              </Button>
+            </CardBody>
+          </Card>
 
           {/* About Section */}
-          <div className="bg-white border border-slate-200 rounded-lg  p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-slate-900 mb-6">
-              About
-            </h2>
-
-            <div className="space-y-4">
-              <div className="flex items-start justify-between pb-4 border-b border-slate-200">
-                <p className="text-sm font-semibold text-slate-600">
-                  Version
-                </p>
-                <p className="font-semibold text-slate-900">{settings?.settings?.version || "1.0.0"}</p>
-              </div>
-
-              <div className="flex items-start justify-between pb-4 border-b border-slate-200">
-                <p className="text-sm font-semibold text-slate-600">
-                  Environment
-                </p>
-                <p className="font-semibold text-slate-900">{settings?.settings?.environment || "Production"}</p>
-              </div>
-
-              <div className="flex items-start justify-between">
-                <p className="text-sm font-semibold text-slate-600">
-                  Last Deploy
-                </p>
-                <p className="font-semibold text-slate-900">{settings?.settings?.lastDeploy || "2024-02-08 12:34:56 UTC"}</p>
-              </div>
-            </div>
-          </div>
+          <Card>
+            <CardHeader title="About" />
+            <CardBody className="pt-1 pb-1">
+              <dl>
+                <div className="flex justify-between items-center gap-4 py-3 border-b border-slate-200">
+                  <dt className="text-sm text-slate-600">Version</dt>
+                  <dd className="text-sm font-medium text-slate-900 tabular">{settings?.settings?.version || "1.0.0"}</dd>
+                </div>
+                <div className="flex justify-between items-center gap-4 py-3 border-b border-slate-200">
+                  <dt className="text-sm text-slate-600">Environment</dt>
+                  <dd className="text-sm font-medium text-slate-900">{settings?.settings?.environment || "Production"}</dd>
+                </div>
+                <div className="flex justify-between items-center gap-4 py-3">
+                  <dt className="text-sm text-slate-600">Last Deploy</dt>
+                  <dd className="text-sm font-medium text-slate-900 tabular">{settings?.settings?.lastDeploy || "2024-02-08 12:34:56 UTC"}</dd>
+                </div>
+              </dl>
+            </CardBody>
+          </Card>
 
           {/* Footer */}
-          <div className="text-center text-sm text-slate-500">
-            <p>Settings are automatically saved. Contact support for additional help.</p>
-          </div>
-        </>
+          <p className="text-center text-sm text-slate-500">Settings are automatically saved. Contact support for additional help.</p>
+        </div>
       )}
     </div>
   );

@@ -1,242 +1,108 @@
 "use client";
 
-import { useState } from "react";
-import { BarChart3, Play, ExternalLink } from "lucide-react";
+import { BarChart3, Play, ExternalLink, Bug, AlertTriangle } from "lucide-react";
+import { buttonVariants, Card, CardHeader, CardBody, PageHeader } from "@/components/kit";
 
 const POSTHOG_PROJECT_URL = "https://us.posthog.com/project";
 const SENTRY_ORG_URL = "https://sentry.io/organizations";
 
+const linkBtn = buttonVariants({ variant: "secondary", size: "sm" });
+
 export default function AnalyticsPage() {
-  const [activeTab, setActiveTab] = useState<"posthog" | "sentry">("posthog");
-
   return (
-    <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900 flex items-center gap-3">
-            <BarChart3 size={24} className="text-amber-500" />
-            Analytics & Monitoring
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            User behavior, session replays, and error tracking
-          </p>
-        </div>
-      </div>
+    <div className="max-w-7xl">
+      <PageHeader
+        title="Analytics & Monitoring"
+        description="User behavior, session replays, and error tracking. Each destination opens in its own tool."
+      />
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => setActiveTab("posthog")}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition ${
-            activeTab === "posthog"
-              ? "bg-amber-600 text-white"
-              : "bg-slate-50 text-slate-500 hover:text-slate-900"
-          }`}
-        >
-          PostHog - User Analytics
-        </button>
-        <button
-          onClick={() => setActiveTab("sentry")}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition ${
-            activeTab === "sentry"
-              ? "bg-red-600 text-white"
-              : "bg-slate-50 text-slate-500 hover:text-slate-900"
-          }`}
-        >
-          Sentry - Error Tracking
-        </button>
-      </div>
-
-      {activeTab === "posthog" && (
-        <div className="space-y-6">
-          {/* Quick Stats Embeds */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white border border-slate-200 rounded-lg p-5">
-              <div className="text-xs uppercase tracking-wider text-slate-500 mb-2 font-medium">
-                What PostHog Tracks
-              </div>
-              <ul className="space-y-2 text-sm text-slate-600">
-                <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  Every pageview across the site
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                  Session recordings (watch user sessions)
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  Button clicks, form submissions, inputs
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                  Referrer and UTM source tracking
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                  Bounce rates and page leave events
-                </li>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* PostHog */}
+        <Card>
+          <CardHeader
+            title="PostHog"
+            description="Product analytics for sweetlease.io"
+            actions={
+              <a href={POSTHOG_PROJECT_URL} target="_blank" rel="noopener noreferrer" className={linkBtn}>
+                <BarChart3 size={14} aria-hidden /> Open dashboard <ExternalLink size={12} className="text-slate-400" aria-hidden />
+              </a>
+            }
+          />
+          <CardBody className="space-y-4">
+            <div>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">What it tracks</p>
+              <ul className="space-y-1.5 text-sm text-slate-700">
+                <li>Every pageview across the site</li>
+                <li>Session recordings (watch user sessions)</li>
+                <li>Button clicks, form submissions, inputs</li>
+                <li>Referrer and UTM source tracking</li>
+                <li>Bounce rates and page leave events</li>
               </ul>
             </div>
-
-            <div className="bg-white border border-slate-200 rounded-lg p-5">
-              <div className="text-xs uppercase tracking-wider text-slate-500 mb-2 font-medium">
-                Key Pages Tracked
-              </div>
-              <ul className="space-y-2 text-sm text-slate-600">
-                <li className="flex items-center gap-2">
-                  <span className="text-slate-500 font-mono text-xs">/site-access</span>
-                  Homepage / signup
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-slate-500 font-mono text-xs">/programs/*</span>
-                  Program portals (515)
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-slate-500 font-mono text-xs">/reddit</span>
-                  Reddit landing page
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-slate-500 font-mono text-xs">/matches/*</span>
-                  Tenant matches pages
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-slate-500 font-mono text-xs">/onboarding/*</span>
-                  Onboarding survey
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-slate-500 font-mono text-xs">/landlord/*</span>
-                  Landlord invite pages
-                </li>
+            <div>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Key pages tracked</p>
+              <ul className="space-y-1.5 text-sm text-slate-700">
+                <li className="flex items-baseline gap-2"><code className="text-xs font-mono text-slate-500 shrink-0">/site-access</code> Homepage / signup</li>
+                <li className="flex items-baseline gap-2"><code className="text-xs font-mono text-slate-500 shrink-0">/programs/*</code> Program portals (515)</li>
+                <li className="flex items-baseline gap-2"><code className="text-xs font-mono text-slate-500 shrink-0">/reddit</code> Reddit landing page</li>
+                <li className="flex items-baseline gap-2"><code className="text-xs font-mono text-slate-500 shrink-0">/matches/*</code> Tenant matches pages</li>
+                <li className="flex items-baseline gap-2"><code className="text-xs font-mono text-slate-500 shrink-0">/onboarding/*</code> Onboarding survey</li>
+                <li className="flex items-baseline gap-2"><code className="text-xs font-mono text-slate-500 shrink-0">/landlord/*</code> Landlord invite pages</li>
               </ul>
             </div>
+          </CardBody>
+        </Card>
 
-            <div className="bg-white border border-slate-200 rounded-lg p-5">
-              <div className="text-xs uppercase tracking-wider text-slate-500 mb-2 font-medium">
-                Quick Actions
-              </div>
-              <div className="space-y-3">
-                <a
-                  href={`${POSTHOG_PROJECT_URL}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 px-4 py-3 bg-slate-50 hover:bg-slate-100 rounded-lg transition text-sm text-slate-900"
-                >
-                  <BarChart3 size={16} className="text-amber-500" />
-                  Open PostHog Dashboard
-                  <ExternalLink size={12} className="ml-auto text-slate-500" />
-                </a>
-                <a
-                  href={`${POSTHOG_PROJECT_URL}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 px-4 py-3 bg-slate-50 hover:bg-slate-100 rounded-lg transition text-sm text-slate-900"
-                >
-                  <Play size={16} className="text-emerald-500" />
-                  Watch Session Recordings
-                  <ExternalLink size={12} className="ml-auto text-slate-500" />
-                </a>
-              </div>
+        {/* Session recordings */}
+        <Card>
+          <CardHeader
+            title="Session recordings"
+            description="Watch real visitors move through the site"
+            actions={
+              <a href={POSTHOG_PROJECT_URL} target="_blank" rel="noopener noreferrer" className={linkBtn}>
+                <Play size={14} aria-hidden /> Watch recordings <ExternalLink size={12} className="text-slate-400" aria-hidden />
+              </a>
+            }
+          />
+          <CardBody>
+            <p className="text-sm text-slate-700">
+              Recordings live in the same PostHog project. Filter by page (for example <code className="text-xs font-mono text-slate-500">/onboarding/*</code>) to see where people drop off, or by UTM source to compare Reddit and program-portal traffic.
+            </p>
+          </CardBody>
+        </Card>
+
+        {/* Sentry */}
+        <Card>
+          <CardHeader
+            title="Sentry"
+            description="Error and performance monitoring"
+            actions={
+              <a href={SENTRY_ORG_URL} target="_blank" rel="noopener noreferrer" className={linkBtn}>
+                <AlertTriangle size={14} aria-hidden /> Open Sentry <ExternalLink size={12} className="text-slate-400" aria-hidden />
+              </a>
+            }
+          />
+          <CardBody className="space-y-4">
+            <div>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">What it tracks</p>
+              <ul className="space-y-1.5 text-sm text-slate-700">
+                <li>Unhandled exceptions and errors</li>
+                <li>API failures and timeouts</li>
+                <li>Performance metrics (slow pages, API latency)</li>
+                <li>Stack traces with source maps</li>
+              </ul>
             </div>
-          </div>
-
-          {/* PostHog Embed */}
-          <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-              <div className="text-sm font-medium text-slate-900">PostHog Dashboard</div>
-              <a
-                href={POSTHOG_PROJECT_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-amber-500 hover:text-amber-400 flex items-center gap-1"
-              >
-                Open full dashboard <ExternalLink size={10} />
+            <div className="border-t border-slate-200 pt-4">
+              <p className="text-sm text-slate-700 mb-3">
+                Sentry error reports are also available on the Bugs page with full issue details, stack traces, and resolution status.
+              </p>
+              <a href="/admin/bugs" className={linkBtn}>
+                <Bug size={14} aria-hidden /> View bug reports (Hive)
               </a>
             </div>
-            <div className="p-6">
-              <iframe
-                src={`${POSTHOG_PROJECT_URL}`}
-                className="w-full h-[700px] rounded-lg border border-slate-200"
-                title="PostHog Dashboard"
-                allow="clipboard-read; clipboard-write"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "sentry" && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white border border-slate-200 rounded-lg p-5">
-              <div className="text-xs uppercase tracking-wider text-slate-500 mb-2 font-medium">
-                What Sentry Tracks
-              </div>
-              <ul className="space-y-2 text-sm text-slate-600">
-                <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                  Unhandled exceptions and errors
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  API failures and timeouts
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                  Performance metrics (slow pages, API latency)
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                  Stack traces with source maps
-                </li>
-              </ul>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-lg p-5">
-              <div className="text-xs uppercase tracking-wider text-slate-500 mb-2 font-medium">
-                Quick Actions
-              </div>
-              <div className="space-y-3">
-                <a
-                  href="/admin/bugs"
-                  className="flex items-center gap-3 px-4 py-3 bg-slate-50 hover:bg-slate-100 rounded-lg transition text-sm text-slate-900"
-                >
-                  <Bug size={16} className="text-red-500" />
-                  View Bug Reports (Hive)
-                </a>
-                <a
-                  href={SENTRY_ORG_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 px-4 py-3 bg-slate-50 hover:bg-slate-100 rounded-lg transition text-sm text-slate-900"
-                >
-                  <ExternalLink size={16} className="text-amber-500" />
-                  Open Sentry Dashboard
-                  <ExternalLink size={12} className="ml-auto text-slate-500" />
-                </a>
-              </div>
-            </div>
-          </div>
-
-          {/* Link to existing bugs page */}
-          <div className="bg-white border border-slate-200 rounded-lg p-6 text-center">
-            <p className="text-slate-500 text-sm mb-4">
-              Sentry error reports are available on the Bugs page with full issue details, stack traces, and resolution status.
-            </p>
-            <a
-              href="/admin/bugs"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition"
-            >
-              <Bug size={16} />
-              Go to Bug Reports
-            </a>
-          </div>
-        </div>
-      )}
+          </CardBody>
+        </Card>
+      </div>
     </div>
   );
 }
-
-// Need to import Bug icon used in Sentry tab
-import { Bug } from "lucide-react";

@@ -3,15 +3,14 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
-import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
+import { Button, Card, CardHeader, CardBody, Badge, statusTone, StatTile, PageHeader, FilterChips, type Chip, Table, THead, TH, TBody, TR, TD, Input, Select } from "@/components/kit";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
 import {
   RefreshCw,
-  Search,
   MapPin,
   ChevronLeft,
   ChevronRight,
   Stethoscope,
-  GraduationCap,
   Phone,
   Mail,
 } from "lucide-react";
@@ -49,23 +48,18 @@ interface ProspectResponse {
   topStates: Array<{ state: string | null; count: number }>;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  new: "bg-blue-100 text-blue-700",
-  enriched: "bg-purple-100 text-purple-700",
-  contacted: "bg-amber-100 text-amber-700",
-  converted: "bg-green-100 text-green-700",
-  skipped: "bg-slate-100 text-slate-500",
-};
-
 const CREDENTIAL_LABELS: Record<string, string> = {
- "M.D.": "MD",
+  "M.D.": "MD",
   MD: "MD",
- "D.O.": "DO",
+  "D.O.": "DO",
   DO: "DO",
   DMD: "DMD",
   DDS: "DDS",
   MBBS: "MBBS",
 };
+
+/** FilterChips needs a selected key; "" is also the key of a null-state row, so "no filter" gets its own sentinel. */
+const NO_STATE = "__all__";
 
 export default function NpiProspectsPage() {
   const [data, setData] = useState<ProspectResponse | null>(null);
@@ -82,7 +76,7 @@ export default function NpiProspectsPage() {
     setLoading(true);
     try {
       const result = await api.get<ProspectResponse>(
- "/api/admin/npi-prospects",
+        "/api/admin/npi-prospects",
         {
           limit: pageSize,
           offset: page * pageSize,
@@ -128,112 +122,74 @@ export default function NpiProspectsPage() {
     return phone;
   };
 
+  const stateChips: Chip<string>[] = (data?.topStates || []).map((s) => ({
+    key: s.state || "",
+    label: s.state || "?",
+    count: s.count,
+  }));
+
+  const hasFilters = !!(stateFilter || statusFilter || credentialFilter);
+
   return (
-    <div className="p-6 max-w-[1400px] mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900 flex items-center gap-3">
-            <GraduationCap size={28} />
-            NPI Prospects
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            New residents & fellows from NPI Registry weekly imports
-          </p>
-        </div>
-        <button
-          onClick={() => fetchData()}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm rounded-lg hover:bg-slate-800 disabled:opacity-50 transition"
-        >
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          Refresh
-        </button>
-      </div>
+    <div className="max-w-[1400px]">
+      <PageHeader
+        title="NPI Prospects"
+        description="New residents & fellows from NPI Registry weekly imports"
+        actions={
+          <Button variant="ghost" size="icon" aria-label="Refresh" onClick={() => fetchData()} disabled={loading}>
+            <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
+          </Button>
+        }
+      />
 
-      {error && (
-        <ErrorBanner message={error} onRetry={fetchData} className="mb-6" />
-      )}
+      {error && <ErrorBanner message={error} onRetry={fetchData} className="mb-5" />}
 
-      {/* Stats Cards */}
+      {/* Stats */}
       {data && (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
-          <div className="bg-white border border-slate-200 rounded-lg p-4">
-            <div className="text-xs text-slate-500 uppercase tracking-wider">
-              Total
-            </div>
-            <div className="text-2xl font-semibold text-slate-900 mt-1">
-              {data.total.toLocaleString()}
-            </div>
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-5">
+          <StatTile label="Total" value={data.total.toLocaleString()} />
           {Object.entries(data.stats).map(([status, count]) => (
-            <div
-              key={status}
-              className="bg-white border border-slate-200 rounded-lg p-4"
-            >
-              <div className="text-xs text-slate-500 uppercase tracking-wider">
-                {status}
-              </div>
-              <div className="text-2xl font-semibold text-slate-900 mt-1">
-                {count.toLocaleString()}
-              </div>
-            </div>
+            <StatTile key={status} label={status} value={count.toLocaleString()} />
           ))}
         </div>
       )}
 
-      {/* Top States */}
-      {data?.topStates && data.topStates.length > 0 && (
-        <div className="bg-white border border-slate-200 rounded-lg p-4 mb-6">
-          <div className="text-xs text-slate-500 uppercase tracking-wider mb-3">
-            Top States
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {data.topStates.map((s) => (
-              <button
-                key={s.state}
-                onClick={() => {
-                  setStateFilter(
-                    stateFilter === (s.state || "") ? "" : s.state || ""
-                  );
-                  setPage(0);
-                }}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
-                  stateFilter === s.state
-                    ? "bg-slate-900 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                {s.state || "?"} ({s.count})
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* Top states */}
+      {stateChips.length > 0 && (
+        <Card className="mb-5">
+          <CardHeader title="Top States" description="Click a state to filter, click again to clear" />
+          <CardBody>
+            <FilterChips
+              items={stateChips}
+              value={stateFilter || NO_STATE}
+              onChange={(k) => {
+                setStateFilter(stateFilter === k ? "" : k);
+                setPage(0);
+              }}
+            />
+          </CardBody>
+        </Card>
       )}
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-          />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by name, NPI, or city..."
-            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-          />
-        </div>
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 mb-4">
+        <Input
+          type="search"
+          aria-label="Search prospects"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search by name, NPI, or city..."
+          className="sm:flex-1 sm:min-w-[200px] sm:max-w-md"
+        />
 
-        <select
+        <Select
+          aria-label="Filter by status"
           value={statusFilter}
           onChange={(e) => {
             setStatusFilter(e.target.value);
             setPage(0);
           }}
-          className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none"
+          className="sm:w-44"
         >
           <option value="">All Statuses</option>
           <option value="new">New</option>
@@ -241,15 +197,16 @@ export default function NpiProspectsPage() {
           <option value="contacted">Contacted</option>
           <option value="converted">Converted</option>
           <option value="skipped">Skipped</option>
-        </select>
+        </Select>
 
-        <select
+        <Select
+          aria-label="Filter by credential"
           value={credentialFilter}
           onChange={(e) => {
             setCredentialFilter(e.target.value);
             setPage(0);
           }}
-          className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none"
+          className="sm:w-44"
         >
           <option value="">All Credentials</option>
           <option value="M.D.">MD</option>
@@ -257,178 +214,128 @@ export default function NpiProspectsPage() {
           <option value="MBBS">MBBS</option>
           <option value="DMD">DMD</option>
           <option value="DDS">DDS</option>
-        </select>
+        </Select>
 
-        {(stateFilter || statusFilter || credentialFilter) && (
-          <button
+        {hasFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => {
               setStateFilter("");
               setStatusFilter("");
               setCredentialFilter("");
               setPage(0);
             }}
-            className="px-3 py-2 text-xs text-slate-500 hover:text-slate-900 transition"
           >
             Clear filters
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50">
-                <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Credential
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Location
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  NPI
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Enumerated
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Phone
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Status
-                </th>
+      <Card className="overflow-hidden">
+        <Table>
+          <THead>
+            <tr>
+              <TH>Name</TH>
+              <TH>Credential</TH>
+              <TH>Location</TH>
+              <TH>NPI</TH>
+              <TH>Enumerated</TH>
+              <TH>Phone</TH>
+              <TH>Status</TH>
+            </tr>
+          </THead>
+          <TBody>
+            {loading && !data ? (
+              <tr>
+                <td colSpan={7}>
+                  <Spinner label="Loading prospects" />
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading && !data ? (
-                <tr>
-                  <td colSpan={7} className="px-4">
-                    <Spinner label="Loading prospects" />
-                  </td>
-                </tr>
-              ) : filteredProspects.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="px-4 py-12 text-center text-sm text-slate-500"
-                  >
-                    No prospects found
-                  </td>
-                </tr>
-              ) : (
-                filteredProspects.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="hover:bg-slate-50/50 transition-colors"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-slate-900">
-                        {p.firstName} {p.middleName ? `${p.middleName} ` : ""}
-                        {p.lastName}
+            ) : filteredProspects.length === 0 ? (
+              <tr>
+                <td colSpan={7}>
+                  <EmptyState title="No prospects found" />
+                </td>
+              </tr>
+            ) : (
+              filteredProspects.map((p) => (
+                <TR key={p.id} className="hover:bg-slate-50">
+                  <TD>
+                    <div className="font-medium text-slate-900">
+                      {p.firstName} {p.middleName ? `${p.middleName} ` : ""}
+                      {p.lastName}
+                    </div>
+                    {p.email && (
+                      <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                        <Mail size={12} aria-hidden />
+                        {p.email}
                       </div>
-                      {p.email && (
-                        <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                          <Mail size={10} />
-                          {p.email}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {p.credential ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs font-medium rounded">
-                          <Stethoscope size={10} />
-                          {CREDENTIAL_LABELS[p.credential] || p.credential}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 text-xs">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {p.practiceCity || p.practiceState ? (
-                        <div className="flex items-center gap-1 text-slate-600">
-                          <MapPin size={12} className="text-slate-400" />
-                          {[p.practiceCity, p.practiceState]
-                            .filter(Boolean)
-                            .join(", ")}
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 text-xs">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs text-slate-500 font-mono">
-                        {p.npi}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs text-slate-600">
-                        {formatDate(p.enumerationDate)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {p.phone ? (
-                        <a
-                          href={`tel:${p.phone}`}
-                          className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900"
-                        >
-                          <Phone size={10} />
-                          {formatPhone(p.phone)}
-                        </a>
-                      ) : (
-                        <span className="text-slate-400 text-xs">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                          STATUS_COLORS[p.outreachStatus] ||
- "bg-slate-100 text-slate-600"
-                        }`}
-                      >
-                        {p.outreachStatus}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                    )}
+                  </TD>
+                  <TD>
+                    {p.credential ? (
+                      <Badge tone="outline">
+                        <Stethoscope size={12} aria-hidden />
+                        {CREDENTIAL_LABELS[p.credential] || p.credential}
+                      </Badge>
+                    ) : (
+                      <span className="text-slate-400">-</span>
+                    )}
+                  </TD>
+                  <TD>
+                    {p.practiceCity || p.practiceState ? (
+                      <div className="flex items-center gap-1 text-slate-700">
+                        <MapPin size={12} className="text-slate-400" aria-hidden />
+                        {[p.practiceCity, p.practiceState].filter(Boolean).join(", ")}
+                      </div>
+                    ) : (
+                      <span className="text-slate-400">-</span>
+                    )}
+                  </TD>
+                  <TD muted className="font-mono text-xs tabular">{p.npi}</TD>
+                  <TD muted className="tabular whitespace-nowrap">{formatDate(p.enumerationDate)}</TD>
+                  <TD>
+                    {p.phone ? (
+                      <a href={`tel:${p.phone}`} className="inline-flex items-center gap-1 text-slate-700 hover:text-slate-900 hover:underline tabular whitespace-nowrap">
+                        <Phone size={12} aria-hidden />
+                        {formatPhone(p.phone)}
+                      </a>
+                    ) : (
+                      <span className="text-slate-400">-</span>
+                    )}
+                  </TD>
+                  <TD>
+                    <Badge tone={statusTone(p.outreachStatus)} dot>{p.outreachStatus}</Badge>
+                  </TD>
+                </TR>
+              ))
+            )}
+          </TBody>
+        </Table>
 
         {/* Pagination */}
         {data && data.total > pageSize && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50">
-            <div className="text-xs text-slate-500">
-              Showing {page * pageSize + 1}–
-              {Math.min((page + 1) * pageSize, data.total)} of{" "}
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-slate-200 bg-slate-50">
+            <div className="text-xs text-slate-500 tabular">
+              Showing {page * pageSize + 1}-{Math.min((page + 1) * pageSize, data.total)} of{" "}
               {data.total.toLocaleString()}
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setPage(Math.max(0, page - 1))}
-                disabled={page === 0}
-                className="p-1.5 rounded border border-slate-200 hover:bg-white disabled:opacity-30 transition"
-              >
+              <Button variant="ghost" size="icon" aria-label="Previous page" onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0}>
                 <ChevronLeft size={14} />
-              </button>
-              <span className="text-xs text-slate-600">
+              </Button>
+              <span className="text-xs text-slate-600 tabular">
                 {page + 1} / {totalPages}
               </span>
-              <button
-                onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-                disabled={page >= totalPages - 1}
-                className="p-1.5 rounded border border-slate-200 hover:bg-white disabled:opacity-30 transition"
-              >
+              <Button variant="ghost" size="icon" aria-label="Next page" onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1}>
                 <ChevronRight size={14} />
-              </button>
+              </Button>
             </div>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

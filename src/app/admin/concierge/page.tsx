@@ -3,15 +3,17 @@
 import { useState, useEffect, useRef } from "react";
 import { sweetleaseApi } from "@/lib/api";
 import { usePolling } from "@/lib/hooks";
-import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
+import { Button, buttonVariants, Card, Badge, statusTone, PageHeader, FilterChips, type Chip } from "@/components/kit";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   RefreshCw,
-  Inbox,
   Mail,
   AlertCircle,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Sparkles,
   ExternalLink,
   Circle,
@@ -86,6 +88,8 @@ interface ThreadsResponse {
   unreadCount: number;
 }
 
+type Filter = "all" | "needs_reply" | "high_priority";
+
 // --- Helpers ---
 
 function relativeTime(dateStr: string | null): string {
@@ -114,51 +118,20 @@ function formatDate(dateStr: string | null): string {
 }
 
 function contactTypeBadge(type: string) {
-  const styles: Record<string, string> = {
-    LANDLORD: "bg-blue-500/20 text-blue-400",
-    RESIDENT: "bg-green-500/20 text-green-400",
-    PARTNER: "bg-purple-500/20 text-purple-400",
-  };
-  return (
-    <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${styles[type] || "bg-slate-500/20 text-slate-500"}`}>
-      {type}
-    </span>
-  );
+  return <Badge tone={statusTone(type)}>{type}</Badge>;
 }
 
 function intentBadge(intent: string | null | undefined) {
   if (!intent) return null;
-  const styles: Record<string, string> = {
-    pricing_question: "bg-amber-500/20 text-amber-400",
-    ready_to_proceed: "bg-green-500/20 text-green-400",
-    objection: "bg-red-500/20 text-red-400",
-    scheduling: "bg-blue-500/20 text-blue-400",
-    general_inquiry: "bg-slate-500/20 text-slate-500",
-    follow_up: "bg-cyan-500/20 text-cyan-400",
-    complaint: "bg-red-500/20 text-red-400",
-    information_request: "bg-indigo-500/20 text-indigo-400",
-  };
   const label = intent.replace(/_/g, " ");
-  return (
-    <span className={`text-xs font-medium px-1.5 py-0.5 rounded capitalize ${styles[intent] || "bg-slate-500/20 text-slate-500"}`}>
-      {label}
-    </span>
-  );
+  return <Badge tone={statusTone(intent)} className="capitalize">{label}</Badge>;
 }
 
-function urgencyDot(urgency: string | null | undefined) {
+/** Urgency is a fixed three-level enum, so its tone is set per level like the other fixed labels. */
+function urgencyBadge(urgency: string | null | undefined) {
   if (!urgency) return null;
-  const colors: Record<string, string> = {
-    high: "bg-red-500",
-    medium: "bg-amber-500",
-    low: "bg-slate-500",
-  };
-  return (
-    <span
-      className={`inline-block w-2 h-2 rounded-full shrink-0 ${colors[urgency] || "bg-slate-500"}`}
-      title={`${urgency} urgency`}
-    />
-  );
+  const tone = urgency === "high" ? "danger" : urgency === "medium" ? "warning" : "neutral";
+  return <Badge tone={tone} dot className="capitalize" title={`${urgency} urgency`}>{urgency}</Badge>;
 }
 
 function getClassification(item: ThreadListItem) {
@@ -180,7 +153,7 @@ export default function ConciergeInboxPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [polling, setPolling] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [filter, setFilter] = useState<"all" | "needs_reply" | "high_priority">("all");
+  const [filter, setFilter] = useState<Filter>("all");
   const [classificationOpen, setClassificationOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -271,176 +244,161 @@ export default function ConciergeInboxPage() {
     return true;
   });
 
+  const chips: Chip<Filter>[] = [
+    { key: "all", label: "All", count: threads.length },
+    { key: "needs_reply", label: "Needs Reply", count: threads.filter((t) => t.needsReply).length },
+    { key: "high_priority", label: "High Priority", count: threads.filter((t) => getClassification(t)?.urgency === "high").length },
+  ];
+
+  const classification =
+    detail?.classification && typeof detail.classification === "object"
+      ? (detail.classification as Record<string, any>)
+      : null;
+
   return (
-    <div className="h-[calc(100vh-48px)]">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900 flex items-center gap-3">
-            <Inbox size={24} className="text-amber-500" />
+    <div className="flex flex-col lg:h-[calc(100vh-48px)]">
+      <PageHeader
+        title={
+          <span className="inline-flex items-center gap-2">
             Concierge Inbox
-            {stats.needsReply > 0 && (
-              <span className="px-2.5 py-0.5 text-xs font-bold bg-red-600 text-white rounded-full">
-                {stats.needsReply}
-              </span>
-            )}
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            {stats.total} threads - {stats.needsReply} needs reply - {stats.unread} unread
-          </p>
-        </div>
-        <button
-          onClick={handlePoll}
-          disabled={polling}
-          className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-500 hover:text-slate-900 rounded-lg text-sm transition disabled:opacity-50"
-        >
-          <RefreshCw size={14} className={polling ? "animate-spin" : ""} />
-          {polling ? "Polling..." : "Poll Now"}
-        </button>
-      </div>
+            {stats.needsReply > 0 && <Badge tone="danger">{stats.needsReply}</Badge>}
+          </span>
+        }
+        description={`${stats.total} threads - ${stats.needsReply} needs reply - ${stats.unread} unread`}
+        actions={
+          <Button variant="secondary" icon={<RefreshCw size={14} />} loading={polling} onClick={handlePoll}>
+            {polling ? "Polling" : "Poll Now"}
+          </Button>
+        }
+      />
 
-      {/* Filter Tabs */}
-      <div className="flex gap-1 mb-4">
-        {(
-          [
-            { key: "all", label: "All" },
-            { key: "needs_reply", label: "Needs Reply" },
-            { key: "high_priority", label: "High Priority" },
-          ] as const
-        ).map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setFilter(tab.key)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
-              filter === tab.key
-                ? "bg-amber-600 text-white"
-                : "bg-slate-50 text-slate-500 hover:text-slate-900"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <FilterChips items={chips} value={filter} onChange={setFilter} className="mb-4" />
 
-      <div className="flex gap-4 h-[calc(100%-120px)]">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:flex-1 lg:min-h-0">
         {/* Left Panel - Thread List */}
-        <div className="w-96 max-w-[calc(100vw-2rem)] shrink-0 bg-white border border-slate-200 rounded-lg overflow-y-auto">
+        <Card className={cn("lg:col-span-2 lg:overflow-y-auto lg:min-h-0 max-h-[70vh] lg:max-h-none overflow-y-auto", selectedId ? "hidden lg:block" : "")}>
           {error && (
             <div className="p-3">
               <ErrorBanner message={error} onRetry={fetchThreads} />
             </div>
           )}
           {loading ? (
-            <Spinner />
+            <Spinner label="Loading threads" />
           ) : filteredThreads.length === 0 ? (
-            <div className="p-6 text-center text-slate-500 text-sm">
-              {filter === "all"
-                ? "No email threads yet. Click Poll Now to check for new emails."
-                : `No ${filter === "needs_reply" ? "threads needing reply" : "high priority threads"}.`}
-            </div>
+            <EmptyState
+              title={filter === "all" ? "No email threads yet" : `No ${filter === "needs_reply" ? "threads needing reply" : "high priority threads"}`}
+              hint={filter === "all" ? "Click Poll Now to check for new emails." : undefined}
+              icon={<Mail size={28} className="mx-auto" aria-hidden />}
+            />
           ) : (
-            filteredThreads.map((thread) => {
-              const isSelected = selectedId === thread.id;
-              const cls = getClassification(thread);
-              const summary = cls?.summary || null;
-              const intent = cls?.intent || null;
-              const urgency = cls?.urgency || null;
+            <ul className="divide-y divide-slate-200">
+              {filteredThreads.map((thread) => {
+                const isSelected = selectedId === thread.id;
+                const cls = getClassification(thread);
+                const summary = cls?.summary || null;
+                const intent = cls?.intent || null;
+                const urgency = cls?.urgency || null;
 
-              return (
-                <div
-                  key={thread.id}
-                  onClick={() => setSelectedId(thread.id)}
-                  className={`px-4 py-3 border-b border-slate-200 cursor-pointer transition ${
-                    isSelected
-                      ? "bg-slate-50 border-l-2 border-l-amber-500"
-                      : "hover:bg-slate-50"
-                  }`}
-                >
-                  {/* Row 1: Name + type badge + time */}
-                  <div className="flex items-center justify-between mb-1 gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      {thread.needsReply && urgencyDot(urgency || "medium")}
-                      <span
-                        className={`text-sm truncate ${
-                          thread.needsReply ? "font-semibold text-slate-900" : "font-medium text-slate-600"
-                        }`}
-                      >
-                        {thread.contact.name}
-                      </span>
-                      {contactTypeBadge(thread.contact.type)}
-                    </div>
-                    <span className="text-xs text-slate-500 shrink-0">
-                      {relativeTime(thread.lastMessageAt)}
-                    </span>
-                  </div>
+                return (
+                  <li key={thread.id}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(thread.id)}
+                      aria-current={isSelected ? "true" : undefined}
+                      className={cn(
+                        "w-full text-left px-4 py-3 border-l-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-500",
+                        isSelected ? "bg-amber-50 border-l-amber-500" : "border-l-transparent hover:bg-slate-50"
+                      )}
+                    >
+                      {/* Row 1: Name + type badge + time */}
+                      <div className="flex items-center justify-between mb-1 gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span
+                            className={cn(
+                              "text-sm truncate",
+                              thread.needsReply ? "font-semibold text-slate-900" : "font-medium text-slate-600"
+                            )}
+                          >
+                            {thread.contact.name}
+                          </span>
+                          {contactTypeBadge(thread.contact.type)}
+                        </div>
+                        <span className="text-xs text-slate-500 shrink-0 tabular">
+                          {relativeTime(thread.lastMessageAt)}
+                        </span>
+                      </div>
 
-                  {/* Row 2: Subject */}
-                  <div className="text-xs text-slate-500 truncate mb-1">
-                    {thread.subject || "(no subject)"}
-                  </div>
+                      {/* Row 2: Subject */}
+                      <div className="text-xs text-slate-500 truncate mb-1">
+                        {thread.subject || "(no subject)"}
+                      </div>
 
-                  {/* Row 3: AI summary */}
-                  {summary && (
-                    <div className="text-xs text-slate-500 truncate mb-1.5 italic">
-                      {summary}
-                    </div>
-                  )}
+                      {/* Row 3: AI summary */}
+                      {summary && (
+                        <div className="text-xs text-slate-500 truncate mb-1.5 italic">
+                          {summary}
+                        </div>
+                      )}
 
-                  {/* Row 4: Intent badge */}
-                  <div className="flex items-center gap-1.5">
-                    {intentBadge(intent)}
-                    {thread.needsReply && (
-                      <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">
-                        needs reply
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })
+                      {/* Row 4: Intent badge */}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {intentBadge(intent)}
+                        {thread.needsReply && urgencyBadge(urgency || "medium")}
+                        {thread.needsReply && <Badge tone="danger">needs reply</Badge>}
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           )}
-        </div>
+        </Card>
 
         {/* Right Panel - Thread Detail */}
-        <div className="flex-1 bg-white border border-slate-200 rounded-lg flex flex-col">
+        <Card className={cn("lg:col-span-3 flex flex-col lg:min-h-0 min-h-[50vh]", selectedId ? "flex" : "hidden lg:flex")}>
           {selectedId && detail ? (
             detailLoading ? (
               <div className="flex-1 flex items-center justify-center">
-                <Spinner />
+                <Spinner label="Loading thread" />
               </div>
             ) : (
               <>
                 {/* Thread Header */}
-                <div className="px-6 py-4 border-b border-slate-200">
-                  <div className="flex items-center justify-between">
-                    <div>
+                <div className="px-4 sm:px-6 py-4 border-b border-slate-200">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-slate-900 font-medium text-lg">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 lg:hidden -ml-2"
+                          aria-label="Back to threads"
+                          onClick={() => setSelectedId(null)}
+                        >
+                          <ChevronLeft size={16} />
+                        </Button>
+                        <span className="text-slate-900 font-medium text-md truncate">
                           {detail.contact.name}
                         </span>
                         {contactTypeBadge(detail.contact.type)}
                       </div>
-                      <div className="text-xs text-slate-500 flex items-center gap-3">
+                      <div className="text-xs text-slate-500 flex flex-wrap items-center gap-3">
                         {detail.contact.primaryEmail && (
-                          <span className="flex items-center gap-1">
-                            <Mail size={10} />
-                            {detail.contact.primaryEmail}
+                          <span className="flex items-center gap-1 min-w-0">
+                            <Mail size={12} aria-hidden />
+                            <span className="truncate">{detail.contact.primaryEmail}</span>
                           </span>
                         )}
                         {detail.contact.market && (
                           <span className="flex items-center gap-1">
-                            <Circle size={8} />
+                            <Circle size={8} aria-hidden />
                             {detail.contact.market}
                           </span>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {detail.needsReply && (
-                        <span className="text-xs font-medium px-2 py-1 rounded bg-red-500/20 text-red-400">
-                          Needs Reply
-                        </span>
-                      )}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {detail.needsReply && <Badge tone="danger">Needs Reply</Badge>}
                     </div>
                   </div>
                   {detail.subject && (
@@ -451,25 +409,27 @@ export default function ConciergeInboxPage() {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4">
                   {[...detail.messages].reverse().map((msg) => (
                     <div key={msg.id}>
                       <div
-                        className={`rounded-lg px-4 py-3 text-sm ${
+                        className={cn(
+                          "rounded-lg px-4 py-3 text-sm border",
                           msg.direction === "OUTBOUND"
-                            ? "bg-amber-600/20 border border-amber-600/30"
-                            : "bg-slate-50 border border-slate-200"
-                        }`}
+                            ? "bg-amber-50 border-amber-200"
+                            : "bg-slate-50 border-slate-200"
+                        )}
                       >
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-2 gap-2">
                           <span
-                            className={`text-xs font-medium ${
-                              msg.direction === "OUTBOUND" ? "text-amber-400" : "text-slate-500"
-                            }`}
+                            className={cn(
+                              "text-xs font-medium",
+                              msg.direction === "OUTBOUND" ? "text-amber-800" : "text-slate-500"
+                            )}
                           >
                             {msg.direction === "OUTBOUND" ? "SweetLease" : detail.contact.name}
                           </span>
-                          <span className="text-xs text-slate-500">
+                          <span className="text-xs text-slate-500 tabular">
                             {formatDate(msg.sentAt || msg.receivedAt || msg.createdAt)}
                           </span>
                         </div>
@@ -483,64 +443,52 @@ export default function ConciergeInboxPage() {
                 </div>
 
                 {/* Classification Panel (collapsible) */}
-                {detail.classification && typeof detail.classification === "object" && (
+                {classification && (
                   <div className="border-t border-slate-200">
                     <button
+                      type="button"
                       onClick={() => setClassificationOpen(!classificationOpen)}
-                      className="w-full flex items-center justify-between px-6 py-3 text-sm text-slate-500 hover:text-slate-900 transition"
+                      aria-expanded={classificationOpen}
+                      className="w-full flex items-center justify-between px-4 sm:px-6 py-3 text-sm text-slate-500 hover:text-slate-900 transition-colors"
                     >
                       <span className="flex items-center gap-2">
-                        <Sparkles size={14} className="text-amber-500" />
+                        <Sparkles size={14} className="text-amber-500" aria-hidden />
                         AI Classification
                       </span>
-                      {classificationOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                      {classificationOpen ? <ChevronDown size={14} aria-hidden /> : <ChevronRight size={14} aria-hidden />}
                     </button>
                     {classificationOpen && (
-                      <div className="px-6 pb-4 grid grid-cols-2 gap-3 text-xs">
-                        {(detail.classification as Record<string, any>).sender_type && (
+                      <div className="px-4 sm:px-6 pb-4 grid grid-cols-2 gap-3 text-xs">
+                        {classification.sender_type && (
                           <div>
                             <span className="text-slate-500">Sender Type</span>
-                            <div className="text-slate-700 mt-0.5">
-                              {(detail.classification as Record<string, any>).sender_type}
-                            </div>
+                            <div className="text-slate-700 mt-0.5">{classification.sender_type}</div>
                           </div>
                         )}
-                        {(detail.classification as Record<string, any>).intent && (
+                        {classification.intent && (
                           <div>
                             <span className="text-slate-500">Intent</span>
-                            <div className="mt-0.5">
-                              {intentBadge((detail.classification as Record<string, any>).intent)}
-                            </div>
+                            <div className="mt-0.5">{intentBadge(classification.intent)}</div>
                           </div>
                         )}
-                        {(detail.classification as Record<string, any>).urgency && (
+                        {classification.urgency && (
                           <div>
                             <span className="text-slate-500">Urgency</span>
-                            <div className="text-slate-700 mt-0.5 flex items-center gap-1.5">
-                              {urgencyDot((detail.classification as Record<string, any>).urgency)}
-                              <span className="capitalize">
-                                {(detail.classification as Record<string, any>).urgency}
-                              </span>
-                            </div>
+                            <div className="mt-0.5">{urgencyBadge(classification.urgency)}</div>
                           </div>
                         )}
-                        {(detail.classification as Record<string, any>).confidence !== undefined && (
+                        {classification.confidence !== undefined && (
                           <div>
                             <span className="text-slate-500">Confidence</span>
-                            <div className="text-slate-700 mt-0.5">
-                              {Math.round(
-                                ((detail.classification as Record<string, any>).confidence || 0) * 100
-                              )}
-                              %
+                            <div className="text-slate-700 mt-0.5 tabular">
+                              {Math.round((classification.confidence || 0) * 100)}%
                             </div>
                           </div>
                         )}
-                        {(detail.classification as Record<string, any>).summary && (
+                        {classification.summary && (
                           <div className="col-span-2">
                             <span className="text-slate-500">AI Summary</span>
-                            <div className="text-slate-600 mt-0.5">
-                              {(detail.classification as Record<string, any>).summary}
-                            </div>
+                            <div className="text-slate-600 mt-0.5">{classification.summary}</div>
                           </div>
                         )}
                       </div>
@@ -549,42 +497,44 @@ export default function ConciergeInboxPage() {
                 )}
 
                 {/* Quick Actions */}
-                <div className="px-4 py-3 border-t border-slate-200 flex items-center gap-3">
-                  <button
+                <div className="px-4 py-3 border-t border-slate-200 flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="primary"
+                    icon={<Sparkles size={14} />}
+                    loading={generating}
                     onClick={handleGenerateDraft}
-                    disabled={generating}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition disabled:opacity-50 text-sm font-medium"
                   >
-                    <Sparkles size={14} />
-                    {generating ? "Generating..." : "Generate Draft"}
-                  </button>
+                    {generating ? "Generating" : "Generate Draft"}
+                  </Button>
                   <a
                     href="/admin/concierge/contacts"
-                    className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 text-slate-500 hover:text-slate-900 rounded-lg transition text-sm"
+                    className={buttonVariants({ variant: "secondary" })}
                   >
-                    <ExternalLink size={14} />
+                    <ExternalLink size={14} aria-hidden />
                     View Contact
                   </a>
                   {detail.pendingDraft && (
-                    <span className="text-xs text-amber-400 ml-auto flex items-center gap-1">
-                      <AlertCircle size={12} />
+                    <Badge tone="warning" className="ml-auto">
+                      <AlertCircle size={12} aria-hidden />
                       Pending draft available
-                    </span>
+                    </Badge>
                   )}
                 </div>
               </>
             )
           ) : selectedId && detailLoading ? (
             <div className="flex-1 flex items-center justify-center">
-              <Spinner />
+              <Spinner label="Loading thread" />
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-slate-500 text-sm gap-2">
-              <Mail size={32} className="text-slate-600" />
-              Select a thread to view the conversation
+            <div className="flex-1 flex items-center justify-center">
+              <EmptyState
+                title="Select a thread to view the conversation"
+                icon={<Mail size={28} className="mx-auto" aria-hidden />}
+              />
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

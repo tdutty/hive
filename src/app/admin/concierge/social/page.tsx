@@ -1,20 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  Share2,
-  ExternalLink,
-  Copy,
-  Check,
-  Clock,
-  AlertCircle,
-  CheckCircle2,
-  Filter,
-  Mail,
-  Download,
-  Star,
-  Link,
-} from "lucide-react";
+import { ExternalLink, Copy, Check, CheckCircle2, Filter, Mail, Download, Link } from "lucide-react";
+import { Button, buttonVariants, Card, CardHeader, CardBody, Badge, statusTone, StatTile, PageHeader, FilterChips, type Chip } from "@/components/kit";
+import { EmptyState } from "@/components/ui/AsyncState";
 
 // --- Types ---
 
@@ -37,83 +26,6 @@ const REPOST_DAYS = 14;
 
 const SWEETLEASE_GROUP_URL = "https://www.facebook.com/groups/949816451005596/";
 const SWEETLEASE_GROUP_SHORT = "facebook.com/groups/949816451005596";
-
-const CITY_COLORS: Record<string, { bg: string; text: string }> = {
-  Cleveland: { bg: "bg-blue-100", text: "text-blue-700" },
-  Miami: { bg: "bg-pink-100", text: "text-pink-700" },
-  Pittsburgh: { bg: "bg-yellow-100", text: "text-yellow-700" },
-  Nashville: { bg: "bg-purple-100", text: "text-purple-700" },
-  Boston: { bg: "bg-red-100", text: "text-red-700" },
-  Houston: { bg: "bg-green-100", text: "text-green-700" },
-  National: { bg: "bg-gray-100", text: "text-gray-700" },
-  NYC: { bg: "bg-orange-100", text: "text-orange-700" },
-  Baltimore: { bg: "bg-indigo-100", text: "text-indigo-700" },
- "Los Angeles": { bg: "bg-sky-100", text: "text-sky-700" },
- "San Francisco": { bg: "bg-teal-100", text: "text-teal-700" },
- "Ann Arbor": { bg: "bg-amber-100", text: "text-amber-700" },
-  Durham: { bg: "bg-violet-100", text: "text-violet-700" },
-  Philadelphia: { bg: "bg-rose-100", text: "text-rose-700" },
-  Chicago: { bg: "bg-cyan-100", text: "text-cyan-700" },
-  Atlanta: { bg: "bg-emerald-100", text: "text-emerald-700" },
-  Seattle: { bg: "bg-fuchsia-100", text: "text-fuchsia-700" },
-  Dallas: { bg: "bg-lime-100", text: "text-lime-700" },
- "Rochester MN": { bg: "bg-stone-100", text: "text-stone-700" },
-  Indianapolis: { bg: "bg-zinc-100", text: "text-zinc-700" },
-  Birmingham: { bg: "bg-red-100", text: "text-red-700" },
-  Cincinnati: { bg: "bg-orange-100", text: "text-orange-700" },
-  Minneapolis: { bg: "bg-blue-100", text: "text-blue-700" },
-  Charleston: { bg: "bg-green-100", text: "text-green-700" },
- "New Orleans": { bg: "bg-purple-100", text: "text-purple-700" },
-  Madison: { bg: "bg-pink-100", text: "text-pink-700" },
-  Denver: { bg: "bg-sky-100", text: "text-sky-700" },
-  Gainesville: { bg: "bg-orange-100", text: "text-orange-700" },
- "Chapel Hill": { bg: "bg-blue-100", text: "text-blue-700" },
-  Charlottesville: { bg: "bg-indigo-100", text: "text-indigo-700" },
- "Iowa City": { bg: "bg-amber-100", text: "text-amber-700" },
-  Lexington: { bg: "bg-cyan-100", text: "text-cyan-700" },
-  Tampa: { bg: "bg-emerald-100", text: "text-emerald-700" },
- "Kansas City": { bg: "bg-violet-100", text: "text-violet-700" },
-  Omaha: { bg: "bg-rose-100", text: "text-rose-700" },
-  Memphis: { bg: "bg-teal-100", text: "text-teal-700" },
- "Rochester NY": { bg: "bg-fuchsia-100", text: "text-fuchsia-700" },
- "Washington DC": { bg: "bg-lime-100", text: "text-lime-700" },
-  Detroit: { bg: "bg-stone-100", text: "text-stone-700" },
- "Winston-Salem": { bg: "bg-zinc-100", text: "text-zinc-700" },
- "Danville PA": { bg: "bg-slate-100", text: "text-slate-700" },
- "Travel Nurse": { bg: "bg-red-100", text: "text-red-700" },
-  Medical: { bg: "bg-emerald-100", text: "text-emerald-700" },
- "East Tennessee": { bg: "bg-amber-100", text: "text-amber-700" },
-  Connecticut: { bg: "bg-indigo-100", text: "text-indigo-700" },
-  Oakland: { bg: "bg-stone-100", text: "text-stone-700" },
-  Florida: { bg: "bg-orange-100", text: "text-orange-700" },
- "New Haven": { bg: "bg-blue-100", text: "text-blue-700" },
-  Albany: { bg: "bg-purple-100", text: "text-purple-700" },
- "Burlington VT": { bg: "bg-green-100", text: "text-green-700" },
-  Richmond: { bg: "bg-red-100", text: "text-red-700" },
- "Columbus OH": { bg: "bg-rose-100", text: "text-rose-700" },
- "St. Louis": { bg: "bg-sky-100", text: "text-sky-700" },
-  Milwaukee: { bg: "bg-amber-100", text: "text-amber-700" },
- "East Lansing": { bg: "bg-green-100", text: "text-green-700" },
-  Orlando: { bg: "bg-orange-100", text: "text-orange-700" },
-  Louisville: { bg: "bg-red-100", text: "text-red-700" },
-  Sacramento: { bg: "bg-yellow-100", text: "text-yellow-700" },
- "San Antonio": { bg: "bg-teal-100", text: "text-teal-700" },
-  Austin: { bg: "bg-violet-100", text: "text-violet-700" },
- "San Diego": { bg: "bg-cyan-100", text: "text-cyan-700" },
-  Irvine: { bg: "bg-blue-100", text: "text-blue-700" },
-  Portland: { bg: "bg-emerald-100", text: "text-emerald-700" },
-  Tucson: { bg: "bg-orange-100", text: "text-orange-700" },
- "Salt Lake City": { bg: "bg-sky-100", text: "text-sky-700" },
-  Albuquerque: { bg: "bg-rose-100", text: "text-rose-700" },
- "Oklahoma City": { bg: "bg-red-100", text: "text-red-700" },
-  Galveston: { bg: "bg-teal-100", text: "text-teal-700" },
-  Aurora: { bg: "bg-indigo-100", text: "text-indigo-700" },
-  Toledo: { bg: "bg-amber-100", text: "text-amber-700" },
- "Loma Linda": { bg: "bg-purple-100", text: "text-purple-700" },
-  Tallahassee: { bg: "bg-fuchsia-100", text: "text-fuchsia-700" },
-  Augusta: { bg: "bg-lime-100", text: "text-lime-700" },
- "Columbia SC": { bg: "bg-green-100", text: "text-green-700" },
-};
 
 const GROUPS: GroupData[] = [
   // Cleveland
@@ -493,7 +405,7 @@ Happy to answer any questions!${GROUP_LINK_FOOTER}`;
   if (city === "Medical") {
     return `Hey everyone! If you are starting rotations or residency and need to find housing in a new city, check out SweetLease.
 
-We are a free service built specifically for medical trainees relocating for residency or clinical rotations. We negotiate rent on your behalf with property managers near teaching hospitals.
+We are a free service built specifically for physicians, residents, and medical students relocating for residency or clinical rotations. We negotiate rent on your behalf with property managers near teaching hospitals.
 
 We cover 12+ cities including Houston, Nashville, Pittsburgh, Cleveland, Boston, Miami, and more.
 
@@ -502,7 +414,7 @@ How it works:
 - We match you to properties within 15 min of the hospital
 - We negotiate rent using group demand - typically 10-35% below listed rent
 - Virtual tours, remote lease signing, the whole process handled for you
-- 100% free for medical trainees
+- 100% free for physicians, residents, and medical students
 
 ${link}
 
@@ -602,18 +514,23 @@ function emailAllPosts() {
   window.open(`mailto:terrellgilb5@gmail.com?subject=${subject}&body=${body}`, "_self");
 }
 
-function getStatus(lastPosted: string | undefined): { label: string; color: string; priority: number } {
+type PostStatusKey = "never" | "due" | "recent";
+
+/** `signal` is a word from the app's shared status vocabulary so Badge + statusTone own the color. */
+function getStatus(lastPosted: string | undefined): { key: PostStatusKey; signal: string; label: string; priority: number } {
   if (!lastPosted) {
-    return { label: "Never posted", color: "red", priority: 0 };
+    return { key: "never", signal: "missed", label: "Never posted", priority: 0 };
   }
   const daysSince = Math.floor((Date.now() - new Date(lastPosted).getTime()) / (1000 * 60 * 60 * 24));
   if (daysSince >= REPOST_DAYS) {
-    return { label: `Due for repost (${daysSince}d ago)`, color: "amber", priority: 1 };
+    return { key: "due", signal: "pending", label: `Due for repost (${daysSince}d ago)`, priority: 1 };
   }
-  return { label: `Recent (${daysSince}d ago)`, color: "green", priority: 2 };
+  return { key: "recent", signal: "completed", label: `Recent (${daysSince}d ago)`, priority: 2 };
 }
 
 // --- Components ---
+
+const linkBtn = buttonVariants({ variant: "secondary", size: "sm" });
 
 function SweetLeaseGroupHero() {
   const [copied, setCopied] = useState(false);
@@ -636,46 +553,22 @@ function SweetLeaseGroupHero() {
   };
 
   return (
-    <div className="bg-white rounded-lg border-2 border-orange-400  overflow-hidden">
-      <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-6">
-        <div className="flex items-start gap-4">
-          <div className="bg-orange-100 rounded-lg p-3">
-            <Star size={28} className="text-orange-500" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-xl font-bold text-slate-900">Medical Resident Housing - SweetLease</h2>
-              <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full">YOUR GROUP</span>
-            </div>
-            <p className="text-sm text-slate-600 mb-4">
-              Cross-promote this group in every post. Link it everywhere - this is our owned community for incoming residents.
-            </p>
-            <div className="flex items-center gap-3">
-              <a
-                href={SWEETLEASE_GROUP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors"
-              >
-                <ExternalLink size={14} />
-                Open Group
-              </a>
-              <button
-                onClick={handleCopyLink}
-                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  copied
-                    ? "bg-green-100 text-green-700 border border-green-200"
-                    : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
-                }`}
-              >
-                {copied ? <Check size={14} /> : <Link size={14} />}
-                {copied ? "Copied!" : "Copy Group Link"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <Card>
+      <CardHeader
+        title={<span className="inline-flex flex-wrap items-center gap-2">Medical Resident Housing - SweetLease <Badge tone="accent">Your group</Badge></span>}
+        description="Cross-promote this group in every post. Link it everywhere: this is our owned community for incoming residents."
+        actions={
+          <>
+            <a href={SWEETLEASE_GROUP_URL} target="_blank" rel="noopener noreferrer" className={linkBtn}>
+              <ExternalLink size={14} aria-hidden /> Open group
+            </a>
+            <Button size="sm" variant="ghost" icon={copied ? <Check size={14} /> : <Link size={14} />} onClick={handleCopyLink}>
+              {copied ? "Copied" : "Copy group link"}
+            </Button>
+          </>
+        }
+      />
+    </Card>
   );
 }
 
@@ -691,7 +584,6 @@ function GroupCard({
   const [copied, setCopied] = useState(false);
   const status = getStatus(lastPosted);
   const postText = getCityPost(group.city);
-  const cityColor = CITY_COLORS[group.city] || { bg: "bg-gray-100", text: "text-gray-700" };
 
   const handleCopy = async () => {
     try {
@@ -716,90 +608,53 @@ function GroupCard({
     window.open(`mailto:?subject=${subject}&body=${body}`, "_self");
   };
 
-  const statusColors: Record<string, string> = {
-    red: "bg-red-50 text-red-700 border-red-200",
-    amber: "bg-amber-50 text-amber-700 border-amber-200",
-    green: "bg-green-50 text-green-700 border-green-200",
-  };
-
-  const statusIcons: Record<string, React.ReactNode> = {
-    red: <AlertCircle size={14} />,
-    amber: <Clock size={14} />,
-    green: <CheckCircle2 size={14} />,
-  };
-
   return (
-    <div className="bg-white rounded-lg border border-slate-200  overflow-hidden">
+    <Card className="overflow-hidden">
       <div className="flex flex-col lg:flex-row">
-        {/* Left side */}
-        <div className="lg:w-72 p-5 border-b lg:border-b-0 lg:border-r border-slate-100 flex flex-col gap-3">
+        {/* Group details */}
+        <div className="lg:w-72 shrink-0 p-4 border-b lg:border-b-0 lg:border-r border-slate-200 flex flex-col gap-2.5">
           <div>
-            <h3 className="font-semibold text-slate-900 text-sm leading-tight">{group.name}</h3>
-            <span className={`inline-block mt-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${cityColor.bg} ${cityColor.text}`}>
-              {group.city}
-            </span>
+            <h3 className="text-sm font-semibold text-slate-900 leading-5">{group.name}</h3>
+            <div className="mt-1.5"><Badge tone="outline">{group.city}</Badge></div>
           </div>
 
           <a
             href={group.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium"
+            className="inline-flex items-center gap-1.5 text-sm text-slate-700 hover:text-slate-900 underline underline-offset-2 decoration-slate-300 hover:decoration-slate-500 w-fit"
           >
-            <ExternalLink size={14} />
-            Open Group
+            <ExternalLink size={13} aria-hidden />
+            Open group
           </a>
 
-          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border ${statusColors[status.color]}`}>
-            {statusIcons[status.color]}
-            {status.label}
-          </div>
+          <div><Badge tone={statusTone(status.signal)} dot>{status.label}</Badge></div>
 
           {lastPosted && (
-            <p className="text-xs text-slate-400">
-              Last posted: {new Date(lastPosted).toLocaleDateString()}
-            </p>
+            <p className="text-xs text-slate-500">Last posted {new Date(lastPosted).toLocaleDateString()}</p>
           )}
         </div>
 
-        {/* Right side */}
-        <div className="flex-1 p-5 flex flex-col gap-3">
-          <pre className="text-sm text-slate-700 whitespace-pre-wrap font-sans bg-slate-50 rounded-lg p-4 border border-slate-100 max-h-64 overflow-y-auto leading-relaxed">
+        {/* Post text and actions */}
+        <CardBody className="flex-1 flex flex-col gap-3 min-w-0">
+          <pre className="text-sm text-slate-700 whitespace-pre-wrap font-sans bg-slate-50 rounded-sm p-3 border border-slate-200 max-h-64 overflow-y-auto leading-relaxed">
             {postText}
           </pre>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={handleCopy}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                copied
-                  ? "bg-green-100 text-green-700 border border-green-200"
-                  : "bg-slate-900 text-white hover:bg-slate-800"
-              }`}
-            >
-              {copied ? <Check size={14} /> : <Copy size={14} />}
-              {copied ? "Copied!" : "Copy Post"}
-            </button>
-
-            <button
-              onClick={() => onMarkPosted(group.url)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
-            >
-              <CheckCircle2 size={14} />
-              Mark as Posted
-            </button>
-
-            <button
-              onClick={handleEmailPost}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium border border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors"
-            >
-              <Mail size={14} />
-              Email Post
-            </button>
+            <Button size="sm" icon={copied ? <Check size={14} /> : <Copy size={14} />} onClick={handleCopy}>
+              {copied ? "Copied" : "Copy post"}
+            </Button>
+            <Button size="sm" icon={<CheckCircle2 size={14} />} onClick={() => onMarkPosted(group.url)}>
+              Mark as posted
+            </Button>
+            <Button size="sm" variant="ghost" icon={<Mail size={14} />} onClick={handleEmailPost}>
+              Email post
+            </Button>
           </div>
-        </div>
+        </CardBody>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -837,8 +692,8 @@ export default function SocialOutreachPage() {
   // Filter and sort groups
   const filteredGroups = GROUPS.filter((g) => {
     const status = getStatus(tracker[g.url]);
-    if (filter === "never") return status.color === "red";
-    if (filter === "due") return status.color === "amber";
+    if (filter === "never") return status.key === "never";
+    if (filter === "due") return status.key === "due";
     return true;
   }).sort((a, b) => {
     const aPriority = getStatus(tracker[a.url]).priority;
@@ -851,7 +706,7 @@ export default function SocialOutreachPage() {
   const neverPosted = GROUPS.filter((g) => !tracker[g.url]).length;
   const dueForRepost = GROUPS.filter((g) => {
     const s = getStatus(tracker[g.url]);
-    return s.color === "amber";
+    return s.key === "due";
   }).length;
   const postedThisWeek = GROUPS.filter((g) => {
     const last = tracker[g.url];
@@ -861,91 +716,49 @@ export default function SocialOutreachPage() {
   }).length;
   const uniqueCities = Array.from(new Set(GROUPS.map((g) => g.city))).length;
 
-  const tabs: { key: FilterTab; label: string; count: number }[] = [
+  const tabs: Chip<FilterTab>[] = [
     { key: "all", label: "All", count: totalGroups },
-    { key: "due", label: "Due for Repost", count: dueForRepost },
-    { key: "never", label: "Never Posted", count: neverPosted },
+    { key: "due", label: "Due for repost", count: dueForRepost },
+    { key: "never", label: "Never posted", count: neverPosted },
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Share2 size={22} className="text-amber-600" />
-            <h1 className="text-lg font-semibold text-slate-900">Social Outreach</h1>
-          </div>
-          <p className="text-sm text-slate-500">
-            Copy and paste into Facebook groups - {totalGroups} groups across {uniqueCities} cities
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={emailAllPosts}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-          >
-            <Mail size={14} />
-            Email All Posts to Me
-          </button>
-          <button
-            onClick={downloadAllPosts}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
-          >
-            <Download size={14} />
-            Download All Posts
-          </button>
-        </div>
+    <div className="max-w-7xl">
+      <PageHeader
+        title="Social Outreach"
+        meta="Concierge · Facebook groups"
+        description={
+          <>
+            Copy and paste into Facebook groups. {totalGroups} groups across {uniqueCities} cities.
+            <span className="block text-xs text-slate-400 mt-1">Static playbook. The group list is hardcoded and post history is stored in this browser only.</span>
+          </>
+        }
+        actions={
+          <>
+            <Button icon={<Download size={14} />} onClick={downloadAllPosts}>Download all posts</Button>
+            <Button variant="primary" icon={<Mail size={14} />} onClick={emailAllPosts}>Email all posts to me</Button>
+          </>
+        }
+      />
+
+      <div className="mb-5">
+        <SweetLeaseGroupHero />
       </div>
 
-      {/* SweetLease Group Hero */}
-      <SweetLeaseGroupHero />
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-slate-200 p-4">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Groups</p>
-          <p className="text-2xl font-bold text-slate-900 mt-1">{totalGroups}</p>
-        </div>
-        <div className="bg-white rounded-lg border border-slate-200 p-4">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Posted This Week</p>
-          <p className="text-2xl font-bold text-green-600 mt-1">{postedThisWeek}</p>
-        </div>
-        <div className="bg-white rounded-lg border border-slate-200 p-4">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Due for Repost</p>
-          <p className="text-2xl font-bold text-amber-600 mt-1">{dueForRepost}</p>
-        </div>
-        <div className="bg-white rounded-lg border border-slate-200 p-4">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Never Posted</p>
-          <p className="text-2xl font-bold text-red-600 mt-1">{neverPosted}</p>
-        </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <StatTile label="Groups" value={totalGroups} hint={`${uniqueCities} cities`} />
+        <StatTile label="Posted this week" value={postedThisWeek} />
+        <StatTile label="Due for repost" value={dueForRepost} hint={`${REPOST_DAYS}+ days since last post`} />
+        <StatTile label="Never posted" value={neverPosted} />
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1 w-fit">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setFilter(tab.key)}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              filter === tab.key
-                ? "bg-white text-slate-900 "
-                : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            {tab.label}
-            <span className="ml-1.5 text-xs opacity-60">({tab.count})</span>
-          </button>
-        ))}
-      </div>
+      <FilterChips items={tabs} value={filter} onChange={setFilter} className="mb-4" />
 
-      {/* Group Cards */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {filteredGroups.length === 0 ? (
-          <div className="bg-white rounded-lg border border-slate-200 p-12 text-center">
-            <Filter size={32} className="text-slate-300 mx-auto mb-3" />
-            <p className="text-sm text-slate-500">No groups match this filter</p>
-          </div>
+          <Card>
+            <EmptyState icon={<Filter size={28} className="mx-auto" aria-hidden />} title="No groups match this filter" hint="Try another filter." />
+          </Card>
         ) : (
           filteredGroups.map((group) => (
             <GroupCard

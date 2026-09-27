@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
+import { Button, Card, CardHeader, CardBody, Badge, StatTile, PageHeader, Table, THead, TH, TBody, TR, TD, Select } from "@/components/kit";
+import { SimpleBarChart } from "@/components/charts/SimpleBarChart";
 import {
   RefreshCw,
   TrendingUp,
@@ -72,7 +74,7 @@ export default function CampaignsPage() {
     try {
       setLoading(true);
       const result = await api.get<CampaignData>(
- "/api/admin/campaign-analytics",
+        "/api/admin/campaign-analytics",
         { days }
       );
       setData(result);
@@ -88,356 +90,201 @@ export default function CampaignsPage() {
     fetchData();
   }, [days]);
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-gray-900">Campaigns</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Ad performance, referral tracking, and funnel conversion by source
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <select
-            value={days}
-            onChange={(e) => setDays(Number(e.target.value))}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
-          >
-            <option value={7}>Last 7 days</option>
-            <option value={30}>Last 30 days</option>
-            <option value={90}>Last 90 days</option>
-            <option value={180}>Last 180 days</option>
-            <option value={365}>Last year</option>
-          </select>
-          <button
-            onClick={fetchData}
-            disabled={loading}
-            className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50"
-          >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-            Refresh
-          </button>
-        </div>
-      </div>
+  const recentDaily = data?.dailySignups.slice(-60) ?? [];
 
-      {error && <ErrorBanner message={error} onRetry={fetchData} />}
+  return (
+    <div className="max-w-7xl">
+      <PageHeader
+        title="Campaigns"
+        description="Ad performance, referral tracking, and funnel conversion by source"
+        actions={
+          <>
+            <Select
+              aria-label="Period"
+              value={days}
+              onChange={(e) => setDays(Number(e.target.value))}
+              className="w-auto"
+            >
+              <option value={7}>Last 7 days</option>
+              <option value={30}>Last 30 days</option>
+              <option value={90}>Last 90 days</option>
+              <option value={180}>Last 180 days</option>
+              <option value={365}>Last year</option>
+            </Select>
+            <Button variant="primary" icon={<RefreshCw size={14} />} loading={loading} onClick={fetchData}>
+              Refresh
+            </Button>
+          </>
+        }
+      />
+
+      {error && <ErrorBanner message={error} onRetry={fetchData} className="mb-5" />}
       {loading && !data && !error && <Spinner />}
 
       {data && (
-        <>
-          {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-            <SummaryCard
-              icon={<Users size={20} className="text-blue-600" />}
-              bg="bg-blue-100"
-              value={data.summary.totalSignups}
-              label="Signups"
-            />
-            <SummaryCard
-              icon={<BarChart3 size={20} className="text-purple-600" />}
-              bg="bg-purple-100"
-              value={data.summary.totalSurveys}
-              label="Surveys"
-            />
-            <SummaryCard
-              icon={<Target size={20} className="text-indigo-600" />}
-              bg="bg-indigo-100"
-              value={data.summary.totalMatched}
-              label="Matched"
-            />
-            <SummaryCard
-              icon={<TrendingUp size={20} className="text-green-600" />}
-              bg="bg-green-100"
-              value={data.summary.totalLeased}
-              label="Leased"
-            />
-            <SummaryCard
-              icon={<DollarSign size={20} className="text-amber-600" />}
-              bg="bg-amber-100"
-              value={`$${data.summary.totalRevenue.toLocaleString()}`}
-              label="Revenue"
-            />
-            <SummaryCard
-              icon={<Share2 size={20} className="text-pink-600" />}
-              bg="bg-pink-100"
-              value={data.summary.totalReferrals}
-              label="Referrals"
-            />
+        <div className="space-y-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <StatTile label="Signups" value={data.summary.totalSignups} icon={<Users size={14} />} />
+            <StatTile label="Surveys" value={data.summary.totalSurveys} icon={<BarChart3 size={14} />} />
+            <StatTile label="Matched" value={data.summary.totalMatched} icon={<Target size={14} />} />
+            <StatTile label="Leased" value={data.summary.totalLeased} icon={<TrendingUp size={14} />} />
+            <StatTile label="Revenue" value={`$${data.summary.totalRevenue.toLocaleString()}`} icon={<DollarSign size={14} />} />
+            <StatTile label="Referrals" value={data.summary.totalReferrals} icon={<Share2 size={14} />} />
           </div>
 
-          {/* Conversion Rate */}
-          <div className="bg-white border border-gray-200 rounded-lg p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">
-                Overall Conversion: Signup → Leased
-              </h3>
-              <span className="text-2xl font-bold text-green-600">
-                {data.summary.conversionRate}%
-              </span>
-            </div>
-            <div className="w-full bg-gray-100 rounded-full h-3">
-              <div
-                className="bg-green-500 h-3 rounded-full transition-all"
-                style={{ width: `${Math.min(100, data.summary.conversionRate)}%` }}
-              />
-            </div>
-          </div>
+          <Card>
+            <CardHeader
+              title="Overall Conversion: Signup to Leased"
+              actions={<span className="text-xl font-semibold text-slate-900 tabular">{data.summary.conversionRate}%</span>}
+            />
+            <CardBody>
+              <div className="w-full bg-slate-100 rounded-full h-2" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={data.summary.conversionRate} aria-label="Conversion rate">
+                <div
+                  className="bg-emerald-500 h-2 rounded-full transition-all"
+                  style={{ width: `${Math.min(100, data.summary.conversionRate)}%` }}
+                />
+              </div>
+            </CardBody>
+          </Card>
 
-          {/* Source Breakdown + Referrals */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white border border-gray-200 rounded-lg p-5">
-              <h3 className="font-semibold text-gray-900 mb-4">
-                Traffic Sources
-              </h3>
-              <div className="space-y-3">
-                {data.sources.map((s) => {
-                  const maxSignups = data.sources[0]?.signups || 1;
-                  return (
-                    <div key={s.source}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-gray-700 capitalize">
-                          {s.source}
-                        </span>
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
-                          <span>{s.signups} signups</span>
-                          <span>{s.surveys} surveys</span>
-                          <span className="text-green-600 font-medium">
-                            {s.leased} leased
-                          </span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <Card>
+              <CardHeader title="Traffic Sources" />
+              <CardBody>
+                {data.sources.length === 0 ? (
+                  <p className="text-sm text-slate-500">No traffic sources yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {data.sources.map((s) => {
+                      const maxSignups = data.sources[0]?.signups || 1;
+                      return (
+                        <div key={s.source}>
+                          <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                            <span className="text-sm font-medium text-slate-700 capitalize">{s.source}</span>
+                            <div className="flex items-center gap-3 text-xs text-slate-500 tabular">
+                              <span>{s.signups} signups</span>
+                              <span>{s.surveys} surveys</span>
+                              <Badge tone="success">{s.leased} leased</Badge>
+                            </div>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-1.5">
+                            <div
+                              className="bg-amber-600 h-1.5 rounded-full"
+                              style={{ width: `${(s.signups / maxSignups) * 100}%` }}
+                            />
+                          </div>
                         </div>
-                      </div>
-                      <div className="w-full bg-gray-100 rounded-full h-2">
-                        <div
-                          className="bg-blue-500 h-2 rounded-full"
-                          style={{
-                            width: `${(s.signups / maxSignups) * 100}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardBody>
+            </Card>
 
-            <div className="bg-white border border-gray-200 rounded-lg p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <Share2 size={18} className="text-pink-600" />
-                <h3 className="font-semibold text-gray-900">
-                  Referral Performance
-                </h3>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                <div className="text-center p-4 bg-pink-50 rounded-lg">
-                  <div className="text-2xl font-bold text-gray-900">
-                    {data.referrals.signups}
-                  </div>
-                  <div className="text-xs text-gray-500">Referred Signups</div>
+            <Card>
+              <CardHeader title="Referral Performance" />
+              <CardBody>
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <StatTile label="Referred Signups" value={data.referrals.signups} />
+                  <StatTile label="Completed Survey" value={data.referrals.surveys} />
+                  <StatTile label="Leased" value={data.referrals.leased} />
                 </div>
-                <div className="text-center p-4 bg-pink-50 rounded-lg">
-                  <div className="text-2xl font-bold text-gray-900">
-                    {data.referrals.surveys}
-                  </div>
-                  <div className="text-xs text-gray-500">Completed Survey</div>
-                </div>
-                <div className="text-center p-4 bg-pink-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">
-                    {data.referrals.leased}
-                  </div>
-                  <div className="text-xs text-gray-500">Leased</div>
-                </div>
-              </div>
-              <div className="text-sm text-gray-500">
-                Conversion:{" "}
-                <span className="font-medium text-gray-900">
-                  {data.referrals.signups > 0
-                    ? Math.round(
-                        (data.referrals.leased / data.referrals.signups) * 100
-                      )
-                    : 0}
-                  %
-                </span>{" "}
-                referral → leased
-              </div>
-            </div>
+                <p className="text-sm text-slate-500">
+                  Conversion:{" "}
+                  <span className="font-medium text-slate-900 tabular">
+                    {data.referrals.signups > 0
+                      ? Math.round((data.referrals.leased / data.referrals.signups) * 100)
+                      : 0}
+                    %
+                  </span>{" "}
+                  referral to leased
+                </p>
+              </CardBody>
+            </Card>
           </div>
 
-          {/* Daily Signups Chart */}
           {data.dailySignups.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-lg p-5">
-              <h3 className="font-semibold text-gray-900 mb-4">
-                Daily Signups
-              </h3>
-              <div className="flex items-end gap-1 h-32">
-                {data.dailySignups.slice(-60).map((d) => {
-                  const max = Math.max(
-                    ...data.dailySignups.slice(-60).map((x) => x.count),
-                    1
-                  );
-                  return (
-                    <div
-                      key={d.date}
-                      className="flex-1 bg-blue-500 rounded-t hover:bg-blue-600 transition-colors group relative"
-                      style={{
-                        height: `${(d.count / max) * 100}%`,
-                        minHeight: d.count > 0 ? "4px" : "0",
-                      }}
-                      title={`${d.date}: ${d.count}`}
-                    />
-                  );
-                })}
-              </div>
-              <div className="flex justify-between mt-2 text-xs text-gray-400">
-                <span>
-                  {data.dailySignups.slice(-60)[0]?.date || ""}
-                </span>
-                <span>
-                  {data.dailySignups[data.dailySignups.length - 1]?.date || ""}
-                </span>
-              </div>
-            </div>
+            <Card>
+              <CardHeader title="Daily Signups" description={`${recentDaily[0]?.date || ""} to ${data.dailySignups[data.dailySignups.length - 1]?.date || ""}`} />
+              <CardBody>
+                <SimpleBarChart bare data={recentDaily} dataKey="count" nameKey="date" height={160} />
+              </CardBody>
+            </Card>
           )}
 
-          {/* Campaign Table */}
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100">
-              <h3 className="font-semibold text-gray-900">
-                All Campaigns
-              </h3>
-            </div>
-            <table className="w-full">
-              <thead>
-                <tr className="text-xs text-gray-500 uppercase border-b border-gray-100 bg-gray-50">
-                  <th className="text-left px-5 py-3">Source</th>
-                  <th className="text-left px-5 py-3">Medium</th>
-                  <th className="text-left px-5 py-3">Campaign</th>
-                  <th className="text-right px-5 py-3">Signups</th>
-                  <th className="text-right px-5 py-3">Surveys</th>
-                  <th className="text-right px-5 py-3">Matched</th>
-                  <th className="text-right px-5 py-3">Leased</th>
-                  <th className="text-right px-5 py-3">Conv %</th>
-                  <th className="text-left px-5 py-3">Last Seen</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {data.campaigns.map((c, i) => {
-                  const conv =
-                    c.signups > 0
-                      ? Math.round((c.leased / c.signups) * 100)
-                      : 0;
-                  return (
-                    <tr key={i} className="hover:bg-gray-50">
-                      <td className="px-5 py-3 text-sm font-medium text-gray-900 capitalize">
-                        {c.source}
-                      </td>
-                      <td className="px-5 py-3 text-sm text-gray-600">
-                        {c.medium}
-                      </td>
-                      <td className="px-5 py-3 text-sm text-gray-600">
-                        {c.campaign === "none" ? (
-                          <span className="text-gray-400">—</span>
-                        ) : (
-                          c.campaign
-                        )}
-                      </td>
-                      <td className="px-5 py-3 text-sm text-gray-900 text-right font-medium">
-                        {c.signups}
-                      </td>
-                      <td className="px-5 py-3 text-sm text-gray-700 text-right">
-                        {c.surveys}
-                      </td>
-                      <td className="px-5 py-3 text-sm text-gray-700 text-right">
-                        {c.matched}
-                      </td>
-                      <td className="px-5 py-3 text-sm text-right">
-                        <span
-                          className={
-                            c.leased > 0
-                              ? "text-green-600 font-bold"
-                              : "text-gray-400"
-                          }
-                        >
-                          {c.leased}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-sm text-right">
-                        <span
-                          className={
-                            conv >= 10
-                              ? "text-green-600 font-bold"
-                              : conv > 0
-                                ? "text-amber-600 font-medium"
-                                : "text-gray-400"
-                          }
-                        >
-                          {conv}%
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-xs text-gray-500">
-                        {new Date(c.lastSeen).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            {data.campaigns.length === 0 && (
-              <div className="p-8 text-center text-gray-400 text-sm">
-                No campaign data yet. UTM parameters will be tracked
-                automatically when visitors arrive via ad links.
-              </div>
+          <Card>
+            <CardHeader title="All Campaigns" />
+            {data.campaigns.length === 0 ? (
+              <EmptyState
+                title="No campaign data yet"
+                hint="UTM parameters will be tracked automatically when visitors arrive via ad links."
+              />
+            ) : (
+              <Table>
+                <THead>
+                  <tr>
+                    <TH>Source</TH>
+                    <TH>Medium</TH>
+                    <TH>Campaign</TH>
+                    <TH numeric>Signups</TH>
+                    <TH numeric>Surveys</TH>
+                    <TH numeric>Matched</TH>
+                    <TH numeric>Leased</TH>
+                    <TH numeric>Conv %</TH>
+                    <TH>Last Seen</TH>
+                  </tr>
+                </THead>
+                <TBody>
+                  {data.campaigns.map((c, i) => {
+                    const conv = c.signups > 0 ? Math.round((c.leased / c.signups) * 100) : 0;
+                    return (
+                      <TR key={i} className="hover:bg-slate-50">
+                        <TD className="font-medium capitalize">{c.source}</TD>
+                        <TD muted>{c.medium}</TD>
+                        <TD muted>{c.campaign === "none" ? <span className="text-slate-400">-</span> : c.campaign}</TD>
+                        <TD numeric className="font-medium">{c.signups}</TD>
+                        <TD numeric>{c.surveys}</TD>
+                        <TD numeric>{c.matched}</TD>
+                        <TD numeric>
+                          {c.leased > 0 ? (
+                            <Badge tone="success">{c.leased}</Badge>
+                          ) : (
+                            <span className="text-slate-400">{c.leased}</span>
+                          )}
+                        </TD>
+                        <TD numeric>
+                          {conv >= 10 ? (
+                            <Badge tone="success">{conv}%</Badge>
+                          ) : conv > 0 ? (
+                            <Badge tone="warning">{conv}%</Badge>
+                          ) : (
+                            <span className="text-slate-400">{conv}%</span>
+                          )}
+                        </TD>
+                        <TD muted className="tabular whitespace-nowrap">{new Date(c.lastSeen).toLocaleDateString()}</TD>
+                      </TR>
+                    );
+                  })}
+                </TBody>
+              </Table>
             )}
-          </div>
+          </Card>
 
-          {/* UTM Guide */}
-          <div className="bg-white border border-gray-200 rounded-lg p-5">
-            <h3 className="font-semibold text-gray-900 mb-3">
-              How to Track Campaigns
-            </h3>
-            <p className="text-sm text-gray-600 mb-3">
-              Add UTM parameters to your ad URLs. They&apos;ll be automatically
-              tracked through the entire funnel.
-            </p>
-            <div className="bg-gray-50 rounded-lg p-4 font-mono text-xs text-gray-700 break-all">
-              sweetlease.io/site-access?<span className="text-blue-600">utm_source</span>=tiktok&<span className="text-purple-600">utm_medium</span>=paid&<span className="text-green-600">utm_campaign</span>=match-day-2026
-            </div>
-            <div className="mt-3 text-xs text-gray-500">
-              <strong>utm_source:</strong> tiktok, instagram, google, facebook, referral &nbsp;|&nbsp;
-              <strong>utm_medium:</strong> paid, organic, email, referral &nbsp;|&nbsp;
-              <strong>utm_campaign:</strong> your campaign name
-            </div>
-          </div>
-        </>
+          <Card>
+            <CardHeader title="How to Track Campaigns" description="Add UTM parameters to your ad URLs. They'll be automatically tracked through the entire funnel." />
+            <CardBody>
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 font-mono text-xs text-slate-700 break-all">
+                sweetlease.io/site-access?<span className="text-amber-700">utm_source</span>=tiktok&<span className="text-amber-700">utm_medium</span>=paid&<span className="text-amber-700">utm_campaign</span>=match-day-2026
+              </div>
+              <div className="mt-3 text-xs text-slate-500">
+                <strong>utm_source:</strong> tiktok, instagram, google, facebook, referral &nbsp;|&nbsp;
+                <strong>utm_medium:</strong> paid, organic, email, referral &nbsp;|&nbsp;
+                <strong>utm_campaign:</strong> your campaign name
+              </div>
+            </CardBody>
+          </Card>
+        </div>
       )}
-    </div>
-  );
-}
-
-function SummaryCard({
-  icon,
-  bg,
-  value,
-  label,
-}: {
-  icon: React.ReactNode;
-  bg: string;
-  value: number | string;
-  label: string;
-}) {
-  return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4">
-      <div className="flex items-center gap-3">
-        <div
-          className={`w-10 h-10 rounded-lg ${bg} flex items-center justify-center`}
-        >
-          {icon}
-        </div>
-        <div>
-          <div className="text-xl font-bold text-gray-900">{value}</div>
-          <div className="text-xs text-gray-500">{label}</div>
-        </div>
-      </div>
     </div>
   );
 }

@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { Clock, Zap } from "lucide-react";
 import { useApi } from "@/lib/hooks";
 import { monitoringService } from "@/lib/services/monitoring";
-import { ProgressBar } from "@/components/ui/ProgressBar";
-import { StatusBadge } from "@/components/ui/StatusBadge";
+import { Card, CardHeader, CardBody, Badge, statusTone, StatTile, PageHeader } from "@/components/kit";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
 
 interface ServiceStatus {
   name: string;
@@ -14,11 +14,37 @@ interface ServiceStatus {
   details: string;
 }
 
+interface Metric {
+  label: string;
+  value: number;
+  /** the value crossed its alert threshold */
+  over: boolean;
+}
+
+/** The shared status map knows healthy/warning/critical; alias the health words it does not. */
+const healthTone = (status: string) =>
+  statusTone(status === "degraded" ? "warning" : status === "down" ? "critical" : status);
+
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+function KeyValueList({ entries }: { entries: [string, unknown][] }) {
+  return (
+    <dl className="divide-y divide-slate-100">
+      {entries.map(([key, value]) => (
+        <div key={key} className="flex justify-between items-center py-2 gap-4">
+          <dt className="text-sm text-slate-600">{key}</dt>
+          <dd className="text-sm font-medium text-slate-900 tabular text-right">{String(value)}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 export default function MonitoringPage() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [overallStatus, setOverallStatus] = useState<"healthy" | "degraded" | "down">("healthy");
   const [services, setServices] = useState<ServiceStatus[]>([]);
-  const [metrics, setMetrics] = useState<Array<{ label: string; value: number; color: string }>>([]);
+  const [metrics, setMetrics] = useState<Metric[]>([]);
 
   const { data: healthData, loading: healthLoading, error: healthError, refetch: refetchHealth } = useApi(
     () => monitoringService.getHealth(),
@@ -52,69 +78,17 @@ export default function MonitoringPage() {
 
   useEffect(() => {
     if (detailedData?.systemMetrics) {
-      const metricsList: Array<{ label: string; value: number; color: string }> = [];
+      const m = detailedData.systemMetrics;
+      const metricsList: Metric[] = [];
 
-      if (detailedData.systemMetrics.memory !== undefined) {
-        metricsList.push({
-          label: "Memory Usage",
-          value: detailedData.systemMetrics.memory,
-          color: detailedData.systemMetrics.memory > 80 ? "bg-red-600" : "bg-green-600",
-        });
-      }
-
-      if (detailedData.systemMetrics.cpu !== undefined) {
-        metricsList.push({
-          label: "CPU Usage",
-          value: detailedData.systemMetrics.cpu,
-          color: detailedData.systemMetrics.cpu > 70 ? "bg-red-600" : "bg-amber-600",
-        });
-      }
-
-      if (detailedData.systemMetrics.cacheHitRate !== undefined) {
-        metricsList.push({
-          label: "Cache Hit Rate",
-          value: detailedData.systemMetrics.cacheHitRate,
-          color: "bg-green-600",
-        });
-      }
-
-      if (detailedData.systemMetrics.errorRate !== undefined) {
-        metricsList.push({
-          label: "Error Rate",
-          value: detailedData.systemMetrics.errorRate,
-          color: detailedData.systemMetrics.errorRate > 1 ? "bg-red-600" : "bg-green-600",
-        });
-      }
+      if (m.memory !== undefined) metricsList.push({ label: "Memory Usage", value: m.memory, over: m.memory > 80 });
+      if (m.cpu !== undefined) metricsList.push({ label: "CPU Usage", value: m.cpu, over: m.cpu > 70 });
+      if (m.cacheHitRate !== undefined) metricsList.push({ label: "Cache Hit Rate", value: m.cacheHitRate, over: false });
+      if (m.errorRate !== undefined) metricsList.push({ label: "Error Rate", value: m.errorRate, over: m.errorRate > 1 });
 
       setMetrics(metricsList);
     }
   }, [detailedData]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "healthy":
-        return "bg-green-50";
-      case "degraded":
-        return "bg-yellow-50";
-      case "down":
-        return "bg-red-50";
-      default:
-        return "bg-slate-50";
-    }
-  };
-
-  const getStatusBgColor = () => {
-    switch (overallStatus) {
-      case "healthy":
-        return "bg-green-50 text-green-900";
-      case "degraded":
-        return "bg-yellow-50 text-yellow-900";
-      case "down":
-        return "bg-red-50 text-red-900";
-      default:
-        return "bg-slate-50 text-slate-900";
-    }
-  };
 
   const loading = healthLoading || detailedLoading;
   const error = healthError || detailedError;
@@ -123,206 +97,129 @@ export default function MonitoringPage() {
     refetchDetailed();
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold text-slate-900">System Monitoring</h1>
-          </div>
-        </div>
-        <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold text-slate-900">System Monitoring</h1>
-          </div>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700">
-          <p className="font-medium">Failed to load data</p>
-          <p className="text-sm mt-1">{error}</p>
-          <button
-            onClick={refetch}
-            className="mt-3 bg-red-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-red-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div><PageHeader title="System Monitoring" /><Spinner /></div>;
+  if (error) return <div><PageHeader title="System Monitoring" /><ErrorBanner message={error} onRetry={refetch} /></div>;
 
   return (
-    <div className="space-y-8">
-      {/* Page Header with Auto-Refresh Toggle */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900 mb-2">System Monitoring</h1>
-          <p className="text-slate-500">Real-time system health and performance metrics</p>
-        </div>
-        <label className="flex items-center gap-3 cursor-pointer bg-white border border-slate-200 rounded-lg  px-4 py-2">
-          <input
-            type="checkbox"
-            checked={autoRefresh}
-            onChange={(e) => setAutoRefresh(e.target.checked)}
-            className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
-          />
-          <span className="font-medium text-slate-900">Auto-Refresh</span>
-        </label>
-      </div>
+    <div className="max-w-7xl space-y-5">
+      <PageHeader
+        title="System Monitoring"
+        description="Real-time system health and performance metrics"
+        actions={
+          <label className="inline-flex items-center gap-2 h-9 px-3 rounded border border-slate-300 bg-white text-sm text-slate-800 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+              className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+            />
+            Auto-refresh
+          </label>
+        }
+      />
 
-      {/* Overall Status Banner */}
-      <div
-        className={`border border-green-200 rounded-lg  p-6 ${getStatusBgColor()} text-center`}
-      >
-        <h2 className="text-xl font-semibold mb-2">
-          {overallStatus.charAt(0).toUpperCase() + overallStatus.slice(1)}
-        </h2>
-        <p className="text-sm">All systems operational • Last checked 2 minutes ago</p>
-      </div>
+      {/* Overall status */}
+      <Card>
+        <CardBody className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Badge tone={healthTone(overallStatus)} dot>{capitalize(overallStatus)}</Badge>
+            <span className="text-sm font-medium text-slate-900">Overall status</span>
+          </div>
+          <p className="text-sm text-slate-500">All systems operational. Last checked 2 minutes ago</p>
+        </CardBody>
+      </Card>
 
-      {/* Service Status Cards */}
+      {/* Service status */}
       {services.length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">
-            Service Status
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+        <section>
+          <h2 className="text-md font-semibold text-slate-900 mb-3">Service Status</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {services.map((service) => (
-              <div
-                key={service.name}
-                className={`border border-slate-200 rounded-lg  p-6 ${getStatusColor(
-                  service.status
-                )}`}
-              >
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                  {service.name}
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-slate-700">
-                      Status
-                    </span>
-                    <StatusBadge
-                      status={service.status}
-                      size="sm"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-slate-700">
-                      Response Time
-                    </span>
-                    <span className="text-sm font-medium text-slate-900">
-                      {service.responseTime}ms
-                    </span>
-                  </div>
+              <Card key={service.name}>
+                <CardHeader title={service.name} actions={<Badge tone={healthTone(service.status)} dot>{capitalize(service.status)}</Badge>} />
+                <CardBody>
+                  <dl className="divide-y divide-slate-100">
+                    <div className="flex justify-between items-center py-2 gap-4">
+                      <dt className="text-sm text-slate-600">Status</dt>
+                      <dd className="text-sm font-medium text-slate-900">{capitalize(service.status)}</dd>
+                    </div>
+                    <div className="flex justify-between items-center py-2 gap-4">
+                      <dt className="text-sm text-slate-600">Response Time</dt>
+                      <dd className="text-sm font-medium text-slate-900 tabular">{service.responseTime}ms</dd>
+                    </div>
+                  </dl>
                   {service.details && (
-                    <p className="text-sm text-slate-700 pt-2 border-t border-slate-200">
-                      {service.details}
-                    </p>
+                    <p className="text-sm text-slate-600 pt-3 mt-1 border-t border-slate-200">{service.details}</p>
                   )}
-                </div>
-              </div>
+                </CardBody>
+              </Card>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* System Metrics */}
+      {/* System metrics */}
       {metrics.length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">
-            System Metrics
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {metrics.map((metric, idx) => (
-              <div key={idx} className="bg-white border border-slate-200 rounded-lg  p-6">
-                <label className="text-sm font-semibold text-slate-700 mb-3 block">
-                  {metric.label}
-                </label>
-                <ProgressBar
-                  value={metric.value}
-                  color={metric.color}
-                  showValue
-                />
-              </div>
-            ))}
+        <section>
+          <h2 className="text-md font-semibold text-slate-900 mb-3">System Metrics</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {metrics.map((metric) => {
+              const pct = Math.min(Math.max(metric.value, 0), 100);
+              return (
+                <Card key={metric.label} className="px-4 py-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide truncate">{metric.label}</p>
+                    <Badge tone={statusTone(metric.over ? "critical" : "healthy")} dot>{metric.over ? "High" : "Normal"}</Badge>
+                  </div>
+                  <p className="mt-1 text-xl font-semibold text-slate-900 tabular">{pct}%</p>
+                  <div className="mt-2 h-1.5 bg-slate-100 rounded-full overflow-hidden" role="meter" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={metric.label}>
+                    <div className="h-full bg-slate-800 rounded-full transition-all duration-200" style={{ width: `${pct}%` }} />
+                  </div>
+                </Card>
+              );
+            })}
           </div>
-        </div>
+        </section>
       )}
 
       {/* Uptime */}
       {detailedData?.uptime && (
-        <div className="bg-white border border-slate-200 rounded-lg  p-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs font-semibold text-slate-500 mb-2">
-                System Uptime
-              </p>
-              <p className="text-3xl font-bold text-green-600 mb-2">{detailedData.uptime.percentage}%</p>
-              <p className="text-sm text-slate-500">{detailedData.uptime.details}</p>
-            </div>
-            <Clock size={32} className="text-green-600" />
-          </div>
-        </div>
+        <StatTile
+          label="System Uptime"
+          value={`${detailedData.uptime.percentage}%`}
+          hint={detailedData.uptime.details}
+          icon={<Clock size={14} />}
+        />
       )}
 
-      {/* Performance Details */}
+      {/* Performance */}
       {detailedData?.performance && (
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {detailedData.performance.database && (
-            <div className="bg-white border border-slate-200 rounded-lg  p-6">
-              <h3 className="font-semibold text-slate-900 mb-4">
-                Database Performance
-              </h3>
-              <div className="space-y-3 text-sm">
-                {Object.entries(detailedData.performance.database).map(([key, value]) => (
-                  <div key={key} className="flex justify-between">
-                    <span className="text-slate-700">{key}</span>
-                    <span className="font-medium text-slate-900">{String(value)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <Card>
+              <CardHeader title="Database Performance" />
+              <CardBody>
+                <KeyValueList entries={Object.entries(detailedData.performance.database)} />
+              </CardBody>
+            </Card>
           )}
 
           {detailedData.performance.api && (
-            <div className="bg-white border border-slate-200 rounded-lg  p-6">
-              <h3 className="font-semibold text-slate-900 mb-4">
-                API Performance
-              </h3>
-              <div className="space-y-3 text-sm">
-                {Object.entries(detailedData.performance.api).map(([key, value]) => (
-                  <div key={key} className="flex justify-between">
-                    <span className="text-slate-700">{key}</span>
-                    <span className="font-medium text-slate-900">{String(value)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <Card>
+              <CardHeader title="API Performance" />
+              <CardBody>
+                <KeyValueList entries={Object.entries(detailedData.performance.api)} />
+              </CardBody>
+            </Card>
           )}
         </div>
       )}
 
-      {/* Alert Thresholds */}
-      <div className="bg-white border border-slate-200 rounded-lg  p-6">
-        <h3 className="font-semibold text-slate-900 mb-4">
-          Active Alerts
-        </h3>
-        <div className="text-center text-slate-600 py-8">
-          <Zap size={32} className="mx-auto text-green-600 mb-3" />
-          <p className="font-semibold">No active alerts</p>
-          <p className="text-sm">All thresholds within normal ranges</p>
-        </div>
-      </div>
+      {/* Alerts */}
+      <Card>
+        <CardHeader title="Active Alerts" />
+        <EmptyState title="No active alerts" hint="All thresholds within normal ranges" icon={<Zap size={28} className="mx-auto" aria-hidden />} />
+      </Card>
     </div>
   );
 }

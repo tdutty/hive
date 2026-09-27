@@ -1,8 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Fragment, useState, useEffect } from "react";
 import { sweetleaseApi } from "@/lib/api";
-import { RefreshCw, Phone, PhoneIncoming, PhoneOutgoing, Clock, ChevronDown, ChevronRight } from "lucide-react";
+import { RefreshCw, PhoneIncoming, PhoneOutgoing, Clock, ChevronDown, ChevronRight, Phone } from "lucide-react";
+import { Button, Card, CardHeader, Badge, StatTile, PageHeader, Table, THead, TH, TBody, TR, TD } from "@/components/kit";
+import type { BadgeProps } from "@/components/kit/Badge";
+import { Spinner, EmptyState } from "@/components/ui/AsyncState";
+
+type BadgeTone = NonNullable<BadgeProps["tone"]>;
 
 interface Call {
   call_id: string;
@@ -22,14 +27,17 @@ interface Call {
   objections: string;
 }
 
-const OUTCOME_COLORS: Record<string, string> = {
-  interested: "bg-emerald-100 text-emerald-700",
-  needs_followup: "bg-blue-100 text-blue-700",
-  objection: "bg-amber-100 text-amber-700",
-  not_interested: "bg-red-100 text-red-700",
-  no_show: "bg-gray-100 text-slate-500",
-  technical_issue: "bg-gray-100 text-slate-500",
+const OUTCOME_TONE: Record<string, BadgeTone> = {
+  interested: "success",
+  needs_followup: "info",
+  objection: "warning",
+  not_interested: "danger",
+  no_show: "neutral",
+  technical_issue: "neutral",
 };
+
+const statusToneFor = (status: string): BadgeTone =>
+  status === "ongoing" ? "success" : "neutral";
 
 export default function CallLogPage() {
   const [calls, setCalls] = useState<Call[]>([]);
@@ -66,157 +74,136 @@ export default function CallLogPage() {
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900 flex items-center gap-3">
-            <Phone size={24} className="text-amber-500" />
-            Call Log
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Retell AI phone conversations with landlords
-          </p>
-        </div>
-        <button
-          onClick={fetchCalls}
-          className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-500 hover:text-slate-900 rounded-lg text-sm transition"
-        >
-          <RefreshCw size={14} />
-          Refresh
-        </button>
+    <div className="max-w-7xl">
+      <PageHeader
+        title="Call Log"
+        description="Retell AI phone conversations with landlords"
+        actions={
+          <Button variant="primary" icon={<RefreshCw size={14} />} onClick={fetchCalls}>
+            Refresh
+          </Button>
+        }
+      />
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <StatTile label="Total Calls" value={calls.length} icon={<Phone size={14} />} />
+        <StatTile label="Interested" value={calls.filter(c => c.outcome === "interested").length} />
+        <StatTile label="Follow-up" value={calls.filter(c => c.outcome === "needs_followup").length} />
+        <StatTile label="Not Interested" value={calls.filter(c => c.outcome === "not_interested").length} />
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: "Total Calls", value: calls.length, color: "text-slate-900" },
-          { label: "Interested", value: calls.filter(c => c.outcome === "interested").length, color: "text-emerald-400" },
-          { label: "Follow-up", value: calls.filter(c => c.outcome === "needs_followup").length, color: "text-blue-400" },
-          { label: "Not Interested", value: calls.filter(c => c.outcome === "not_interested").length, color: "text-red-400" },
-        ].map(s => (
-          <div key={s.label} className="bg-white border border-slate-200 rounded-lg p-4 text-center">
-            <div className={`text-2xl font-semibold ${s.color}`}>{s.value}</div>
-            <div className="text-xs uppercase tracking-wider text-slate-500 mt-1">{s.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Call List */}
-      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <Card>
+        <CardHeader title={`Calls (${calls.length})`} />
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <RefreshCw className="animate-spin text-slate-500" size={20} />
-          </div>
+          <Spinner label="Loading calls" />
         ) : calls.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 text-sm">
-            No calls yet. When landlords call (838) 262-2706, conversations will appear here with transcripts and AI analysis.
-          </div>
+          <EmptyState
+            title="No calls yet"
+            hint="When landlords call (838) 262-2706, conversations will appear here with transcripts and AI analysis."
+            icon={<Phone size={28} className="mx-auto" aria-hidden />}
+          />
         ) : (
-          <div>
-            {/* Header */}
-            <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-medium">
-              <div className="col-span-1">Type</div>
-              <div className="col-span-2">Caller</div>
-              <div className="col-span-2">Date</div>
-              <div className="col-span-1">Duration</div>
-              <div className="col-span-2">Outcome</div>
-              <div className="col-span-2">Key Topics</div>
-              <div className="col-span-2">Status</div>
-            </div>
-
-            {calls.map((call) => (
-              <div key={call.call_id}>
-                <div
-                  className="grid grid-cols-12 gap-4 px-6 py-3 hover:bg-slate-50 cursor-pointer transition border-b border-slate-200/50"
-                  onClick={() => setExpanded(expanded === call.call_id ? null : call.call_id)}
-                >
-                  <div className="col-span-1 flex items-center">
-                    {call.direction === "inbound" ? (
-                      <PhoneIncoming size={14} className="text-emerald-400" />
-                    ) : (
-                      <PhoneOutgoing size={14} className="text-blue-400" />
-                    )}
-                  </div>
-                  <div className="col-span-2 text-sm text-slate-900 truncate">
-                    {call.from_number || "Unknown"}
-                  </div>
-                  <div className="col-span-2 text-xs text-slate-500">
-                    {formatDate(call.start_timestamp)}
-                  </div>
-                  <div className="col-span-1 text-xs text-slate-500 flex items-center gap-1">
-                    <Clock size={10} />
-                    {formatDuration(call.duration)}
-                  </div>
-                  <div className="col-span-2">
-                    {call.outcome && (
-                      <span className={`text-xs px-2 py-0.5 rounded font-medium uppercase tracking-wider ${OUTCOME_COLORS[call.outcome] || "bg-gray-100 text-slate-500"}`}>
-                        {call.outcome.replace("_", " ")}
-                      </span>
-                    )}
-                  </div>
-                  <div className="col-span-2 text-xs text-slate-500 truncate">
-                    {call.keyTopics || "-"}
-                  </div>
-                  <div className="col-span-2 flex items-center justify-between">
-                    <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                      call.call_status === "ended" ? "bg-slate-700 text-slate-600" :
-                      call.call_status === "ongoing" ? "bg-emerald-900 text-emerald-300" :
- "bg-slate-800 text-slate-500"
-                    }`}>
-                      {call.call_status}
-                    </span>
-                    {expanded === call.call_id ? <ChevronDown size={14} className="text-slate-500" /> : <ChevronRight size={14} className="text-slate-500" />}
-                  </div>
-                </div>
-
-                {/* Expanded Details */}
-                {expanded === call.call_id && (
-                  <div className="px-6 py-4 bg-white border-b border-slate-200">
-                    <div className="grid grid-cols-2 gap-6">
-                      {/* Left - Details */}
-                      <div className="space-y-3">
-                        <div>
-                          <div className="text-xs uppercase tracking-wider text-slate-500 mb-1 font-medium">Call Details</div>
-                          <div className="text-xs text-slate-600 space-y-1">
-                            <div>From: {call.from_number}</div>
-                            <div>To: {call.to_number}</div>
-                            <div>Duration: {formatDuration(call.duration)}</div>
-                            <div>Disconnect: {call.disconnection_reason || "normal"}</div>
-                          </div>
-                        </div>
+          <Table>
+            <THead>
+              <tr>
+                <TH>Type</TH>
+                <TH>Caller</TH>
+                <TH>Date</TH>
+                <TH numeric>Duration</TH>
+                <TH>Outcome</TH>
+                <TH>Key Topics</TH>
+                <TH>Status</TH>
+                <TH aria-label="Expand" />
+              </tr>
+            </THead>
+            <TBody>
+              {calls.map((call) => {
+                const isOpen = expanded === call.call_id;
+                return (
+                  <Fragment key={call.call_id}>
+                    <TR
+                      clickable
+                      selected={isOpen}
+                      onClick={() => setExpanded(isOpen ? null : call.call_id)}
+                    >
+                      <TD>
+                        {call.direction === "inbound" ? (
+                          <PhoneIncoming size={14} className="text-emerald-600" aria-label="Inbound" />
+                        ) : (
+                          <PhoneOutgoing size={14} className="text-sky-600" aria-label="Outbound" />
+                        )}
+                      </TD>
+                      <TD className="font-medium tabular whitespace-nowrap">{call.from_number || "Unknown"}</TD>
+                      <TD muted className="tabular whitespace-nowrap">{formatDate(call.start_timestamp)}</TD>
+                      <TD numeric muted>
+                        <span className="inline-flex items-center gap-1">
+                          <Clock size={12} aria-hidden />
+                          {formatDuration(call.duration)}
+                        </span>
+                      </TD>
+                      <TD>
                         {call.outcome && (
-                          <div>
-                            <div className="text-xs uppercase tracking-wider text-slate-500 mb-1 font-medium">AI Analysis</div>
-                            <div className="text-xs text-slate-600 space-y-1">
-                              <div>Outcome: <span className="font-medium text-slate-900">{call.outcome}</span></div>
-                              {call.timeline && <div>Timeline: {call.timeline}</div>}
-                              {call.objections && <div>Objections: {call.objections}</div>}
+                          <Badge tone={OUTCOME_TONE[call.outcome] || "neutral"} dot>
+                            {call.outcome.replace("_", " ")}
+                          </Badge>
+                        )}
+                      </TD>
+                      <TD muted className="max-w-[16rem] truncate">{call.keyTopics || "-"}</TD>
+                      <TD><Badge tone={statusToneFor(call.call_status)}>{call.call_status}</Badge></TD>
+                      <TD className="w-8">
+                        {isOpen ? <ChevronDown size={14} className="text-slate-500" aria-hidden /> : <ChevronRight size={14} className="text-slate-500" aria-hidden />}
+                      </TD>
+                    </TR>
+
+                    {isOpen && (
+                      <tr className="bg-slate-50">
+                        <td colSpan={8} className="px-4 py-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                              <div>
+                                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Call Details</p>
+                                <div className="text-sm text-slate-700 space-y-1">
+                                  <div>From: <span className="tabular">{call.from_number}</span></div>
+                                  <div>To: <span className="tabular">{call.to_number}</span></div>
+                                  <div>Duration: {formatDuration(call.duration)}</div>
+                                  <div>Disconnect: {call.disconnection_reason || "normal"}</div>
+                                </div>
+                              </div>
+                              {call.outcome && (
+                                <div>
+                                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">AI Analysis</p>
+                                  <div className="text-sm text-slate-700 space-y-1">
+                                    <div>Outcome: <span className="font-medium text-slate-900">{call.outcome}</span></div>
+                                    {call.timeline && <div>Timeline: {call.timeline}</div>}
+                                    {call.objections && <div>Objections: {call.objections}</div>}
+                                  </div>
+                                </div>
+                              )}
+                              {call.recording_url && (
+                                <div>
+                                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Recording</p>
+                                  <audio controls className="w-full h-8" src={call.recording_url} />
+                                </div>
+                              )}
+                            </div>
+
+                            <div>
+                              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Transcript</p>
+                              <div className="bg-white border border-slate-200 rounded-lg p-3 max-h-64 overflow-y-auto text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                                {call.transcript || "No transcript available"}
+                              </div>
                             </div>
                           </div>
-                        )}
-                        {call.recording_url && (
-                          <div>
-                            <div className="text-xs uppercase tracking-wider text-slate-500 mb-1 font-medium">Recording</div>
-                            <audio controls className="w-full h-8" src={call.recording_url} />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Right - Transcript */}
-                      <div>
-                        <div className="text-xs uppercase tracking-wider text-slate-500 mb-1 font-medium">Transcript</div>
-                        <div className="bg-white rounded-lg p-3 max-h-64 overflow-y-auto text-xs text-slate-600 whitespace-pre-wrap leading-relaxed">
-                          {call.transcript || "No transcript available"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </TBody>
+          </Table>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

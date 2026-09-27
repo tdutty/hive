@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { sweetleaseApi } from "@/lib/api";
+import { Button, Card, CardHeader, PageHeader, Badge, Table, THead, TH, TBody, TR, TD } from "@/components/kit";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
 import {
   Inbox,
   RefreshCw,
-  Loader2,
   CheckCircle2,
   X,
   Building2,
@@ -99,85 +100,88 @@ export default function PMPortReviewPage() {
   }, {});
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Inbox className="text-orange-500" size={28} />
-          <div>
-            <h1 className="text-lg font-semibold text-gray-900">PM Port Review</h1>
-            <p className="text-sm text-gray-500">Properties accepted PMs sent in, awaiting approval to go live.</p>
-          </div>
-        </div>
-        <button
-          onClick={load}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50"
-        >
-          <RefreshCw size={16} /> Refresh
-        </button>
-      </div>
+    <div className="max-w-6xl">
+      <PageHeader
+        title="PM Port Review"
+        description="Properties accepted PMs sent in, awaiting approval to go live."
+        actions={
+          <Button variant="ghost" size="icon" aria-label="Refresh" onClick={load}>
+            <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
+          </Button>
+        }
+      />
 
-      {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
+      {error && <ErrorBanner message={error} onRetry={load} className="mb-4" />}
 
       {loading ? (
-        <div className="flex items-center gap-2 text-gray-500"><Loader2 className="animate-spin" size={18} /> Loading…</div>
+        <Spinner label="Loading staging queue" />
       ) : !data || data.count === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          <Inbox size={40} className="mx-auto mb-3 opacity-40" />
-          Nothing staged. When an accepted PM uploads units, they show up here.
-        </div>
+        <Card>
+          <EmptyState
+            title="Nothing staged"
+            hint="When an accepted PM uploads units, they show up here."
+            icon={<Inbox size={28} className="mx-auto" aria-hidden />}
+          />
+        </Card>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {Object.entries(byCompany).map(([pmCompanyId, props]) => (
-            <div key={pmCompanyId} className="border border-gray-200 rounded-lg overflow-hidden">
-              <div className="flex items-center justify-between bg-gray-50 px-4 py-3 border-b border-gray-200">
-                <div className="flex items-center gap-2">
-                  <Building2 size={18} className="text-gray-500" />
-                  <span className="font-medium text-gray-900">{props[0].company || pmCompanyId}</span>
-                  <span className="text-xs text-gray-500">{props.length} staged</span>
-                </div>
-                <button
-                  onClick={() => approveCompany(pmCompanyId)}
-                  disabled={busy === pmCompanyId + ":all"}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-40"
-                >
-                  {busy === pmCompanyId + ":all" ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle2 size={14} />}
-                  Approve all
-                </button>
-              </div>
-              <table className="w-full text-sm">
-                <tbody>
+            <Card key={pmCompanyId} className="overflow-hidden">
+              <CardHeader
+                title={
+                  <span className="inline-flex items-center gap-2">
+                    <Building2 size={16} className="text-slate-500" aria-hidden />
+                    {props[0].company || pmCompanyId}
+                  </span>
+                }
+                description={`${props.length} staged`}
+                actions={
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    icon={<CheckCircle2 size={14} />}
+                    onClick={() => approveCompany(pmCompanyId)}
+                    loading={busy === pmCompanyId + ":all"}
+                    disabled={busy === pmCompanyId + ":all"}
+                  >
+                    Approve all
+                  </Button>
+                }
+              />
+              <Table>
+                <THead>
+                  <tr>
+                    <TH>Property</TH>
+                    <TH numeric>Actions</TH>
+                  </tr>
+                </THead>
+                <TBody>
                   {props.map((p) => (
-                    <tr key={p.id} className="border-b border-gray-100 last:border-0">
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-gray-900">{p.title || `${p.bedrooms ?? "?"}BR`}</div>
-                        <div className="text-xs text-gray-500 flex items-center gap-3 mt-0.5">
-                          <span className="flex items-center gap-1"><MapPin size={12} />{p.address}, {p.city} {p.state}</span>
-                          <span className="flex items-center gap-1"><BedDouble size={12} />{p.bedrooms}bd/{p.bathrooms ?? "?"}ba</span>
-                          <span className="flex items-center gap-1"><DollarSign size={12} />{p.price?.toLocaleString()}</span>
-                          <span className="uppercase tracking-wide text-gray-400">{p.source}</span>
+                    <TR key={p.id}>
+                      <TD>
+                        <div className="font-medium text-slate-900">{p.title || `${p.bedrooms ?? "?"}BR`}</div>
+                        <div className="text-xs text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5">
+                          <span className="inline-flex items-center gap-1"><MapPin size={12} aria-hidden />{p.address}, {p.city} {p.state}</span>
+                          <span className="inline-flex items-center gap-1 tabular"><BedDouble size={12} aria-hidden />{p.bedrooms}bd/{p.bathrooms ?? "?"}ba</span>
+                          <span className="inline-flex items-center gap-1 tabular"><DollarSign size={12} aria-hidden />{p.price?.toLocaleString()}</span>
+                          <Badge tone="outline" className="uppercase tracking-wide">{p.source}</Badge>
                         </div>
-                      </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <button
-                          onClick={() => act([p.id], false)}
-                          disabled={!!busy}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-40 mr-2"
-                        >
-                          <CheckCircle2 size={13} /> Approve
-                        </button>
-                        <button
-                          onClick={() => act([p.id], true)}
-                          disabled={!!busy}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-                        >
-                          <X size={13} /> Reject
-                        </button>
-                      </td>
-                    </tr>
+                      </TD>
+                      <TD numeric className="whitespace-nowrap">
+                        <div className="inline-flex items-center gap-2">
+                          <Button size="sm" icon={<CheckCircle2 size={13} />} onClick={() => act([p.id], false)} disabled={!!busy} loading={busy === p.id + ":approve"}>
+                            Approve
+                          </Button>
+                          <Button size="sm" variant="ghost" icon={<X size={13} />} onClick={() => act([p.id], true)} disabled={!!busy} loading={busy === p.id + ":reject"}>
+                            Reject
+                          </Button>
+                        </div>
+                      </TD>
+                    </TR>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </TBody>
+              </Table>
+            </Card>
           ))}
         </div>
       )}

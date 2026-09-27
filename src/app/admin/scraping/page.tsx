@@ -1,20 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Play } from "lucide-react";
+import { Plus, Play, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useApi } from "@/lib/hooks";
 import { scrapingService } from "@/lib/services/scraping";
-import { MetricCard } from "@/components/ui/MetricCard";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { DataTable } from "@/components/ui/DataTable";
 import { Modal } from "@/components/ui/Modal";
 import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
+import { Button, Card, CardHeader, CardBody, Badge, statusTone, StatTile, PageHeader, Table, THead, TH, TBody, TR, TD, Field, Input, Select } from "@/components/kit";
 import { formatNumber } from "@/lib/utils";
 
 // POST /api/admin/scraping/jobs has no backend handler yet (returns 405).
 const JOB_SUBMIT_UNAVAILABLE = "Job submission is not available yet: the scraping jobs endpoint has no backend handler.";
 
+const capitalize = (v: string | null | undefined) => (v ? v.charAt(0).toUpperCase() + v.slice(1) : "-");
+const stageProgress = (status: string | undefined, inProgress: number) => (status === "completed" ? 100 : status === "in progress" ? inProgress : 0);
 
 export default function ScrapingPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -113,266 +114,138 @@ export default function ScrapingPage() {
   const errorMessage = [jobsError, sitesError, configError].filter(Boolean).join("; ");
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900 mb-2">Web Scraping</h1>
-          <p className="text-slate-500">Manage property data collection and processing jobs</p>
-        </div>
-        <button
-          onClick={handleStartJob}
-          disabled={isLoading}
-          className="bg-amber-600 text-white rounded-md px-6 py-3 font-medium flex items-center gap-2 hover:bg-amber-700 transition-colors disabled:opacity-50"
-        >
-          <Plus size={20} />
-          Start New Job
-        </button>
-      </div>
+    <div className="max-w-7xl">
+      <PageHeader
+        title="Web Scraping"
+        description="Manage property data collection and processing jobs"
+        actions={
+          <Button variant="primary" icon={<Plus size={14} />} onClick={handleStartJob} disabled={isLoading}>
+            Start New Job
+          </Button>
+        }
+      />
 
       {/* Error State */}
       {hasError && (
-        <ErrorBanner message={`Failed to load scraping data: ${errorMessage}`} onRetry={handleRetry} />
+        <ErrorBanner className="mb-5" message={`Failed to load scraping data: ${errorMessage}`} onRetry={handleRetry} />
       )}
 
       {/* Loading State */}
       {isLoading && <Spinner label="Loading scraping data" />}
 
       {!isLoading && (
-        <>
+        <div className="space-y-5">
           {/* Metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <MetricCard
-              title="Total Jobs"
-              value={formatNumber(totalJobs)}
-              subtitle="All time"
-              icon={Plus}
-            />
-            <MetricCard
-              title="Active"
-              value={activeJobs.length.toString()}
-              subtitle="Currently running"
-              icon={Play}
-            />
-            <MetricCard
-              title="Completed"
-              value={completedJobsCount.toString()}
-              subtitle="Successful executions"
-              icon={Play}
-            />
-            <MetricCard
-              title="Failed"
-              value={failedJobsCount.toString()}
-              subtitle="Need investigation"
-              icon={Play}
-            />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <StatTile label="Total Jobs" value={formatNumber(totalJobs)} hint="All time" icon={<Plus size={14} />} />
+            <StatTile label="Active" value={activeJobs.length} hint="Currently running" icon={<Play size={14} />} />
+            <StatTile label="Completed" value={completedJobsCount} hint="Successful executions" icon={<CheckCircle size={14} />} />
+            <StatTile label="Failed" value={failedJobsCount} hint="Need investigation" icon={<XCircle size={14} />} />
           </div>
 
           {/* Active Jobs Section */}
           {activeJobs.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">
-                Active Jobs
-              </h2>
-              <div className="space-y-4">
-                {activeJobs.map((job) => (
-                  <div
-                    key={job.jobId}
-                    className="bg-white border border-slate-200 rounded-lg  p-6 space-y-4"
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-slate-900">{job.jobId}</h3>
-                        <p className="text-sm text-slate-500">Started {job.startTime}</p>
+            <section className="space-y-3">
+              <h2 className="text-md font-semibold text-slate-900">Active Jobs</h2>
+              {activeJobs.map((job) => (
+                <Card key={job.jobId}>
+                  <CardHeader
+                    title={job.jobId}
+                    description={`Started ${job.startTime}`}
+                    actions={<>
+                      <Badge tone={statusTone(job.status)} dot>Running</Badge>
+                      <Button size="sm" variant="dangerOutline" onClick={() => handleStopJob(job.jobId)}>Stop</Button>
+                    </>}
+                  />
+                  <CardBody className="space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-sm font-medium text-slate-700">Market Data Collection</span>
+                        <span className="text-xs text-slate-500 tabular">{job.progress?.marketData?.collected ?? 0} collected</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="inline-block border border-blue-200 rounded-md bg-blue-50 text-blue-900 px-3 py-1.5 text-sm font-semibold">
-                          RUNNING
-                        </span>
-                        <button
-                          onClick={() => handleStopJob(job.jobId)}
-                          className="border border-red-200 rounded-md bg-red-50 text-red-700 px-3 py-1.5 text-sm font-medium hover:bg-red-100 transition-colors"
-                        >
-                          Stop
-                        </button>
-                      </div>
+                      <ProgressBar value={stageProgress(job.progress?.marketData?.status, 65)} />
                     </div>
-
-                    <div className="space-y-3">
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-semibold text-slate-600">
-                            Market Data Collection
-                          </span>
-                          <span className="text-xs text-slate-500">
-                            {job.progress?.marketData?.collected ?? 0} collected
-                          </span>
-                        </div>
-                        <ProgressBar
-                          value={
-                            job.progress?.marketData?.status === "completed"
-                              ? 100
-                              : job.progress?.marketData?.status === "in progress"
-                              ? 65
-                              : 0
-                          }
-                          color="bg-blue-600"
-                        />
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-sm font-medium text-slate-700">Competitor Analysis</span>
+                        <span className="text-xs text-slate-500 tabular">{job.progress?.competitors?.scraped ?? 0} analyzed</span>
                       </div>
-
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-semibold text-slate-600">
-                            Competitor Analysis
-                          </span>
-                          <span className="text-xs text-slate-500">
-                            {job.progress?.competitors?.scraped ?? 0} analyzed
-                          </span>
-                        </div>
-                        <ProgressBar
-                          value={
-                            job.progress?.competitors?.status === "completed"
-                              ? 100
-                              : job.progress?.competitors?.status === "in progress"
-                              ? 45
-                              : 0
-                          }
-                          color="bg-green-600"
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-semibold text-slate-600">
-                            Indicator Calculation
-                          </span>
-                          <span className="text-xs text-slate-500">
-                            {job.progress?.indicators?.calculated ?? 0} calculated
-                          </span>
-                        </div>
-                        <ProgressBar
-                          value={
-                            job.progress?.indicators?.status === "completed"
-                              ? 100
-                              : job.progress?.indicators?.status === "in progress"
-                              ? 20
-                              : 0
-                          }
-                          color="bg-amber-600"
-                        />
-                      </div>
+                      <ProgressBar value={stageProgress(job.progress?.competitors?.status, 45)} />
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-sm font-medium text-slate-700">Indicator Calculation</span>
+                        <span className="text-xs text-slate-500 tabular">{job.progress?.indicators?.calculated ?? 0} calculated</span>
+                      </div>
+                      <ProgressBar value={stageProgress(job.progress?.indicators?.status, 20)} />
+                    </div>
+                  </CardBody>
+                </Card>
+              ))}
+            </section>
           )}
 
           {/* Completed Jobs Table */}
           {completedJobs.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">
-                Job History
-              </h2>
-              <DataTable
-                columns={[
-                  { key: "jobId", label: "Job ID" },
-                  {
-                    key: "status",
-                    label: "Status",
-                    render: (value) => {
-                      const colorMap: Record<string, string> = {
-                        completed: "bg-green-50 text-green-900 border-green-200",
-                        failed: "bg-red-50 text-red-900 border-red-200",
-                      };
-                      return (
-                        <span
-                          className={`inline-flex items-center border rounded-md px-3 py-1.5 text-sm font-medium ${
-                            colorMap[value] || colorMap.completed
-                          }`}
-                        >
-                          {value ? value.charAt(0).toUpperCase() + value.slice(1) : "-"}
-                        </span>
-                      );
-                    },
-                  },
-                  { key: "duration", label: "Duration" },
-                  { key: "listingsCollected", label: "Listings Collected" },
-                  {
-                    key: "errors",
-                    label: "Errors",
-                    render: (value) => (
-                      <span
-                        className={`font-semibold ${
-                          value === 0 ? "text-green-600" : "text-red-600"
-                        }`}
-                      >
-                        {value}
-                      </span>
-                    ),
-                  },
-                  {
-                    key: "jobId",
-                    label: "Actions",
-                    render: () => (
-                      <button className="border border-slate-200 rounded-md bg-white text-slate-700 px-3 py-1 text-sm font-medium hover:bg-slate-50 transition-colors">
-                        Details
-                      </button>
-                    ),
-                  },
-                ]}
-                data={completedJobs}
-                emptyMessage="No completed jobs"
-              />
-            </div>
+            <Card>
+              <CardHeader title="Job History" />
+              <Table>
+                <THead>
+                  <tr>
+                    <TH>Job ID</TH>
+                    <TH>Status</TH>
+                    <TH>Duration</TH>
+                    <TH numeric>Listings Collected</TH>
+                    <TH numeric>Errors</TH>
+                    <TH>Actions</TH>
+                  </tr>
+                </THead>
+                <TBody>
+                  {completedJobs.map((job, i) => (
+                    <TR key={`${job.jobId}-${i}`}>
+                      <TD className="font-medium">{job.jobId}</TD>
+                      <TD><Badge tone={statusTone(job.status)} dot>{capitalize(job.status)}</Badge></TD>
+                      <TD muted>{job.duration}</TD>
+                      <TD numeric>{job.listingsCollected}</TD>
+                      <TD numeric><Badge tone={statusTone(job.errors === 0 ? "success" : "failed")}>{job.errors}</Badge></TD>
+                      <TD><Button size="sm">Details</Button></TD>
+                    </TR>
+                  ))}
+                </TBody>
+              </Table>
+            </Card>
           )}
 
           {/* Sites Status Section */}
           {sitesData && sitesData.sites && sitesData.sites.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">
-                Site Status
-              </h2>
-              <div className="grid grid-cols-2 gap-6">
+            <section className="space-y-3">
+              <h2 className="text-md font-semibold text-slate-900">Site Status</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {sitesData.sites.map((site: any) => (
-                  <div
-                    key={site.id}
-                    className="bg-white border border-slate-200 rounded-lg  p-6"
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-slate-900">{site.name}</h3>
-                      <span
-                        className={`inline-block border rounded-md px-2 py-1 text-xs font-semibold ${
-                          site.status === "healthy"
-                            ? "border-green-200 bg-green-50 text-green-900"
-                            : site.status === "degraded"
-                            ? "border-amber-200 bg-amber-50 text-amber-900"
-                            : "border-red-200 bg-red-50 text-red-900"
-                        }`}
-                      >
-                        {site.status ? site.status.charAt(0).toUpperCase() + site.status.slice(1) : "-"}
-                      </span>
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Last Scraped</span>
-                        <span className="font-semibold text-slate-900">{site.lastScraped}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Records Collected</span>
-                        <span className="font-semibold text-slate-900">{formatNumber(site.recordsCollected)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Success Rate</span>
-                        <span className="font-semibold text-green-600">{site.successRate}%</span>
-                      </div>
-                    </div>
-                  </div>
+                  <Card key={site.id}>
+                    <CardHeader title={site.name} actions={<Badge tone={statusTone(site.status)} dot>{capitalize(site.status)}</Badge>} />
+                    <CardBody>
+                      <dl className="divide-y divide-slate-100">
+                        <div className="flex justify-between items-center py-2 gap-4">
+                          <dt className="text-sm text-slate-600">Last Scraped</dt>
+                          <dd className="text-sm font-medium text-slate-900 tabular">{site.lastScraped}</dd>
+                        </div>
+                        <div className="flex justify-between items-center py-2 gap-4">
+                          <dt className="text-sm text-slate-600">Records Collected</dt>
+                          <dd className="text-sm font-medium text-slate-900 tabular">{formatNumber(site.recordsCollected)}</dd>
+                        </div>
+                        <div className="flex justify-between items-center py-2 gap-4">
+                          <dt className="text-sm text-slate-600">Success Rate</dt>
+                          <dd className="text-sm font-medium text-slate-900 tabular">{site.successRate}%</dd>
+                        </div>
+                      </dl>
+                    </CardBody>
+                  </Card>
                 ))}
               </div>
-            </div>
+            </section>
           )}
-        </>
+        </div>
       )}
 
       {/* Modal for New Job */}
@@ -382,79 +255,50 @@ export default function ScrapingPage() {
         title="Start New Scraping Job"
       >
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-slate-600 mb-2">
-              Target Markets
-            </label>
-            <select
+          <Field label="Target Markets">
+            <Select
               value={jobConfig.targets}
-              onChange={(e) =>
-                setJobConfig({ ...jobConfig, targets: e.target.value })
-              }
-              className="w-full border border-slate-200 rounded-md px-4 py-2 text-slate-900 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 bg-white"
+              onChange={(e) => setJobConfig({ ...jobConfig, targets: e.target.value })}
             >
               <option value="all">All Markets</option>
               <option value="us-west">US West</option>
               <option value="us-east">US East</option>
               <option value="us-midwest">US Midwest</option>
               <option value="us-south">US South</option>
-            </select>
-          </div>
+            </Select>
+          </Field>
 
-          <div>
-            <label className="block text-sm font-semibold text-slate-600 mb-2">
-              Max Listings to Collect
-            </label>
-            <input
+          <Field label="Max Listings to Collect">
+            <Input
               type="number"
               value={jobConfig.maxListings}
-              onChange={(e) =>
-                setJobConfig({ ...jobConfig, maxListings: e.target.value })
-              }
+              onChange={(e) => setJobConfig({ ...jobConfig, maxListings: e.target.value })}
               placeholder="20000"
-              className="w-full border border-slate-200 rounded-md px-4 py-2 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
             />
+          </Field>
+
+          <label className="flex items-center gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={jobConfig.includeCompetitors}
+              onChange={(e) => setJobConfig({ ...jobConfig, includeCompetitors: e.target.checked })}
+              className="w-4 h-4 rounded-sm border-slate-300 text-amber-600 focus:ring-amber-500"
+            />
+            <span className="text-sm text-slate-700">Include Competitor Analysis</span>
+          </label>
+
+          <div className="rounded-sm border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <p className="font-medium">Estimated Duration</p>
+            <p className="text-xs text-amber-800 mt-0.5">3-4 hours depending on market size and system load</p>
           </div>
 
-          <div>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={jobConfig.includeCompetitors}
-                onChange={(e) =>
-                  setJobConfig({
-                    ...jobConfig,
-                    includeCompetitors: e.target.checked,
-                  })
-                }
-                className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
-              />
-              <span className="text-sm font-semibold text-slate-600">
-                Include Competitor Analysis
-              </span>
-            </label>
-          </div>
-
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-900">
-            <p className="font-semibold mb-1">Estimated Duration</p>
-            <p>3-4 hours depending on market size and system load</p>
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={handleSubmitJob}
-              disabled
-              title={JOB_SUBMIT_UNAVAILABLE}
-              className="flex-1 bg-amber-600 text-white rounded-md px-4 py-2 font-medium hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+          <div className="flex gap-2 pt-2">
+            <Button variant="primary" className="flex-1" onClick={handleSubmitJob} disabled title={JOB_SUBMIT_UNAVAILABLE}>
               Start Job
-            </button>
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="flex-1 border border-slate-200 rounded-md bg-white text-slate-700 px-4 py-2 font-medium hover:bg-slate-50 transition-colors"
-            >
+            </Button>
+            <Button className="flex-1" onClick={() => setIsModalOpen(false)}>
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       </Modal>

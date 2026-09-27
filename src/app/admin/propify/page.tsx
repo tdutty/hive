@@ -1,38 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Zap,
-  Building2,
-  Calendar,
-  Target,
-  CheckSquare,
-  Square,
-  TrendingUp,
-  ArrowRight,
-  Activity,
-  MapPin,
-} from "lucide-react";
-
-// --- Status Badge ---
-
-type BadgeColor = "yellow" | "gray" | "green" | "blue";
-
-function StatusBadge({ label, color }: { label: string; color: BadgeColor }) {
-  const colors: Record<BadgeColor, string> = {
-    yellow: "bg-yellow-50 text-yellow-700 border-yellow-200",
-    gray: "bg-slate-50 text-slate-500 border-slate-200",
-    green: "bg-green-50 text-green-700 border-green-200",
-    blue: "bg-blue-50 text-blue-700 border-blue-200",
-  };
-  return (
-    <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${colors[color]}`}
-    >
-      {label}
-    </span>
-  );
-}
+import { CheckSquare, Square, ArrowRight } from "lucide-react";
+import { Card, CardHeader, CardBody, Badge, statusTone, StatTile, PageHeader, Table, THead, TH, TBody, TR, TD } from "@/components/kit";
 
 // --- PM Software Data ---
 
@@ -54,13 +24,6 @@ const PM_PLATFORMS: PMPlatform[] = [
   { name: "Propertyware", pmsUsing: "SFR", apiAccess: "PWService", marketplace: "Open", status: "Not Applied" },
   { name: "ResMan", pmsUsing: "Regional", apiAccess: "Via Propify", marketplace: "N/A", status: "Via Propify" },
 ];
-
-const STATUS_BADGE_COLOR: Record<PMPlatform["status"], BadgeColor> = {
- "Not Applied": "gray",
-  Applied: "yellow",
-  Approved: "green",
- "Via Propify": "blue",
-};
 
 // --- City Demand Data ---
 
@@ -186,270 +149,174 @@ export default function PropifyPage() {
   const totalDemand = CITY_DEMAND.reduce((sum, c) => sum + c.annualDemand, 0);
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-3 mb-1">
-          <Zap size={24} className="text-amber-500" />
-          <h1 className="text-lg font-semibold text-slate-900">
-            Propify Integration & Predictive Placement
-          </h1>
-        </div>
-        <p className="text-slate-500 text-sm ml-9">
-          From tenant placement service to medical housing marketplace
-        </p>
+    <div className="max-w-7xl">
+      <PageHeader
+        title="Propify Integration & Predictive Placement"
+        meta="Strategy · PM software integrations"
+        description={
+          <>
+            From tenant placement service to medical housing marketplace.
+            <span className="block text-xs text-slate-400 mt-1">Static playbook. The figures and phases are hardcoded and checkbox state is stored in this browser only.</span>
+          </>
+        }
+      />
+
+      {/* Status tiles */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
+        <StatTile label="Integration status" value={<Badge tone={statusTone("Planning")} dot>Planning</Badge>} />
+        <StatTile label="PM software connected" value="0" />
+        <StatTile label="Annual demand" value={totalDemand.toLocaleString()} hint="all markets" />
+        <StatTile label="Pre-match window" value="120" hint="days" />
+        <StatTile label="Placements this cycle" value="0" />
       </div>
 
-      {/* Status Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="bg-white rounded-lg border border-slate-200 p-4">
-          <p className="text-xs text-slate-500 mb-1">Integration Status</p>
-          <StatusBadge label="Planning" color="yellow" />
-        </div>
-        <div className="bg-white rounded-lg border border-slate-200 p-4">
-          <p className="text-xs text-slate-500 mb-1">PM Software Connected</p>
-          <p className="text-2xl font-bold text-slate-900">0</p>
-        </div>
-        <div className="bg-white rounded-lg border border-slate-200 p-4">
-          <p className="text-xs text-slate-500 mb-1">Annual Demand (All Markets)</p>
-          <p className="text-2xl font-bold text-slate-900">{totalDemand.toLocaleString()}</p>
-        </div>
-        <div className="bg-white rounded-lg border border-slate-200 p-4">
-          <p className="text-xs text-slate-500 mb-1">Pre-Match Window</p>
-          <p className="text-2xl font-bold text-slate-900">120 <span className="text-sm font-normal text-slate-400">days</span></p>
-        </div>
-        <div className="bg-white rounded-lg border border-slate-200 p-4">
-          <p className="text-xs text-slate-500 mb-1">Placements This Cycle</p>
-          <p className="text-2xl font-bold text-slate-900">0</p>
-        </div>
-      </div>
-
-      {/* PM Software Landscape */}
-      <div className="bg-white rounded-lg border border-slate-200">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-            <Building2 size={18} className="text-slate-400" />
-            PM Software Landscape
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Platforms Propify connects to and direct marketplace opportunities
-          </p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="text-left px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Platform</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">PMs Using It</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">API Access</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Marketplace</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Our Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
+      <div className="space-y-5">
+        {/* PM Software Landscape */}
+        <Card>
+          <CardHeader title="PM software landscape" description="Platforms Propify connects to and direct marketplace opportunities" />
+          <Table>
+            <THead>
+              <TR>
+                <TH>Platform</TH>
+                <TH>PMs using it</TH>
+                <TH>API access</TH>
+                <TH>Marketplace</TH>
+                <TH>Our status</TH>
+              </TR>
+            </THead>
+            <TBody>
               {PM_PLATFORMS.map((p) => (
-                <tr key={p.name} className="hover:bg-slate-50">
-                  <td className="px-6 py-3 font-medium text-slate-900">{p.name}</td>
-                  <td className="px-6 py-3 text-slate-600">{p.pmsUsing}</td>
-                  <td className="px-6 py-3 text-slate-600">{p.apiAccess}</td>
-                  <td className="px-6 py-3 text-slate-600">{p.marketplace}</td>
-                  <td className="px-6 py-3">
-                    <StatusBadge label={p.status} color={STATUS_BADGE_COLOR[p.status]} />
-                  </td>
-                </tr>
+                <TR key={p.name}>
+                  <TD className="font-medium text-slate-900">{p.name}</TD>
+                  <TD muted>{p.pmsUsing}</TD>
+                  <TD muted>{p.apiAccess}</TD>
+                  <TD muted>{p.marketplace}</TD>
+                  <TD><Badge tone={statusTone(p.status)} dot>{p.status}</Badge></TD>
+                </TR>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            </TBody>
+          </Table>
+        </Card>
 
-      {/* Demand Forecast by City */}
-      <div className="bg-white rounded-lg border border-slate-200">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-            <TrendingUp size={18} className="text-slate-400" />
-            Demand Forecast by City
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Estimated annual medical resident demand across target markets
-          </p>
-        </div>
-        <div className="p-6 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {CITY_DEMAND.map((city) => (
-            <div
-              key={city.city}
-              className="border border-slate-200 rounded-lg p-4 hover:border-amber-300 transition-colors"
-            >
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="font-semibold text-slate-900 flex items-center gap-1.5">
-                  <MapPin size={14} className="text-amber-500" />
-                  {city.city}
-                </h3>
-                <span className="text-lg font-bold text-slate-900">
-                  {city.annualDemand.toLocaleString()}
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 mb-3">{city.hospital}</p>
-              {/* Bar chart */}
-              <div className="w-full bg-slate-100 rounded-full h-2 mb-3">
-                <div
-                  className="bg-amber-500 h-2 rounded-full"
-                  style={{ width: `${(city.annualDemand / MAX_DEMAND) * 100}%` }}
-                />
-              </div>
-              <div className="flex justify-between text-xs text-slate-400">
-                <span>{city.tenantsInPipeline} in pipeline</span>
-                <span>{city.pmPartners} PM partners</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+        {/* Demand Forecast by City */}
+        <Card>
+          <CardHeader title="Demand forecast by city" description="Estimated annual medical resident demand across target markets" />
+          <Table>
+            <THead>
+              <TR>
+                <TH>City</TH>
+                <TH>Anchor hospital</TH>
+                <TH numeric>Annual demand</TH>
+                <TH className="w-40 hidden md:table-cell"><span className="sr-only">Share of largest market</span></TH>
+                <TH numeric>In pipeline</TH>
+                <TH numeric>PM partners</TH>
+              </TR>
+            </THead>
+            <TBody>
+              {CITY_DEMAND.map((city) => (
+                <TR key={city.city}>
+                  <TD className="font-medium text-slate-900">{city.city}</TD>
+                  <TD muted>{city.hospital}</TD>
+                  <TD numeric className="font-medium">{city.annualDemand.toLocaleString()}</TD>
+                  <TD className="hidden md:table-cell">
+                    <div className="w-full bg-slate-100 rounded-full h-1.5" aria-hidden>
+                      <div className="bg-amber-600 h-1.5 rounded-full" style={{ width: `${(city.annualDemand / MAX_DEMAND) * 100}%` }} />
+                    </div>
+                  </TD>
+                  <TD numeric muted>{city.tenantsInPipeline}</TD>
+                  <TD numeric muted>{city.pmPartners}</TD>
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+        </Card>
 
-      {/* Predictive Timeline */}
-      <div className="bg-white rounded-lg border border-slate-200">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-            <Calendar size={18} className="text-slate-400" />
-            Predictive Timeline - Annual Cycle
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            The medical residency housing cycle repeats every year. We are currently in the peak matching window.
-          </p>
-        </div>
-        <div className="p-6">
-          <div className="flex items-start gap-0">
-            {ANNUAL_CYCLE.map((phase, i) => (
-              <div key={phase.months} className="flex-1 relative">
-                {/* Connector line */}
-                {i < ANNUAL_CYCLE.length - 1 && (
-                  <div className="absolute top-4 left-1/2 right-0 h-0.5 bg-slate-200 z-0" />
-                )}
-                {i > 0 && (
-                  <div className="absolute top-4 left-0 right-1/2 h-0.5 bg-slate-200 z-0" />
-                )}
-                {/* Dot */}
-                <div className="flex justify-center mb-3 relative z-10">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                      phase.isCurrent
-                        ? "bg-amber-500 text-white ring-4 ring-amber-100"
-                        : "bg-slate-200 text-slate-500"
-                    }`}
-                  >
-                    {i + 1}
+        {/* Predictive Timeline */}
+        <Card>
+          <CardHeader title="Predictive timeline: annual cycle" description="The medical residency housing cycle repeats every year. We are currently in the peak matching window." />
+          <CardBody className="overflow-x-auto">
+            <ol className="flex items-start min-w-[640px]">
+              {ANNUAL_CYCLE.map((phase, i) => (
+                <li key={phase.months} className="flex-1 relative">
+                  {i < ANNUAL_CYCLE.length - 1 && <div className="absolute top-4 left-1/2 right-0 h-px bg-slate-200" aria-hidden />}
+                  {i > 0 && <div className="absolute top-4 left-0 right-1/2 h-px bg-slate-200" aria-hidden />}
+                  <div className="flex justify-center mb-3 relative">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold tabular ${
+                        phase.isCurrent ? "bg-amber-600 text-white ring-4 ring-amber-50" : "bg-slate-100 text-slate-500 border border-slate-200"
+                      }`}
+                      aria-current={phase.isCurrent ? "step" : undefined}
+                    >
+                      {i + 1}
+                    </div>
                   </div>
+                  <div className="text-center px-2">
+                    <p className={`text-xs font-medium mb-0.5 ${phase.isCurrent ? "text-amber-700" : "text-slate-500"}`}>{phase.months}</p>
+                    <p className="text-sm font-medium text-slate-900 mb-1">{phase.label}</p>
+                    <p className="text-xs text-slate-500">{phase.description}</p>
+                    {phase.isCurrent && <div className="mt-2"><Badge tone="accent">We are here</Badge></div>}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </CardBody>
+        </Card>
+
+        {/* Execution Roadmap */}
+        <Card>
+          <CardHeader title="Execution roadmap" />
+          <CardBody className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+            {ROADMAP.map((phase, i) => (
+              <div key={phase.phase} className={`border rounded-lg p-4 ${i === 0 ? "border-amber-300" : "border-slate-200"}`}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Badge tone={i === 0 ? "accent" : "neutral"}>{phase.phase}</Badge>
+                  <span className="text-xs text-slate-500">{phase.timeline}</span>
                 </div>
-                <div className="text-center px-2">
-                  <p
-                    className={`text-xs font-semibold mb-0.5 ${
-                      phase.isCurrent ? "text-amber-600" : "text-slate-500"
-                    }`}
-                  >
-                    {phase.months}
-                  </p>
-                  <p
-                    className={`text-sm font-medium mb-1 ${
-                      phase.isCurrent ? "text-slate-900" : "text-slate-700"
-                    }`}
-                  >
-                    {phase.label}
-                  </p>
-                  <p className="text-xs text-slate-400">{phase.description}</p>
-                  {phase.isCurrent && (
-                    <span className="inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-                      WE ARE HERE
-                    </span>
-                  )}
-                </div>
+                <h3 className="text-sm font-semibold text-slate-900 mb-2">{phase.title}</h3>
+                <ul className="space-y-1.5">
+                  {phase.items.map((item) => (
+                    <li key={item} className="text-sm text-slate-700 flex items-start gap-2">
+                      <ArrowRight size={14} className="text-slate-300 mt-0.5 shrink-0" aria-hidden />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
-          </div>
-        </div>
-      </div>
+          </CardBody>
+        </Card>
 
-      {/* Execution Roadmap */}
-      <div className="bg-white rounded-lg border border-slate-200">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-            <Target size={18} className="text-slate-400" />
-            Execution Roadmap
-          </h2>
-        </div>
-        <div className="p-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          {ROADMAP.map((phase, i) => (
-            <div
-              key={phase.phase}
-              className={`border rounded-lg p-5 ${
-                i === 0
-                  ? "border-amber-300 bg-amber-50/30"
-                  : "border-slate-200"
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <span
-                  className={`text-xs font-bold px-2 py-0.5 rounded ${
-                    i === 0
-                      ? "bg-amber-100 text-amber-700"
-                      : "bg-slate-100 text-slate-500"
-                  }`}
-                >
-                  {phase.phase}
-                </span>
-                <span className="text-xs text-slate-400">{phase.timeline}</span>
-              </div>
-              <h3 className="font-semibold text-slate-900 mb-3">{phase.title}</h3>
-              <ul className="space-y-2">
-                {phase.items.map((item) => (
-                  <li
-                    key={item}
-                    className="text-sm text-slate-600 flex items-start gap-2"
+        {/* Next Actions */}
+        <Card>
+          <CardHeader
+            title="Next actions"
+            description="Immediate next steps. Checkbox states persist in your browser."
+            actions={<span className="text-xs text-slate-500 tabular">{ACTION_ITEMS.filter((a) => checkedItems[a.id]).length}/{ACTION_ITEMS.length} done</span>}
+          />
+          <ul className="divide-y divide-slate-100">
+            {ACTION_ITEMS.map((item) => {
+              const done = !!checkedItems[item.id];
+              return (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={done}
+                    onClick={() => toggleItem(item.id)}
+                    className="flex items-center gap-3 w-full text-left px-4 py-2.5 hover:bg-slate-50 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-inset"
                   >
-                    <ArrowRight size={14} className="text-slate-300 mt-0.5 flex-shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Next Actions */}
-      <div className="bg-white rounded-lg border border-slate-200">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-            <Activity size={18} className="text-slate-400" />
-            Next Actions
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Immediate next steps - checkbox states persist in your browser
-          </p>
-        </div>
-        <div className="p-6 space-y-3">
-          {ACTION_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => toggleItem(item.id)}
-              className="flex items-center gap-3 w-full text-left group"
-            >
-              {checkedItems[item.id] ? (
-                <CheckSquare size={20} className="text-green-500 flex-shrink-0" />
-              ) : (
-                <Square size={20} className="text-slate-300 group-hover:text-slate-400 flex-shrink-0" />
-              )}
-              <span
-                className={`text-sm ${
-                  checkedItems[item.id]
-                    ? "text-slate-400 line-through"
-                    : "text-slate-700"
-                }`}
-              >
-                {item.label}
-              </span>
-            </button>
-          ))}
-        </div>
+                    {done ? (
+                      <CheckSquare size={18} className="text-emerald-600 shrink-0" aria-hidden />
+                    ) : (
+                      <Square size={18} className="text-slate-300 group-hover:text-slate-400 shrink-0" aria-hidden />
+                    )}
+                    <span className={`text-sm ${done ? "text-slate-400 line-through" : "text-slate-700"}`}>{item.label}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
       </div>
     </div>
   );

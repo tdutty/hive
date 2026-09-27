@@ -31,9 +31,9 @@ export function Badge({ className, tone, dot, children, ...rest }: BadgeProps) {
 /** One status-to-tone map for the whole app, replacing the per-page color maps. */
 export function statusTone(status: string | null | undefined): BadgeProps["tone"] {
   const s = (status || "").toLowerCase();
-  if (/(active|approved|consented|partnership|sent|completed|success|paid|signed|fulfilled|online|healthy|verified)/.test(s)) return "success";
-  if (/(pending|waiting|review|interested|responded|scheduled|in.?progress|draft|queued|warning)/.test(s)) return "warning";
-  if (/(declined|rejected|failed|error|missed|cancel|expired|bounced|suspended|offline|critical)/.test(s)) return "danger";
-  if (/(new|info|lead|open|auto|contacted|inventory)/.test(s)) return "info";
+  if (/(declined|rejected|failed|error|missed|cancel|expired|bounced|suspended|offline|critical|high)/.test(s)) return "danger";
+  if (/(degraded|at.?risk|stale|overdue|medium|pending|waiting|review|interested|responded|scheduled|in.?progress|draft|queued|warning|paused|matched|negotiating|outreach|selections|countered|down)/.test(s)) return "warning";
+  if (/(running|processing|syncing|sending|searching|new|info|lead|open|auto|contacted|inventory|low)/.test(s)) return "info";
+  if (/(active|approved|consented|partnership|sent|completed|success|paid|signed|fulfilled|online|healthy|verified|resolved|leased|done)/.test(s)) return "success";
   return "neutral";
 }

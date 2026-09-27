@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { Fragment, useState, useEffect, useCallback } from "react";
 import { sweetleaseApi } from "@/lib/api";
-import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
+import { Button, Card, Badge, statusTone, StatTile, PageHeader, FilterChips, type Chip, Table, THead, TH, TBody, TR, TD, Field, Input, Select } from "@/components/kit";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
 import { toast } from "sonner";
 import {
   Users,
@@ -12,7 +13,6 @@ import {
   Phone,
   Search,
   RefreshCw,
-  Loader2,
   ChevronDown,
   ChevronRight,
   ChevronLeft,
@@ -50,19 +50,14 @@ interface ContactsResponse {
   markets: string[];
 }
 
-// --- Constants ---
+type TypeFilter = "" | "LANDLORD" | "RESIDENT" | "PARTNER";
 
-const TYPE_BADGE: Record<string, { bg: string; text: string }> = {
-  LANDLORD: { bg: "bg-blue-50", text: "text-blue-700" },
-  RESIDENT: { bg: "bg-green-50", text: "text-green-700" },
-  PARTNER: { bg: "bg-purple-50", text: "text-purple-700" },
-};
-
-const SENTIMENT_DOT: Record<string, string> = {
-  positive: "bg-green-500",
-  neutral: "bg-gray-400",
-  negative: "bg-red-500",
-};
+const TYPE_CHIPS: Chip<TypeFilter>[] = [
+  { key: "", label: "All" },
+  { key: "LANDLORD", label: "Landlord" },
+  { key: "RESIDENT", label: "Resident" },
+  { key: "PARTNER", label: "Partner" },
+];
 
 // --- Helpers ---
 
@@ -81,6 +76,13 @@ function relativeTime(dateStr: string | null): string {
   return date.toLocaleDateString();
 }
 
+/** Sentiment is a fixed three-value enum, toned per value like the other fixed labels. */
+function sentimentBadge(sentiment: ConciergeContact["sentiment"]) {
+  if (!sentiment) return <span className="text-slate-400">-</span>;
+  const tone = sentiment === "positive" ? "success" : sentiment === "negative" ? "danger" : "neutral";
+  return <Badge tone={tone} dot className="capitalize">{sentiment}</Badge>;
+}
+
 // --- Page Component ---
 
 export default function ConciergeContactsPage() {
@@ -93,7 +95,7 @@ export default function ConciergeContactsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Filters
-  const [typeFilter, setTypeFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("");
   const [marketFilter, setMarketFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -115,7 +117,7 @@ export default function ConciergeContactsPage() {
       if (searchQuery) params.search = searchQuery;
 
       const data = await sweetleaseApi.get<ContactsResponse>(
- "/api/admin/concierge/contacts",
+        "/api/admin/concierge/contacts",
         params
       );
       setContacts(data.contacts);
@@ -156,264 +158,211 @@ export default function ConciergeContactsPage() {
     setExpandedId(expandedId === id ? null : id);
   };
 
-  const statCards = [
-    { label: "Total Contacts", value: stats.total, icon: <Users size={20} className="text-amber-600" /> },
-    { label: "Landlords / PMs", value: stats.landlords, icon: <Building2 size={20} className="text-blue-600" /> },
-    { label: "Residents", value: stats.residents, icon: <GraduationCap size={20} className="text-green-600" /> },
-    { label: "With Email", value: stats.withEmail, icon: <Mail size={20} className="text-purple-600" /> },
-  ];
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900">Concierge Contacts</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Contact directory synced from PM companies and tenant match requests
-          </p>
-        </div>
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50 text-sm font-medium"
-        >
-          {syncing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-          Sync Contacts
-        </button>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="Concierge Contacts"
+        description="Contact directory synced from PM companies and tenant match requests"
+        actions={
+          <Button variant="primary" icon={<RefreshCw size={14} />} loading={syncing} onClick={handleSync}>
+            Sync Contacts
+          </Button>
+        }
+      />
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {statCards.map((card) => (
-          <div
-            key={card.label}
-            className="bg-white rounded-lg border border-slate-200 p-4 flex items-center gap-4"
-          >
-            <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center">
-              {card.icon}
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-slate-900">{card.value.toLocaleString()}</p>
-              <p className="text-xs text-slate-500">{card.label}</p>
-            </div>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatTile label="Total Contacts" value={stats.total.toLocaleString()} icon={<Users size={16} />} />
+        <StatTile label="Landlords / PMs" value={stats.landlords.toLocaleString()} icon={<Building2 size={16} />} />
+        <StatTile label="Residents" value={stats.residents.toLocaleString()} icon={<GraduationCap size={16} />} />
+        <StatTile label="With Email" value={stats.withEmail.toLocaleString()} icon={<Mail size={16} />} />
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg border border-slate-200 p-4 flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-slate-500 uppercase">Type</label>
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
-          >
-            <option value="">All</option>
-            <option value="LANDLORD">Landlord</option>
-            <option value="RESIDENT">Resident</option>
-            <option value="PARTNER">Partner</option>
-          </select>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-slate-500 uppercase">Market</label>
-          <select
-            value={marketFilter}
-            onChange={(e) => setMarketFilter(e.target.value)}
-            className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
-          >
-            <option value="">All Markets</option>
-            {markets.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex-1 relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search by name, email, or phone..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full text-sm border border-slate-200 rounded-lg pl-9 pr-3 py-1.5 bg-white text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
-          />
+      <div className="flex flex-col md:flex-row md:items-end gap-3">
+        <FilterChips items={TYPE_CHIPS} value={typeFilter} onChange={setTypeFilter} />
+        <div className="flex flex-col sm:flex-row gap-3 md:ml-auto md:flex-1 md:max-w-xl">
+          <Field label="Market" className="sm:w-48 shrink-0">
+            <Select value={marketFilter} onChange={(e) => setMarketFilter(e.target.value)}>
+              <option value="">All Markets</option>
+              {markets.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Search" className="flex-1">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" aria-hidden />
+              <Input
+                type="search"
+                placeholder="Search by name, email, or phone"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+          </Field>
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+      <Card className="overflow-hidden">
         {loading ? (
-          <Spinner label="Loading contacts..." />
+          <Spinner label="Loading contacts" />
         ) : error ? (
           <div className="p-4">
             <ErrorBanner message={error} onRetry={fetchContacts} />
           </div>
         ) : contacts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-            <Users size={40} className="mb-3" />
-            <p className="text-sm">No contacts found</p>
-          </div>
+          <EmptyState title="No contacts found" icon={<Users size={28} className="mx-auto" aria-hidden />} />
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 bg-slate-50">
-                <th className="text-left px-4 py-3 font-medium text-slate-500 w-8"></th>
-                <th className="text-left px-4 py-3 font-medium text-slate-500">Name</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-500">Type</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-500">Market</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-500">Email</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-500">Phone</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-500">Deal Stage</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-500">Last Contact</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-500">Sentiment</th>
+          <Table>
+            <THead>
+              <tr>
+                <TH className="w-10"><span className="sr-only">Expand</span></TH>
+                <TH>Name</TH>
+                <TH>Type</TH>
+                <TH>Market</TH>
+                <TH>Email</TH>
+                <TH>Phone</TH>
+                <TH>Deal Stage</TH>
+                <TH>Last Contact</TH>
+                <TH>Sentiment</TH>
               </tr>
-            </thead>
-            <tbody>
+            </THead>
+            <TBody>
               {contacts.map((contact) => {
                 const isExpanded = expandedId === contact.id;
-                const badge = TYPE_BADGE[contact.type] || TYPE_BADGE.PARTNER;
-                const sentimentDot = contact.sentiment ? SENTIMENT_DOT[contact.sentiment] : null;
 
                 return (
-                  <>
-                    <tr
-                      key={contact.id}
-                      onClick={() => toggleExpand(contact.id)}
-                      className="border-b border-slate-50 hover:bg-slate-50 cursor-pointer transition-colors"
-                    >
-                      <td className="px-4 py-3 text-slate-400">
-                        {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-slate-900">{contact.name}</td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}
+                  <Fragment key={contact.id}>
+                    <TR clickable selected={isExpanded} onClick={() => toggleExpand(contact.id)}>
+                      <TD className="w-10 pr-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          aria-label={isExpanded ? "Collapse" : "Expand"}
+                          aria-expanded={isExpanded}
+                          onClick={(e) => { e.stopPropagation(); toggleExpand(contact.id); }}
                         >
-                          {contact.type}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">{contact.market || "-"}</td>
-                      <td className="px-4 py-3 text-slate-600">
+                          {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                        </Button>
+                      </TD>
+                      <TD className="font-medium text-slate-900">{contact.name}</TD>
+                      <TD>
+                        <Badge tone={statusTone(contact.type)}>{contact.type}</Badge>
+                      </TD>
+                      <TD muted>{contact.market || "-"}</TD>
+                      <TD muted>
                         {contact.email ? (
-                          <span className="flex items-center gap-1">
-                            <Mail size={14} className="text-slate-400" />
+                          <span className="flex items-center gap-1.5">
+                            <Mail size={13} className="text-slate-400 shrink-0" aria-hidden />
                             {contact.email}
                           </span>
                         ) : (
-                          <span className="text-slate-300">-</span>
+                          <span className="text-slate-400">-</span>
                         )}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">
+                      </TD>
+                      <TD muted className="whitespace-nowrap tabular">
                         {contact.phone ? (
-                          <span className="flex items-center gap-1">
-                            <Phone size={14} className="text-slate-400" />
+                          <span className="flex items-center gap-1.5">
+                            <Phone size={13} className="text-slate-400 shrink-0" aria-hidden />
                             {contact.phone}
                           </span>
                         ) : (
-                          <span className="text-slate-300">-</span>
+                          <span className="text-slate-400">-</span>
                         )}
-                      </td>
-                      <td className="px-4 py-3">
+                      </TD>
+                      <TD>
                         {contact.dealStage ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600">
-                            {contact.dealStage}
-                          </span>
+                          <Badge tone={statusTone(contact.dealStage)}>{contact.dealStage}</Badge>
                         ) : (
-                          <span className="text-slate-300">-</span>
+                          <span className="text-slate-400">-</span>
                         )}
-                      </td>
-                      <td className="px-4 py-3 text-slate-500 text-xs">
+                      </TD>
+                      <TD muted className="whitespace-nowrap tabular" title={contact.lastContactAt || ""}>
                         {relativeTime(contact.lastContactAt)}
-                      </td>
-                      <td className="px-4 py-3">
-                        {sentimentDot ? (
-                          <span className="flex items-center gap-2">
-                            <span className={`w-2.5 h-2.5 rounded-full ${sentimentDot}`} />
-                            <span className="text-xs text-slate-500 capitalize">{contact.sentiment}</span>
-                          </span>
-                        ) : (
-                          <span className="text-slate-300 text-xs">-</span>
-                        )}
-                      </td>
-                    </tr>
+                      </TD>
+                      <TD>{sentimentBadge(contact.sentiment)}</TD>
+                    </TR>
 
                     {/* Expanded Row - Structured Memory */}
                     {isExpanded && (
-                      <tr key={`${contact.id}-detail`} className="bg-slate-50">
+                      <tr className="bg-slate-50">
                         <td colSpan={9} className="px-4 py-4">
-                          <div className="ml-8">
-                            <h4 className="text-xs font-semibold text-slate-500 uppercase mb-2">
+                          <div className="md:ml-10">
+                            <h4 className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
                               Structured Memory
                             </h4>
                             {contact.structuredMemory &&
                             Object.keys(contact.structuredMemory).length > 0 ? (
-                              <div className="grid grid-cols-2 gap-x-8 gap-y-2">
+                              <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
                                 {Object.entries(contact.structuredMemory).map(([key, value]) => (
                                   <div key={key} className="flex items-start gap-2">
-                                    <span className="text-xs font-medium text-slate-500 min-w-[120px]">
+                                    <dt className="text-xs font-medium text-slate-500 min-w-[120px] shrink-0">
                                       {key
                                         .replace(/([A-Z])/g, " $1")
                                         .replace(/^./, (s) => s.toUpperCase())
                                         .trim()}
-                                    </span>
-                                    <span className="text-xs text-slate-700">
+                                    </dt>
+                                    <dd className="text-xs text-slate-700 break-words min-w-0">
                                       {typeof value === "object"
                                         ? JSON.stringify(value, null, 2)
                                         : String(value)}
-                                    </span>
+                                    </dd>
                                   </div>
                                 ))}
-                              </div>
+                              </dl>
                             ) : (
-                              <p className="text-xs text-slate-400">No memory recorded yet</p>
+                              <p className="text-xs text-slate-500">No memory recorded yet</p>
                             )}
                           </div>
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
-            </tbody>
-          </table>
+            </TBody>
+          </Table>
         )}
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50">
-            <p className="text-xs text-slate-500">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 py-3 border-t border-slate-200 bg-slate-50">
+            <p className="text-xs text-slate-500 tabular">
               Showing {(page - 1) * pageSize + 1} - {Math.min(page * pageSize, total)} of{" "}
               {total.toLocaleString()} contacts
             </p>
             <div className="flex items-center gap-2">
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<ChevronLeft size={14} />}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                <ChevronLeft size={14} />
                 Previous
-              </button>
-              <span className="text-xs text-slate-500">
+              </Button>
+              <span className="text-xs text-slate-500 tabular">
                 Page {page} of {totalPages}
               </span>
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Next
-                <ChevronRight size={14} />
-              </button>
+                <ChevronRight size={14} aria-hidden />
+              </Button>
             </div>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

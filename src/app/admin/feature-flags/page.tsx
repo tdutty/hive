@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Edit2, Trash2, Plus } from "lucide-react";
 import { useApi } from "@/lib/hooks";
 import { featureFlagsService } from "@/lib/services/feature-flags";
-import { SearchInput } from "@/components/ui/SearchInput";
+import { Button, Card, CardHeader, CardBody, Badge, PageHeader, FilterChips, type Chip, Field, Input, Select, Textarea } from "@/components/kit";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Modal } from "@/components/ui/Modal";
 
@@ -18,9 +19,16 @@ interface FeatureFlag {
   tags: string[];
 }
 
+type Environment = "production" | "staging" | "development";
+const ENV_CHIPS: Chip<Environment>[] = [
+  { key: "production", label: "Production" },
+  { key: "staging", label: "Staging" },
+  { key: "development", label: "Development" },
+];
+
 export default function FeatureFlagsPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [environmentFilter, setEnvironmentFilter] = useState("production");
+  const [environmentFilter, setEnvironmentFilter] = useState<Environment>("production");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingFlag, setEditingFlag] = useState<FeatureFlag | null>(null);
   const [formData, setFormData] = useState({
@@ -102,260 +110,151 @@ export default function FeatureFlagsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold text-slate-900 mb-2">Feature Flags</h1>
-          </div>
-        </div>
-        <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    );
+    return <div className="max-w-7xl"><PageHeader title="Feature Flags" /><Spinner label="Loading feature flags" /></div>;
   }
 
   if (error) {
-    return (
-      <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold text-slate-900 mb-2">Feature Flags</h1>
-          </div>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700">
-          <p className="font-medium">Failed to load data</p>
-          <p className="text-sm mt-1">{error}</p>
-          <button
-            onClick={refetch}
-            className="mt-3 bg-red-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-red-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
+    return <div className="max-w-7xl"><PageHeader title="Feature Flags" /><ErrorBanner message={error} onRetry={refetch} /></div>;
   }
 
   return (
-    <div className="space-y-8">
-      {/* Page Title */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900 mb-2">Feature Flags</h1>
-          <p className="text-slate-500">Manage feature rollout and experimentation</p>
-        </div>
-        <button
-          onClick={handleCreate}
-          className="bg-amber-600 text-white rounded-md px-6 py-3 font-medium flex items-center gap-2 hover:bg-amber-700 transition-colors"
-        >
-          <Plus size={20} />
-          Create Flag
-        </button>
-      </div>
-
-      {/* Environment Filter */}
-      <div className="space-y-2">
-        <p className="text-sm font-semibold text-slate-700">Environment</p>
-        <div className="flex gap-2">
-          {["production", "staging", "development"].map((env) => (
-            <button
-              key={env}
-              onClick={() => setEnvironmentFilter(env)}
-              className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                environmentFilter === env
-                  ? "bg-amber-600 text-white"
-                  : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
-              }`}
-            >
-              {env.charAt(0).toUpperCase() + env.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Search */}
-      <SearchInput
-        value={searchTerm}
-        onChange={setSearchTerm}
-        placeholder="Search feature flags..."
+    <div className="max-w-7xl">
+      <PageHeader
+        title="Feature Flags"
+        description="Manage feature rollout and experimentation"
+        actions={<Button variant="primary" icon={<Plus size={14} />} onClick={handleCreate}>Create flag</Button>}
       />
 
-      {/* Feature Flags Grid */}
-      <div className="grid gap-6">
-        {filteredFlags.map((flag) => (
-          <div
-            key={flag.id}
-            className="bg-white border border-slate-200 rounded-lg  p-6 space-y-4"
-          >
-            {/* Header */}
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-slate-900 mb-1">
-                  {flag.name}
-                </h3>
-                <p className="text-sm text-slate-500">{flag.description}</p>
-              </div>
-
-              {/* Toggle Switch */}
-              <button
-                onClick={() => handleToggle(flag.id)}
-                className={`ml-4 w-12 h-6 rounded transition-colors ${
-                  flag.enabled ? "bg-amber-600" : "bg-gray-300"
-                }`}
-              />
-            </div>
-
-            {/* Rollout Percentage */}
-            <div>
-              <label className="text-sm font-semibold text-slate-700 mb-2 block">
-                Rollout: {flag.rolloutPercentage}%
-              </label>
-              <ProgressBar
-                value={flag.rolloutPercentage}
-                color={flag.enabled ? "bg-amber-600" : "bg-gray-400"}
-              />
-            </div>
-
-            {/* Environment & Tags */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-block border border-slate-200 rounded-md px-3 py-1 text-xs font-semibold bg-slate-50 text-slate-900">
-                {flag.environment.toUpperCase()}
-              </span>
-              {(flag.tags || []).map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-block border border-slate-200 rounded px-2 py-1 text-xs text-slate-700 bg-slate-50"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-2 pt-4 border-t border-slate-200">
-              <button
-                onClick={() => handleEdit(flag)}
-                className="flex-1 border border-slate-200 bg-white text-slate-700 rounded-md px-4 py-2 font-medium flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors"
-              >
-                <Edit2 size={16} />
-                Edit
-              </button>
-              <button
-                onClick={() => handleDelete(flag.id)}
-                className="flex-1 border border-red-200 bg-red-50 text-red-700 rounded-md px-4 py-2 font-medium flex items-center justify-center gap-2 hover:bg-red-100 transition-colors"
-              >
-                <Trash2 size={16} />
-                Delete
-              </button>
-            </div>
-          </div>
-        ))}
+      {/* Environment filter + search */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+        <Input
+          type="search"
+          aria-label="Search feature flags"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search feature flags..."
+          className="sm:max-w-xs"
+        />
+        <FilterChips items={ENV_CHIPS} value={environmentFilter} onChange={setEnvironmentFilter} />
       </div>
+
+      {/* Feature Flags Grid */}
+      {filteredFlags.length === 0 ? (
+        <Card>
+          <EmptyState
+            title={flags.length === 0 ? `No flags in ${environmentFilter}` : "No flags match your search"}
+            hint={flags.length === 0 ? "Create a flag to start a rollout in this environment." : undefined}
+          />
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {filteredFlags.map((flag) => (
+            <Card key={flag.id}>
+              <CardHeader
+                title={flag.name}
+                description={flag.description}
+                actions={
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={flag.enabled}
+                    aria-label={`${flag.enabled ? "Disable" : "Enable"} ${flag.name}`}
+                    onClick={() => handleToggle(flag.id)}
+                    className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 ${flag.enabled ? "bg-amber-600" : "bg-slate-300"}`}
+                  >
+                    <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${flag.enabled ? "translate-x-4" : "translate-x-0.5"}`} aria-hidden />
+                  </button>
+                }
+              />
+              <CardBody className="space-y-4">
+                {/* Rollout Percentage */}
+                <div>
+                  <p className="text-xs font-medium text-slate-600 mb-1.5 tabular">Rollout: {flag.rolloutPercentage}%</p>
+                  <ProgressBar
+                    value={flag.rolloutPercentage}
+                    color={flag.enabled ? "bg-amber-600" : "bg-slate-400"}
+                  />
+                </div>
+
+                {/* Environment & Tags */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <Badge tone="outline">{flag.environment.toUpperCase()}</Badge>
+                  {(flag.tags || []).map((tag) => (
+                    <Badge key={tag}>{tag}</Badge>
+                  ))}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-3 border-t border-slate-200">
+                  <Button size="sm" icon={<Edit2 size={14} />} onClick={() => handleEdit(flag)}>Edit</Button>
+                  <Button size="sm" variant="dangerOutline" icon={<Trash2 size={14} />} onClick={() => handleDelete(flag.id)}>Delete</Button>
+                </div>
+              </CardBody>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingFlag ? "Edit Feature Flag" : "Create Feature Flag"}
+        title={editingFlag ? "Edit feature flag" : "Create feature flag"}
       >
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Flag Name
-            </label>
-            <input
+          <Field label="Flag name">
+            <Input
               type="text"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g., new-search-feature"
-              className="w-full border border-slate-200 rounded-md px-4 py-2 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
             />
-          </div>
+          </Field>
 
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Description
-            </label>
-            <textarea
+          <Field label="Description">
+            <Textarea
               value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Describe what this feature flag does"
               rows={3}
-              className="w-full border border-slate-200 rounded-md px-4 py-2 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
             />
-          </div>
+          </Field>
 
-          <div>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.enabled}
-                onChange={(e) =>
-                  setFormData({ ...formData, enabled: e.target.checked })
-                }
-                className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
-              />
-              <span className="text-sm font-semibold text-slate-700">
-                Enabled
-              </span>
-            </label>
-          </div>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.enabled}
+              onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
+              className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+            />
+            <span className="text-sm font-medium text-slate-700">Enabled</span>
+          </label>
 
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Rollout Percentage: {formData.rolloutPercentage}%
-            </label>
+          <Field label={`Rollout percentage: ${formData.rolloutPercentage}%`}>
             <input
               type="range"
               min="0"
               max="100"
               value={formData.rolloutPercentage}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  rolloutPercentage: parseInt(e.target.value),
-                })
-              }
-              className="w-full"
+              onChange={(e) => setFormData({ ...formData, rolloutPercentage: parseInt(e.target.value) })}
+              className="w-full accent-amber-600"
             />
-          </div>
+          </Field>
 
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Environment
-            </label>
-            <select
+          <Field label="Environment">
+            <Select
               value={formData.environment}
-              onChange={(e) =>
-                setFormData({ ...formData, environment: e.target.value })
-              }
-              className="w-full border border-slate-200 rounded-md px-4 py-2 text-slate-900 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 bg-white"
+              onChange={(e) => setFormData({ ...formData, environment: e.target.value })}
             >
               <option value="production">Production</option>
               <option value="staging">Staging</option>
               <option value="development">Development</option>
-            </select>
-          </div>
+            </Select>
+          </Field>
 
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={handleSave}
-              className="flex-1 bg-amber-600 text-white rounded-md px-4 py-2 font-medium hover:bg-amber-700 transition-colors"
-            >
-              Save
-            </button>
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="flex-1 border border-slate-200 bg-white text-slate-700 rounded-md px-4 py-2 font-medium hover:bg-slate-50 transition-colors"
-            >
-              Cancel
-            </button>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleSave}>Save</Button>
           </div>
         </div>
       </Modal>

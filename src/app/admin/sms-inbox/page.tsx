@@ -4,8 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { sweetleaseApi } from "@/lib/api";
 import { usePolling } from "@/lib/hooks";
-import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
-import { RefreshCw, Send, MessageSquare, Phone, MapPin } from "lucide-react";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
+import { Button, Card, Badge, PageHeader, Input } from "@/components/kit";
+import { RefreshCw, Send, MessageSquare, Phone, MapPin, ArrowLeft } from "lucide-react";
 
 interface SmsMessage {
   id: string;
@@ -94,128 +95,119 @@ export default function SmsInboxPage() {
   const unreadCount = conversations.filter((c) => c.hasUnread).length;
 
   return (
-    <div className="h-[calc(100dvh-7rem)]">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900 flex items-center gap-3">
-            <MessageSquare size={24} className="text-amber-500" />
+    <div className="max-w-7xl h-[calc(100dvh-7rem)] flex flex-col">
+      <PageHeader
+        title={
+          <span className="inline-flex items-center gap-2">
+            <MessageSquare size={18} className="text-amber-600" aria-hidden />
             SMS Inbox
-            {unreadCount > 0 && (
-              <span className="px-2.5 py-0.5 text-xs font-bold bg-red-600 text-white rounded-full">
-                {unreadCount}
-              </span>
-            )}
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">Landlord text conversations</p>
-        </div>
-        <button
-          onClick={fetchConversations}
-          className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-500 hover:text-slate-900 rounded-lg text-sm transition"
-        >
-          <RefreshCw size={14} />
-          Refresh
-        </button>
-      </div>
+            {unreadCount > 0 && <Badge tone="accent">{unreadCount}</Badge>}
+          </span>
+        }
+        description="Landlord text conversations"
+        actions={
+          <Button variant="ghost" size="icon" aria-label="Refresh" onClick={fetchConversations}>
+            <RefreshCw size={15} />
+          </Button>
+        }
+      />
 
       {error && (
         <ErrorBanner message={error} onRetry={fetchConversations} className="mb-4" />
       )}
 
-      <div className="flex gap-4 h-[calc(100%-80px)]">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 flex-1 min-h-0">
         {/* Conversation List */}
-        <div className="w-80 max-w-[calc(100vw-2rem)] shrink-0 bg-white border border-slate-200 rounded-lg overflow-y-auto">
+        <Card className={`lg:col-span-2 min-h-0 overflow-y-auto ${selected ? "hidden lg:block" : ""}`}>
           {loading ? (
             <Spinner />
           ) : error && conversations.length === 0 ? null : conversations.length === 0 ? (
-            <div className="p-6 text-center text-slate-500 text-sm">
-              No SMS conversations yet. Outreach texts will appear here when sent.
-            </div>
+            <EmptyState title="No SMS conversations yet" hint="Outreach texts will appear here when sent." />
           ) : (
-            conversations.map((conv) => {
-              const isSelected =
-                selected?.phone.replace(/\D/g, "").slice(-10) ===
-                conv.phone.replace(/\D/g, "").slice(-10);
-              const lastMsg = conv.messages[0];
-              return (
-                <div
-                  key={conv.phone}
-                  onClick={() => setSelected(conv)}
-                  className={`px-4 py-3 border-b border-slate-200 cursor-pointer transition ${
-                    isSelected
-                      ? "bg-slate-50 border-l-2 border-l-amber-500"
-                      : "hover:bg-slate-50"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-slate-900 truncate flex items-center gap-2">
-                      {conv.hasUnread && (
-                        <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-                      )}
-                      {conv.ownerName || conv.phone}
-                    </span>
-                    <span className="text-xs text-slate-500 shrink-0">
-                      {formatTime(conv.lastMessageAt)}
-                    </span>
-                  </div>
-                  {conv.address && (
-                    <div className="text-xs text-slate-500 flex items-center gap-1 mb-1">
-                      <MapPin size={8} />
-                      {conv.address}
+            <div className="divide-y divide-slate-100">
+              {conversations.map((conv) => {
+                const isSelected =
+                  selected?.phone.replace(/\D/g, "").slice(-10) ===
+                  conv.phone.replace(/\D/g, "").slice(-10);
+                const lastMsg = conv.messages[0];
+                return (
+                  <button
+                    key={conv.phone}
+                    onClick={() => setSelected(conv)}
+                    className={`w-full text-left px-4 py-2.5 hover:bg-slate-50 focus-visible:outline-none focus-visible:bg-slate-50 ${isSelected ? "bg-amber-50" : ""}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium text-slate-900 truncate inline-flex items-center gap-2 min-w-0">
+                        {conv.hasUnread && (
+                          <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" aria-label="Unread" />
+                        )}
+                        <span className="truncate">{conv.ownerName || conv.phone}</span>
+                      </span>
+                      <span className="text-xs text-slate-500 tabular shrink-0">
+                        {formatTime(conv.lastMessageAt)}
+                      </span>
                     </div>
-                  )}
-                  <div className="text-xs text-slate-500 truncate">
-                    {lastMsg?.direction === "outbound" ? "You: " : ""}
-                    {lastMsg?.body}
-                  </div>
-                </div>
-              );
-            })
+                    {conv.address && (
+                      <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5 truncate">
+                        <MapPin size={11} aria-hidden className="shrink-0" />
+                        <span className="truncate">{conv.address}</span>
+                      </div>
+                    )}
+                    <div className="text-xs text-slate-600 truncate mt-0.5">
+                      {lastMsg?.direction === "outbound" ? "You: " : ""}
+                      {lastMsg?.body}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           )}
-        </div>
+        </Card>
 
         {/* Message Thread */}
-        <div className="flex-1 bg-white border border-slate-200 rounded-lg flex flex-col">
+        <Card className={`lg:col-span-3 min-h-0 flex flex-col ${selected ? "" : "hidden lg:flex"}`}>
           {selected ? (
             <>
               {/* Thread Header */}
-              <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-                <div>
-                  <div className="text-slate-900 font-medium">
-                    {selected.ownerName || selected.phone}
-                  </div>
-                  <div className="text-xs text-slate-500 flex items-center gap-3">
-                    <span className="flex items-center gap-1">
-                      <Phone size={10} />
-                      {selected.phone}
+              <div className="px-4 py-3 border-b border-slate-200">
+                <button onClick={() => setSelected(null)} className="lg:hidden mb-1 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900">
+                  <ArrowLeft size={13} aria-hidden /> All conversations
+                </button>
+                <h2 className="text-md font-semibold text-slate-900 break-words">
+                  {selected.ownerName || selected.phone}
+                </h2>
+                <div className="text-xs text-slate-500 flex flex-wrap items-center gap-3">
+                  <span className="inline-flex items-center gap-1">
+                    <Phone size={11} aria-hidden />
+                    {selected.phone}
+                  </span>
+                  {selected.address && (
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin size={11} aria-hidden />
+                      {selected.address}
                     </span>
-                    {selected.address && (
-                      <span className="flex items-center gap-1">
-                        <MapPin size={10} />
-                        {selected.address}
-                      </span>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+              <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3">
                 {[...selected.messages].reverse().map((msg) => (
                   <div
                     key={msg.id}
                     className={`flex ${msg.direction === "outbound" ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[70%] px-4 py-2.5 rounded-xl text-sm ${
+                      className={`max-w-[85%] sm:max-w-[70%] px-3 py-2 rounded-lg text-sm ${
                         msg.direction === "outbound"
                           ? "bg-amber-600 text-white rounded-br-sm"
-                          : "bg-slate-50 text-slate-700 rounded-bl-sm"
+                          : "bg-slate-50 border border-slate-200 text-slate-800 rounded-bl-sm"
                       }`}
                     >
-                      <div>{msg.body}</div>
+                      <div className="whitespace-pre-wrap leading-5">{msg.body}</div>
                       <div
-                        className={`text-xs mt-1 ${
-                          msg.direction === "outbound" ? "text-amber-200" : "text-slate-500"
+                        className={`text-xs mt-1 tabular ${
+                          msg.direction === "outbound" ? "text-amber-100" : "text-slate-500"
                         }`}
                       >
                         {new Date(msg.createdAt).toLocaleString([], {
@@ -234,31 +226,33 @@ export default function SmsInboxPage() {
               {/* Reply Input */}
               <div className="px-4 py-3 border-t border-slate-200">
                 <div className="flex gap-2">
-                  <input
+                  <Input
                     type="text"
+                    aria-label="Reply"
                     value={reply}
                     onChange={(e) => setReply(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendReply()}
                     placeholder="Type a reply..."
-                    className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500"
+                    className="flex-1"
                   />
-                  <button
+                  <Button
+                    variant="primary"
+                    icon={<Send size={14} />}
                     onClick={handleSendReply}
+                    loading={sending}
                     disabled={sending || !reply.trim()}
-                    className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
                   >
-                    <Send size={14} />
-                    {sending ? "..." : "Send"}
-                  </button>
+                    Send
+                  </Button>
                 </div>
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-slate-500 text-sm">
-              Select a conversation to view messages
+            <div className="flex-1 flex items-center justify-center">
+              <EmptyState title="Select a conversation" hint="Messages and the reply box show here." />
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

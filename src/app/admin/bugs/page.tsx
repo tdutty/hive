@@ -17,154 +17,114 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { sentryService, type SentryIssue } from "@/lib/services/sentry";
+import { Button, Card, CardBody, Badge, statusTone, StatTile, PageHeader, FilterChips } from "@/components/kit";
+import type { BadgeProps } from "@/components/kit/Badge";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
 
 type FilterTab = "unresolved" | "all" | "fatal" | "error" | "warning";
+type BadgeTone = NonNullable<BadgeProps["tone"]>;
 
-const LEVEL_CONFIG: Record<
-  string,
-  { icon: React.ReactNode; color: string; bg: string; badge: string }
-> = {
-  fatal: {
-    icon: <XCircle size={16} />,
-    color: "text-red-700",
-    bg: "bg-red-50",
-    badge: "bg-red-100 text-red-700 border-red-200",
-  },
-  error: {
-    icon: <AlertCircle size={16} />,
-    color: "text-orange-700",
-    bg: "bg-orange-50",
-    badge: "bg-orange-100 text-orange-700 border-orange-200",
-  },
-  warning: {
-    icon: <AlertTriangle size={16} />,
-    color: "text-amber-700",
-    bg: "bg-amber-50",
-    badge: "bg-amber-100 text-amber-700 border-amber-200",
-  },
-  info: {
-    icon: <Info size={16} />,
-    color: "text-blue-700",
-    bg: "bg-blue-50",
-    badge: "bg-blue-100 text-blue-700 border-blue-200",
-  },
-  debug: {
-    icon: <Bug size={16} />,
-    color: "text-gray-600",
-    bg: "bg-gray-50",
-    badge: "bg-gray-100 text-gray-600 border-gray-200",
-  },
+const LEVEL_ICON: Record<string, React.ReactNode> = {
+  fatal: <XCircle size={16} />,
+  error: <AlertCircle size={16} />,
+  warning: <AlertTriangle size={16} />,
+  info: <Info size={16} />,
+  debug: <Bug size={16} />,
 };
 
-const STATUS_CONFIG: Record<
-  string,
-  { icon: React.ReactNode; label: string; color: string }
-> = {
-  unresolved: {
-    icon: <AlertCircle size={14} />,
-    label: "Unresolved",
-    color: "text-orange-600",
-  },
-  resolved: {
-    icon: <CheckCircle2 size={14} />,
-    label: "Resolved",
-    color: "text-green-600",
-  },
-  ignored: {
-    icon: <EyeOff size={14} />,
-    label: "Ignored",
-    color: "text-gray-500",
-  },
+/** Sentry levels: fatal is not in the shared status map, so it is pinned to danger. */
+const levelTone = (level: string): BadgeTone =>
+  level === "fatal" ? "danger" : level === "debug" ? "neutral" : statusTone(level) ?? "neutral";
+
+const STATUS_CONFIG: Record<string, { icon: React.ReactNode; label: string; tone: BadgeTone }> = {
+  unresolved: { icon: <AlertCircle size={12} />, label: "Unresolved", tone: "warning" },
+  resolved: { icon: <CheckCircle2 size={12} />, label: "Resolved", tone: "success" },
+  ignored: { icon: <EyeOff size={12} />, label: "Ignored", tone: "neutral" },
 };
 
 function IssueRow({ issue }: { issue: SentryIssue }) {
-  const level = LEVEL_CONFIG[issue.level] || LEVEL_CONFIG.error;
+  const icon = LEVEL_ICON[issue.level] || LEVEL_ICON.error;
   const status = STATUS_CONFIG[issue.status] || STATUS_CONFIG.unresolved;
 
   return (
-    <div className="border border-slate-200 rounded-lg bg-white hover: transition-shadow">
-      <div className="p-4">
+    <Card>
+      <CardBody>
         <div className="flex items-start gap-3">
-          <div
-            className={`mt-0.5 p-1.5 rounded-md ${level.bg} ${level.color} flex-shrink-0`}
-          >
-            {level.icon}
+          <div className="mt-0.5 p-1.5 rounded-md bg-slate-100 text-slate-600 shrink-0" aria-hidden>
+            {icon}
           </div>
 
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <h3 className="text-sm font-semibold text-gray-900 truncate">
-                  {issue.title}
-                </h3>
-                <p className="text-xs text-gray-500 mt-0.5 truncate">
-                  {issue.culprit}
-                </p>
+                <h3 className="text-sm font-semibold text-slate-900 truncate">{issue.title}</h3>
+                <p className="text-xs text-slate-500 mt-0.5 truncate">{issue.culprit}</p>
               </div>
 
               <a
                 href={issue.permalink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-shrink-0 p-1.5 hover:bg-slate-100 rounded transition-colors"
+                className="shrink-0 p-1.5 hover:bg-slate-100 rounded transition-colors"
                 title="Open in Sentry"
               >
-                <ExternalLink size={14} className="text-gray-400" />
+                <ExternalLink size={14} className="text-slate-400" aria-hidden />
+                <span className="sr-only">Open in Sentry</span>
               </a>
             </div>
 
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2.5">
-              <span className="flex items-center gap-1 text-xs text-gray-500">
-                <Hash size={12} />
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2.5">
+              <span className="flex items-center gap-1 text-xs text-slate-500 tabular">
+                <Hash size={12} aria-hidden />
                 {issue.shortId}
               </span>
 
-              <span
-                className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border ${level.badge}`}
-              >
-                {issue.level}
-              </span>
+              <Badge tone={levelTone(issue.level)} dot>{issue.level}</Badge>
 
-              <span
-                className={`flex items-center gap-1 text-xs font-medium ${status.color}`}
-              >
+              <Badge tone={status.tone}>
                 {status.icon}
                 {status.label}
-              </span>
+              </Badge>
 
-              <span className="flex items-center gap-1 text-xs text-gray-500">
-                <AlertCircle size={12} />
+              <span className="flex items-center gap-1 text-xs text-slate-500 tabular">
+                <AlertCircle size={12} aria-hidden />
                 {Number(issue.count).toLocaleString()} events
               </span>
 
               {issue.userCount > 0 && (
-                <span className="flex items-center gap-1 text-xs text-gray-500">
-                  <Users size={12} />
+                <span className="flex items-center gap-1 text-xs text-slate-500 tabular">
+                  <Users size={12} aria-hidden />
                   {issue.userCount.toLocaleString()} users
                 </span>
               )}
 
-              <span className="flex items-center gap-1 text-xs text-gray-500">
-                <Clock size={12} />
+              <span className="flex items-center gap-1 text-xs text-slate-500">
+                <Clock size={12} aria-hidden />
                 {issue.lastSeen && !isNaN(new Date(issue.lastSeen).getTime())
-                  ? formatDistanceToNow(new Date(issue.lastSeen), {
-                      addSuffix: true,
-                    })
+                  ? formatDistanceToNow(new Date(issue.lastSeen), { addSuffix: true })
                   : "-"}
               </span>
             </div>
 
             {issue.metadata?.value && (
-              <p className="text-xs text-gray-600 bg-slate-50 rounded px-2.5 py-1.5 mt-2 font-mono truncate">
+              <p className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 mt-2 font-mono truncate">
                 {issue.metadata.value}
               </p>
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </CardBody>
+    </Card>
   );
 }
+
+const TABS: { key: FilterTab; label: string }[] = [
+  { key: "unresolved", label: "Unresolved" },
+  { key: "all", label: "All" },
+  { key: "fatal", label: "Fatal" },
+  { key: "error", label: "Errors" },
+  { key: "warning", label: "Warnings" },
+];
 
 export default function BugsPage() {
   const [issues, setIssues] = useState<SentryIssue[]>([]);
@@ -218,130 +178,43 @@ export default function BugsPage() {
   const warningCount = issues.filter((i) => i.level === "warning").length;
   const totalEvents = issues.reduce((sum, i) => sum + Number(i.count), 0);
 
-  const tabs: { key: FilterTab; label: string }[] = [
-    { key: "unresolved", label: "Unresolved" },
-    { key: "all", label: "All" },
-    { key: "fatal", label: "Fatal" },
-    { key: "error", label: "Errors" },
-    { key: "warning", label: "Warnings" },
-  ];
-
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-semibold text-gray-900">Bugs & Errors</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Live issues from Sentry — SweetLease production
-          </p>
-        </div>
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
-        >
-          <RefreshCw
-            size={16}
-            className={refreshing ? "animate-spin" : ""}
-          />
-          Refresh
-        </button>
+    <div className="max-w-7xl">
+      <PageHeader
+        title="Bugs & Errors"
+        description="Live issues from Sentry, SweetLease production"
+        actions={
+          <Button variant="primary" icon={<RefreshCw size={14} />} loading={refreshing} onClick={handleRefresh}>
+            Refresh
+          </Button>
+        }
+      />
+
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
+        <StatTile label="Total Issues" value={loading ? "-" : issues.length} />
+        <StatTile label="Fatal" value={loading ? "-" : fatalCount} icon={<XCircle size={14} />} />
+        <StatTile label="Errors" value={loading ? "-" : errorCount} icon={<AlertCircle size={14} />} />
+        <StatTile label="Warnings" value={loading ? "-" : warningCount} icon={<AlertTriangle size={14} />} />
+        <StatTile label="Total Events" value={loading ? "-" : totalEvents.toLocaleString()} />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-        <div className="bg-white border border-slate-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-            Total Issues
-          </p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">
-            {loading ? "—" : issues.length}
-          </p>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-red-600 uppercase tracking-wider">
-            Fatal
-          </p>
-          <p className="text-2xl font-bold text-red-700 mt-1">
-            {loading ? "—" : fatalCount}
-          </p>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-orange-600 uppercase tracking-wider">
-            Errors
-          </p>
-          <p className="text-2xl font-bold text-orange-700 mt-1">
-            {loading ? "—" : errorCount}
-          </p>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-amber-600 uppercase tracking-wider">
-            Warnings
-          </p>
-          <p className="text-2xl font-bold text-amber-700 mt-1">
-            {loading ? "—" : warningCount}
-          </p>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-            Total Events
-          </p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">
-            {loading ? "—" : totalEvents.toLocaleString()}
-          </p>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-1 border-b border-slate-200 mb-4">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab.key
-                ? "border-amber-500 text-amber-700"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <FilterChips items={TABS} value={activeTab} onChange={setActiveTab} className="mb-4" />
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="flex flex-col items-center gap-3">
-            <RefreshCw size={24} className="animate-spin text-amber-600" />
-            <p className="text-sm text-gray-500">
-              Loading issues from Sentry…
-            </p>
-          </div>
-        </div>
+        <Spinner label="Loading issues from Sentry" />
       ) : error ? (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <AlertCircle size={24} className="text-red-500 mx-auto mb-2" />
-          <p className="text-sm font-medium text-red-800">{error}</p>
-          <p className="text-xs text-red-600 mt-1">
-            Check that SENTRY_AUTH_TOKEN is configured in .env.local
-          </p>
-          <button
-            onClick={handleRefresh}
-            className="mt-3 px-4 py-1.5 text-xs font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors"
-          >
-            Retry
-          </button>
-        </div>
+        <ErrorBanner
+          message={`${error}. Check that SENTRY_AUTH_TOKEN is configured in .env.local`}
+          onRetry={handleRefresh}
+        />
       ) : issues.length === 0 ? (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-          <CheckCircle2 size={24} className="text-green-600 mx-auto mb-2" />
-          <p className="text-sm font-medium text-green-800">
-            No issues found
-          </p>
-          <p className="text-xs text-green-600 mt-1">
-            {activeTab === "unresolved"
-              ? "All clear — no unresolved issues."
-              : `No ${activeTab} issues to display.`}
-          </p>
-        </div>
+        <Card>
+          <EmptyState
+            title="No issues found"
+            hint={activeTab === "unresolved" ? "All clear, no unresolved issues." : `No ${activeTab} issues to display.`}
+            icon={<CheckCircle2 size={28} className="mx-auto text-emerald-500" aria-hidden />}
+          />
+        </Card>
       ) : (
         <div className="space-y-3">
           {issues.map((issue) => (

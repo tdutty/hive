@@ -5,15 +5,22 @@ import { DollarSign, TrendingUp, AlertCircle, Clock } from "lucide-react";
 import { useApi } from "@/lib/hooks";
 import { api } from "@/lib/api";
 import { financialService } from "@/lib/services/financial";
-import { MetricCard } from "@/components/ui/MetricCard";
-import { DataTable } from "@/components/ui/DataTable";
+import { Card, CardHeader, CardBody, Badge, statusTone, StatTile, PageHeader, FilterChips, type Chip, Table, THead, TH, TBody, TR, TD } from "@/components/kit";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
 import { SimpleLineChart } from "@/components/charts/SimpleLineChart";
 import { SimpleBarChart } from "@/components/charts/SimpleBarChart";
 import { SimplePieChart } from "@/components/charts/SimplePieChart";
 import { formatCurrency } from "@/lib/utils";
 
+type Tab = "overview" | "payments" | "regions";
+const TABS: Chip<Tab>[] = [
+  { key: "overview", label: "Overview" },
+  { key: "payments", label: "Payments" },
+  { key: "regions", label: "Regions" },
+];
+
 export default function FinancialPage() {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState<Tab>("overview");
 
   // Fetch real Stripe financial data
   const { data: stripeData, loading: stripeLoading, error: stripeError, refetch: refetchStripe } = useApi(() =>
@@ -29,40 +36,11 @@ export default function FinancialPage() {
   const error = stripeError || securityError;
 
   if (loading) {
-    return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900">
-            Financial Dashboard
-          </h1>
-        </div>
-        <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    );
+    return <div className="max-w-7xl"><PageHeader title="Financial Dashboard" /><Spinner label="Loading financial data" /></div>;
   }
 
   if (error) {
-    return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900">
-            Financial Dashboard
-          </h1>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700">
-          <p className="font-medium">Failed to load data</p>
-          <p className="text-sm mt-1">{error}</p>
-          <button
-            onClick={() => { refetchStripe(); refetchSecurity(); }}
-            className="mt-3 bg-red-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-red-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
+    return <div className="max-w-7xl"><PageHeader title="Financial Dashboard" /><ErrorBanner message={error} onRetry={() => { refetchStripe(); refetchSecurity(); }} /></div>;
   }
 
   // Extract real Stripe metrics
@@ -70,6 +48,7 @@ export default function FinancialPage() {
   const monthlyRevenue = stripeData?.monthlyRevenue || 0;
   const outstandingBalances = stripeData?.outstandingBalances || 0;
   const refundsTotal = stripeData?.refundsTotal || 0;
+  const growth: number = stripeData?.growth || 0;
 
   // Extract security data
   const securitySummary = securityData?.summary || {
@@ -92,395 +71,256 @@ export default function FinancialPage() {
   // Regional payment preferences table data
   const regionalPaymentData: any[] = [];
 
+  const methodsBreakdown = [
+    { method: "Credit Card", percentage: 65, color: "#D97706" },
+    { method: "ACH", percentage: 20, color: "#3b82f6" },
+    { method: "Wire Transfer", percentage: 10, color: "#10b981" },
+    { method: "Other", percentage: 5, color: "#9ca3af" },
+  ];
+
+  const regionalSummary = [
+    { region: "New York", volume: 658000, trend: 8.5, methodPreference: "Card" },
+    { region: "San Francisco", volume: 486000, trend: 12.3, methodPreference: "Card" },
+    { region: "Los Angeles", volume: 412000, trend: 6.8, methodPreference: "Card" },
+  ];
+
   return (
-    <div className="space-y-8">
-      {/* Page Title */}
-      <div>
-        <h1 className="text-lg font-semibold text-slate-900 mb-2">
-          Financial Dashboard
-        </h1>
-        <p className="text-slate-500">Track revenue, payments, and financial metrics</p>
-      </div>
+    <div className="max-w-7xl">
+      <PageHeader title="Financial Dashboard" description="Track revenue, payments, and financial metrics" />
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <MetricCard
-          title="Total Revenue"
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <StatTile
+          label="Total Revenue"
           value={formatCurrency(totalRevenue)}
-          trend={stripeData?.growth || 0}
-          icon={DollarSign}
+          delta={`${growth > 0 ? "+" : ""}${growth}%`}
+          deltaTone={growth > 0 ? "up" : growth < 0 ? "down" : "flat"}
+          hint="vs last period"
+          icon={<DollarSign size={14} />}
         />
-        <MetricCard
-          title="Monthly Revenue"
-          value={formatCurrency(monthlyRevenue)}
-          subtitle={stripeData?.currentMonth || ""}
-          icon={TrendingUp}
-        />
-        <MetricCard
-          title="Outstanding Balances"
-          value={formatCurrency(outstandingBalances)}
-          subtitle={`${stripeData?.pendingCount || 0} pending`}
-          icon={Clock}
-        />
-        <MetricCard
-          title="Refunds"
-          value={formatCurrency(refundsTotal)}
-          subtitle={`${stripeData?.refundsCount || 0} transactions`}
-          icon={AlertCircle}
-        />
+        <StatTile label="Monthly Revenue" value={formatCurrency(monthlyRevenue)} hint={stripeData?.currentMonth || undefined} icon={<TrendingUp size={14} />} />
+        <StatTile label="Outstanding Balances" value={formatCurrency(outstandingBalances)} hint={`${stripeData?.pendingCount || 0} pending`} icon={<Clock size={14} />} />
+        <StatTile label="Refunds" value={formatCurrency(refundsTotal)} hint={`${stripeData?.refundsCount || 0} transactions`} icon={<AlertCircle size={14} />} />
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-slate-200">
-        {[
-          { id: "overview", label: "Overview" },
-          { id: "payments", label: "Payments" },
-          { id: "regions", label: "Regions" },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-6 py-3 font-medium text-sm transition-colors ${
-              activeTab === tab.id
-                ? "border-b-2 border-amber-500 text-amber-600"
-                : "border-b-2 border-transparent text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <FilterChips items={TABS} value={activeTab} onChange={setActiveTab} className="mb-4" />
 
       {/* Overview Tab */}
       {activeTab === "overview" && (
-        <div className="space-y-8">
+        <div className="space-y-3">
           {/* Revenue Trend */}
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">
-              Revenue Trend (12 months)
-            </h2>
-            <SimpleLineChart
-              data={revenueTrendData}
-              lines={[
-                { dataKey: "revenue", color: "#D97706", name: "Total Revenue" },
-              ]}
-              xAxisKey="month"
-              height={320}
-            />
-          </div>
+          <Card>
+            <CardHeader title="Revenue trend (12 months)" />
+            <CardBody>
+              <SimpleLineChart
+                bare
+                data={revenueTrendData}
+                lines={[{ dataKey: "revenue", color: "#D97706", name: "Total Revenue" }]}
+                xAxisKey="month"
+                height={320}
+              />
+            </CardBody>
+          </Card>
 
           {/* Revenue Breakdown */}
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">
-                Revenue by Type
-              </h2>
-              <div className="space-y-4">
-                {revenueByTypeData.map((item: any) => (
-                  <div
-                    key={item.type}
-                    className="flex items-center justify-between py-3 border-b border-gray-300"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-4 h-4 border border-slate-200 rounded"
-                        style={{ backgroundColor: item.color }}
-                      ></div>
-                      <span className="font-medium text-slate-900">
-                        {item.type}
-                      </span>
-                    </div>
-                    <span className="font-bold text-slate-900">
-                      {formatCurrency(item.amount)}
-                    </span>
-                  </div>
-                ))}
-                <div className="pt-4 flex justify-between items-center font-bold text-lg">
-                  <span>Total</span>
-                  <span className="text-amber-600">
-                    {formatCurrency(
-                      revenueByTypeData.reduce((sum: any, item: any) => sum + item.amount, 0)
-                    )}
-                  </span>
-                </div>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <Card>
+              <CardHeader title="Revenue by type" />
+              {revenueByTypeData.length === 0 ? (
+                <EmptyState title="No revenue by type yet" hint="Populates once transactions are categorized." />
+              ) : (
+                <Table>
+                  <THead>
+                    <tr>
+                      <TH>Type</TH>
+                      <TH numeric>Amount</TH>
+                    </tr>
+                  </THead>
+                  <TBody>
+                    {revenueByTypeData.map((item: any) => (
+                      <TR key={item.type}>
+                        <TD>
+                          <span className="inline-flex items-center gap-2">
+                            <span className="w-3 h-3 rounded-sm border border-slate-200" style={{ backgroundColor: item.color }} aria-hidden />
+                            <span className="font-medium">{item.type}</span>
+                          </span>
+                        </TD>
+                        <TD numeric className="font-medium">{formatCurrency(item.amount)}</TD>
+                      </TR>
+                    ))}
+                    <TR className="bg-slate-50">
+                      <TD className="font-semibold">Total</TD>
+                      <TD numeric className="font-semibold">
+                        {formatCurrency(revenueByTypeData.reduce((sum: any, item: any) => sum + item.amount, 0))}
+                      </TD>
+                    </TR>
+                  </TBody>
+                </Table>
+              )}
+            </Card>
 
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">
-                Revenue Sources
-              </h2>
-              <SimpleBarChart
-                data={revenueByTypeData.map((item: any) => ({
-                  type: item.type,
-                  amount: item.amount,
-                }))}
-                dataKey="amount"
-                nameKey="type"
-                color="#D97706"
-                height={280}
-              />
-            </div>
+            <Card>
+              <CardHeader title="Revenue sources" />
+              <CardBody>
+                <SimpleBarChart
+                  bare
+                  data={revenueByTypeData.map((item: any) => ({ type: item.type, amount: item.amount }))}
+                  dataKey="amount"
+                  nameKey="type"
+                  color="#D97706"
+                  height={280}
+                />
+              </CardBody>
+            </Card>
           </div>
         </div>
       )}
 
       {/* Payments Tab */}
       {activeTab === "payments" && (
-        <div className="space-y-8">
-          {/* Payment Methods Chart */}
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">
-                Payment Methods Distribution
-              </h2>
-              <SimplePieChart data={paymentMethodsData} height={320} />
-            </div>
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {/* Payment Methods Chart */}
+            <Card>
+              <CardHeader title="Payment methods distribution" />
+              <CardBody>
+                <SimplePieChart bare data={paymentMethodsData} height={320} />
+              </CardBody>
+            </Card>
 
             {/* Payment Stats */}
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900 mb-4">
-                  Payment Statistics
-                </h2>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="bg-white border border-slate-200 rounded-lg  p-6">
-                  <p className="text-xs font-semibold text-slate-500 mb-2">
-                    Success Rate
-                  </p>
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-4xl font-bold text-green-600">97.2%</p>
-                    <p className="text-sm text-slate-500">of all payments</p>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-slate-200 rounded-lg  p-6">
-                  <p className="text-xs font-semibold text-slate-500 mb-2">
-                    Avg Processing Time
-                  </p>
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-4xl font-bold text-blue-600">2.3s</p>
-                    <p className="text-sm text-slate-500">per transaction</p>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-slate-200 rounded-lg  p-6">
-                  <p className="text-xs font-semibold text-slate-500 mb-2">
-                    Failed Payments
-                  </p>
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-4xl font-bold text-red-600">
-                      {securitySummary.blockedPayments}
-                    </p>
-                    <p className="text-sm text-slate-500">require action</p>
-                  </div>
-                </div>
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <StatTile label="Success Rate" value="97.2%" hint="of all payments" />
+                <StatTile label="Avg Processing Time" value="2.3s" hint="per transaction" />
+                <StatTile label="Failed Payments" value={securitySummary.blockedPayments} hint="require action" />
               </div>
 
               {/* Payment Methods Breakdown */}
-              <div className="space-y-3 mt-6">
-                <h3 className="text-sm font-semibold text-slate-900">
-                  Methods Breakdown
-                </h3>
-                {[
-                  { method: "Credit Card", percentage: 65, color: "#D97706" },
-                  { method: "ACH", percentage: 20, color: "#3b82f6" },
-                  { method: "Wire Transfer", percentage: 10, color: "#10b981" },
-                  { method: "Other", percentage: 5, color: "#9ca3af" },
-                ].map((item) => (
-                  <div key={item.method} className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-slate-700">
-                        {item.method}
-                      </span>
-                      <span className="text-sm font-bold text-slate-900">
-                        {item.percentage}%
-                      </span>
+              <Card>
+                <CardHeader title="Methods breakdown" />
+                <CardBody className="space-y-3">
+                  {methodsBreakdown.map((item) => (
+                    <div key={item.method}>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm font-medium text-slate-700">{item.method}</span>
+                        <span className="text-sm font-semibold text-slate-900 tabular">{item.percentage}%</span>
+                      </div>
+                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden" role="progressbar" aria-valuenow={item.percentage} aria-valuemin={0} aria-valuemax={100} aria-label={`${item.method} share`}>
+                        <div className="h-full rounded-full" style={{ width: `${item.percentage}%`, backgroundColor: item.color }} />
+                      </div>
                     </div>
-                    <div className="w-full h-2 border border-slate-200 bg-slate-100 rounded">
-                      <div
-                        className="h-full rounded"
-                        style={{
-                          width: `${item.percentage}%`,
-                          backgroundColor: item.color,
-                        }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </CardBody>
+              </Card>
             </div>
           </div>
 
           {/* Security Summary */}
-          <div className="bg-white border border-slate-200 rounded-lg  p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">
-              Payment Security Overview
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <div>
-                <p className="text-xs font-semibold text-slate-500 mb-2">
-                  Suspicious Payments
-                </p>
-                <p className="text-3xl font-bold text-amber-600">
-                  {securitySummary.suspiciousPayments}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-500 mb-2">
-                  Blocked Payments
-                </p>
-                <p className="text-3xl font-bold text-red-600">
-                  {securitySummary.blockedPayments}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-500 mb-2">
-                  Refund Abuse Cases
-                </p>
-                <p className="text-3xl font-bold text-orange-600">
-                  {securitySummary.refundAbuse}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-500 mb-2">
-                  Webhook Issues
-                </p>
-                <p className="text-3xl font-bold text-blue-600">
-                  {securitySummary.webhookIssues}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-500 mb-2">
-                  Risk Level
-                </p>
-                <p className="text-2xl font-bold text-green-600">
-                  {securitySummary.riskLevel}
-                </p>
-              </div>
-            </div>
-          </div>
+          <Card>
+            <CardHeader title="Payment security overview" />
+            <CardBody>
+              <dl className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div>
+                  <dt className="text-xs font-medium text-slate-500 uppercase tracking-wide">Suspicious Payments</dt>
+                  <dd className="text-xl font-semibold text-slate-900 tabular mt-1">{securitySummary.suspiciousPayments}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium text-slate-500 uppercase tracking-wide">Blocked Payments</dt>
+                  <dd className="text-xl font-semibold text-slate-900 tabular mt-1">{securitySummary.blockedPayments}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium text-slate-500 uppercase tracking-wide">Refund Abuse Cases</dt>
+                  <dd className="text-xl font-semibold text-slate-900 tabular mt-1">{securitySummary.refundAbuse}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium text-slate-500 uppercase tracking-wide">Webhook Issues</dt>
+                  <dd className="text-xl font-semibold text-slate-900 tabular mt-1">{securitySummary.webhookIssues}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium text-slate-500 uppercase tracking-wide">Risk Level</dt>
+                  <dd className="mt-1.5"><Badge tone={statusTone(securitySummary.riskLevel)} dot>{securitySummary.riskLevel}</Badge></dd>
+                </div>
+              </dl>
+            </CardBody>
+          </Card>
         </div>
       )}
 
       {/* Regions Tab */}
       {activeTab === "regions" && (
-        <div className="space-y-8">
+        <div className="space-y-3">
           {/* Revenue by Region Chart */}
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">
-              Revenue by Region (Top 8 Cities)
-            </h2>
-            <SimpleBarChart
-              data={revenueByRegionData}
-              dataKey="revenue"
-              nameKey="city"
-              color="#D97706"
-              height={320}
-            />
-          </div>
+          <Card>
+            <CardHeader title="Revenue by region (top 8 cities)" />
+            <CardBody>
+              <SimpleBarChart
+                bare
+                data={revenueByRegionData}
+                dataKey="revenue"
+                nameKey="city"
+                color="#D97706"
+                height={320}
+              />
+            </CardBody>
+          </Card>
 
           {/* Regional Payment Preferences Table */}
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">
-              Regional Payment Preferences
-            </h2>
-            <DataTable
-              columns={[
-                { key: "region", label: "Region" },
-                {
-                  key: "card",
-                  label: "Card %",
-                  render: (value) => <span className="font-medium">{value}%</span>,
-                },
-                {
-                  key: "ach",
-                  label: "ACH %",
-                  render: (value) => <span className="font-medium">{value}%</span>,
-                },
-                {
-                  key: "wire",
-                  label: "Wire %",
-                  render: (value) => <span className="font-medium">{value}%</span>,
-                },
-                {
-                  key: "other",
-                  label: "Other %",
-                  render: (value) => <span className="font-medium">{value}%</span>,
-                },
-                {
-                  key: "volume",
-                  label: "Volume",
-                  render: (value) => (
-                    <span className="font-bold text-amber-600">
-                      {formatCurrency(value)}
-                    </span>
-                  ),
-                },
-              ]}
-              data={regionalPaymentData}
-              emptyMessage="No regional data available"
-            />
-          </div>
+          <Card>
+            <CardHeader title="Regional payment preferences" />
+            {regionalPaymentData.length === 0 ? (
+              <EmptyState title="No regional data available" />
+            ) : (
+              <Table>
+                <THead>
+                  <tr>
+                    <TH>Region</TH>
+                    <TH numeric>Card %</TH>
+                    <TH numeric>ACH %</TH>
+                    <TH numeric>Wire %</TH>
+                    <TH numeric>Other %</TH>
+                    <TH numeric>Volume</TH>
+                  </tr>
+                </THead>
+                <TBody>
+                  {regionalPaymentData.map((row: any, i: number) => (
+                    <TR key={row.region ?? i}>
+                      <TD className="font-medium">{row.region}</TD>
+                      <TD numeric>{row.card}%</TD>
+                      <TD numeric>{row.ach}%</TD>
+                      <TD numeric>{row.wire}%</TD>
+                      <TD numeric>{row.other}%</TD>
+                      <TD numeric className="font-semibold">{formatCurrency(row.volume)}</TD>
+                    </TR>
+                  ))}
+                </TBody>
+              </Table>
+            )}
+          </Card>
 
           {/* Regional Summary Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            {[
-              {
-                region: "New York",
-                volume: 658000,
-                trend: 8.5,
-                methodPreference: "Card",
-              },
-              {
-                region: "San Francisco",
-                volume: 486000,
-                trend: 12.3,
-                methodPreference: "Card",
-              },
-              {
-                region: "Los Angeles",
-                volume: 412000,
-                trend: 6.8,
-                methodPreference: "Card",
-              },
-            ].map((stat) => (
-              <div
-                key={stat.region}
-                className="bg-white border border-slate-200 rounded-lg  p-6"
-              >
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                  {stat.region}
-                </h3>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-xs font-semibold text-slate-500 mb-1">
-                      Volume
-                    </p>
-                    <p className="text-2xl font-bold text-amber-600">
-                      {formatCurrency(stat.volume)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-slate-500 mb-1">
-                      Growth
-                    </p>
-                    <p className="text-2xl font-bold text-green-600">
-                      +{stat.trend}%
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-slate-500 mb-1">
-                      Preferred Method
-                    </p>
-                    <p className="text-lg font-bold text-slate-900">
-                      {stat.methodPreference}
-                    </p>
-                  </div>
-                </div>
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {regionalSummary.map((stat) => (
+              <Card key={stat.region}>
+                <CardHeader title={stat.region} />
+                <CardBody>
+                  <dl className="grid grid-cols-3 gap-3">
+                    <div>
+                      <dt className="text-xs font-medium text-slate-500 uppercase tracking-wide">Volume</dt>
+                      <dd className="text-lg font-semibold text-slate-900 tabular mt-1">{formatCurrency(stat.volume)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-medium text-slate-500 uppercase tracking-wide">Growth</dt>
+                      <dd className="text-lg font-semibold text-emerald-700 tabular mt-1">+{stat.trend}%</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-medium text-slate-500 uppercase tracking-wide">Preferred</dt>
+                      <dd className="text-lg font-semibold text-slate-900 mt-1">{stat.methodPreference}</dd>
+                    </div>
+                  </dl>
+                </CardBody>
+              </Card>
             ))}
           </div>
         </div>

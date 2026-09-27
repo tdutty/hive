@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { Fragment, useState, useEffect, useMemo } from "react";
 import { api } from "@/lib/api";
+import { Button, Card, Badge, statusTone, StatTile, PageHeader, Table, THead, TH, TBody, TR, TD, Input, Select } from "@/components/kit";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
 import {
   RefreshCw,
-  Search,
   Building2,
   DollarSign,
   MapPin,
@@ -98,7 +99,7 @@ export default function PortfolioHoldersPage() {
       if (search) params.search = search;
 
       const result = await api.get<PortfolioData>(
- "/api/admin/portfolio-holders",
+        "/api/admin/portfolio-holders",
         params
       );
       setData(result);
@@ -139,427 +140,300 @@ export default function PortfolioHoldersPage() {
   }, [data]);
 
   const fmt = (n: number) =>
- "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+    "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900">Portfolio Holders</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Property managers and brokers across your listings — ranked by portfolio size
-          </p>
-        </div>
-        <button
-          onClick={fetchData}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-black font-medium rounded-lg hover:bg-amber-400 transition disabled:opacity-50"
-        >
-          <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-          Refresh
-        </button>
-      </div>
+    <div className="max-w-7xl space-y-5">
+      <PageHeader
+        title="Portfolio Holders"
+        description="Property managers and brokers across your listings, ranked by portfolio size"
+        actions={
+          <Button variant="ghost" size="icon" aria-label="Refresh" onClick={fetchData} disabled={loading}>
+            <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
+          </Button>
+        }
+      />
 
-      {/* Stats Cards */}
+      {/* Stats */}
       {data && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <StatCard
-            icon={<TrendingUp size={20} />}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <StatTile
+            icon={<TrendingUp size={14} />}
             label="With Tenant Demand"
             value={String(data.holders.filter(h => h.demand && h.demand.tenantCount > 0).length)}
-            color="amber"
           />
-          <StatCard
-            icon={<Building2 size={20} />}
-            label="Portfolio Holders"
-            value={data.stats.totalHolders.toLocaleString()}
-            color="blue"
-          />
-          <StatCard
-            icon={<Users size={20} />}
-            label="Total Units"
-            value={data.stats.totalUnits.toLocaleString()}
-            color="purple"
-          />
-          <StatCard
-            icon={<DollarSign size={20} />}
-            label="Annual Revenue"
-            value={fmt(data.stats.totalAnnualRevenue)}
-            color="green"
-          />
-          <StatCard
-            icon={<MapPin size={20} />}
-            label="Markets"
-            value={data.stats.totalMarkets.toLocaleString()}
-            color="amber"
-          />
+          <StatTile icon={<Building2 size={14} />} label="Portfolio Holders" value={data.stats.totalHolders.toLocaleString()} />
+          <StatTile icon={<Users size={14} />} label="Total Units" value={data.stats.totalUnits.toLocaleString()} />
+          <StatTile icon={<DollarSign size={14} />} label="Annual Revenue" value={fmt(data.stats.totalAnnualRevenue)} />
+          <StatTile icon={<MapPin size={14} />} label="Markets" value={data.stats.totalMarkets.toLocaleString()} />
         </div>
       )}
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
-          />
-          <input
-            type="text"
-            placeholder="Search broker or agent name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm placeholder:text-slate-500 focus:outline-none focus:border-amber-500"
-          />
-        </div>
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
+        <Input
+          type="search"
+          aria-label="Search broker or agent name"
+          placeholder="Search broker or agent name..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="sm:flex-1 sm:min-w-[200px] sm:max-w-md"
+        />
 
-        <select
-          value={cityFilter}
-          onChange={(e) => setCityFilter(e.target.value)}
-          className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-amber-500"
-        >
+        <Select aria-label="Market" value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} className="sm:w-52">
           <option value="">All Markets</option>
           {data?.cities.map((c) => (
             <option key={`${c.city}|${c.state}`} value={`${c.city}|${c.state}`}>
               {c.city}, {c.state} ({c.count})
             </option>
           ))}
-        </select>
+        </Select>
 
-        <select
-          value={minUnits}
-          onChange={(e) => setMinUnits(e.target.value)}
-          className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-amber-500"
-        >
+        <Select aria-label="Minimum units" value={minUnits} onChange={(e) => setMinUnits(e.target.value)} className="sm:w-32">
           <option value="2">2+ units</option>
           <option value="5">5+ units</option>
           <option value="10">10+ units</option>
           <option value="20">20+ units</option>
           <option value="50">50+ units</option>
-        </select>
+        </Select>
 
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value)}
-          className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:border-amber-500"
-        >
+        <Select aria-label="Sort" value={sort} onChange={(e) => setSort(e.target.value)} className="sm:w-44">
           <option value="units_desc">Most Units</option>
           <option value="units_asc">Fewest Units</option>
           <option value="revenue_desc">Highest Revenue</option>
           <option value="avg_rent_desc">Highest Avg Rent</option>
           <option value="markets_desc">Most Markets</option>
           <option value="name_asc">Name A-Z</option>
-        </select>
+        </Select>
 
-        <select
-          value={demandFilter}
-          onChange={(e) => setDemandFilter(e.target.value)}
-          className={`px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-amber-500 ${
-            demandFilter === "with_demand"
-              ? "bg-amber-500/20 border-amber-500/50 text-amber-300"
-              : "bg-white border-slate-200 text-slate-900"
-          }`}
-        >
+        <Select aria-label="Tenant demand" value={demandFilter} onChange={(e) => setDemandFilter(e.target.value)} className="sm:w-48">
           <option value="all">All Holders</option>
           <option value="with_demand">Has Tenant Demand</option>
           <option value="no_demand">No Demand Yet</option>
-        </select>
+        </Select>
       </div>
 
-      {/* Error */}
-      {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={fetchData} />}
 
       {/* Table */}
       {data && (
-        <div className="bg-slate-50 rounded-lg border border-slate-200 overflow-hidden">
-          {/* Table Header */}
-          <div className="grid grid-cols-[2fr_1fr_80px_100px_120px_140px_160px] gap-2 px-4 py-3 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            <span>Broker / Property Manager</span>
-            <span>Markets</span>
-            <span className="text-right">Units</span>
-            <span className="text-right">Avg Rent</span>
-            <span className="text-right">Annual Rev</span>
-            <span>Contact</span>
-            <span>Phone</span>
-          </div>
+        <Card className="overflow-hidden">
+          <Table>
+            <THead>
+              <tr>
+                <TH>Broker / Property Manager</TH>
+                <TH>Markets</TH>
+                <TH numeric>Units</TH>
+                <TH numeric>Avg Rent</TH>
+                <TH numeric>Annual Rev</TH>
+                <TH>Contact</TH>
+                <TH>Phone</TH>
+              </tr>
+            </THead>
+            <TBody>
+              {filteredHolders.length === 0 && (
+                <tr>
+                  <td colSpan={7}>
+                    <EmptyState title="No portfolio holders found" hint="Try loosening the current filters." />
+                  </td>
+                </tr>
+              )}
 
-          {/* Rows */}
-          {filteredHolders.length === 0 && (
-            <div className="px-4 py-8 text-center text-slate-500">
-              No portfolio holders found with current filters.
-            </div>
-          )}
+              {filteredHolders.map((holder) => {
+                const isExpanded = expandedBroker === holder.brokerName;
+                const holderListings = brokerListings[holder.brokerName] || [];
+                const hasDemand = !!holder.demand && holder.demand.tenantCount > 0;
 
-          {filteredHolders.map((holder) => {
-            const isExpanded = expandedBroker === holder.brokerName;
-            const holderListings = brokerListings[holder.brokerName] || [];
-            const hasDemand = !!holder.demand && holder.demand.tenantCount > 0;
-
-            return (
-              <div key={holder.brokerName}>
-                {/* Main Row */}
-                <div
-                  onClick={() =>
-                    setExpandedBroker(isExpanded ? null : holder.brokerName)
-                  }
-                  className={`grid grid-cols-[2fr_1fr_80px_100px_120px_140px_160px] gap-2 px-4 py-3 cursor-pointer transition hover:bg-slate-100 ${
-                    isExpanded ? "bg-slate-100" : ""
-                  } ${
-                    hasDemand ? "border-l-4 border-l-amber-400 bg-amber-500/5" : ""
-                  } border-b border-slate-200/50`}
-                >
-                  <div className="flex items-center gap-2">
-                    {isExpanded ? (
-                      <ChevronDown size={16} className="text-amber-400 shrink-0" />
-                    ) : (
-                      <ChevronRight size={16} className="text-slate-500 shrink-0" />
-                    )}
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-900 font-medium text-sm truncate">
-                          {holder.brokerName}
-                        </span>
-                        {hasDemand && (
-                          <span className="shrink-0 px-1.5 py-0.5 bg-amber-400/20 text-amber-300 text-xs font-bold rounded-full flex items-center gap-1">
-                            <Users size={10} />
-                            {holder.demand!.tenantCount} {holder.demand!.tenantCount === 1 ? "tenant" : "tenants"}
-                          </span>
-                        )}
-                      </div>
-                      {holder.primaryContact && (
-                        <div className="text-slate-500 text-xs truncate">
-                          {holder.primaryContact}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center">
-                    <div className="flex flex-wrap gap-1">
-                      {holder.markets.slice(0, 3).map((m) => (
-                        <span
-                          key={m}
-                          className="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 text-xs rounded"
-                        >
-                          {m}
-                        </span>
-                      ))}
-                      {holder.markets.length > 3 && (
-                        <span className="px-1.5 py-0.5 bg-gray-500/10 text-slate-500 text-xs rounded">
-                          +{holder.markets.length - 3}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="text-right text-slate-900 font-semibold text-sm flex items-center justify-end">
-                    {holder.totalUnits}
-                  </div>
-
-                  <div className="text-right text-green-400 text-sm flex items-center justify-end">
-                    {fmt(holder.avgRent)}/mo
-                  </div>
-
-                  <div className="text-right text-emerald-400 font-medium text-sm flex items-center justify-end">
-                    {fmt(holder.annualRevenue)}
-                  </div>
-
-                  <div className="flex items-center">
-                    {holder.email ? (
-                      <a
-                        href={`mailto:${holder.email}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex items-center gap-1 text-amber-400 text-xs hover:underline truncate"
-                      >
-                        <Mail size={12} />
-                        <span className="truncate">{holder.email}</span>
-                      </a>
-                    ) : (
-                      <span className="text-slate-600 text-xs">No email</span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center">
-                    {holder.phone ? (
-                      <a
-                        href={`tel:${holder.phone}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex items-center gap-1 text-blue-400 text-xs hover:underline"
-                      >
-                        <Phone size={12} />
-                        {holder.phone}
-                      </a>
-                    ) : (
-                      <span className="text-slate-600 text-xs">No phone</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Expanded: Tenant Demand */}
-                {isExpanded && hasDemand && (
-                  <div className="bg-amber-500/5 border-b border-amber-500/20 px-6 py-3">
-                    <div className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                      <TrendingUp size={12} />
-                      Active Tenant Demand
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {holder.demand!.tenants.map((t) => (
-                        <div
-                          key={t.email}
-                          className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg"
-                        >
-                          <div className="w-6 h-6 rounded-full bg-amber-500/30 flex items-center justify-center text-amber-300 text-xs font-bold">
-                            {t.name.charAt(0)}
-                          </div>
-                          <div>
-                            <div className="text-slate-900 text-xs font-medium">{t.name}</div>
-                            <div className="text-slate-500 text-xs">
-                              {t.city} &middot;{" "}
-                              <span
-                                className={
-                                  t.status === "selections_confirmed"
-                                    ? "text-indigo-400"
-                                    : t.status === "leased"
-                                    ? "text-green-400"
-                                    : t.status === "negotiating"
-                                    ? "text-amber-400"
-                                    : "text-slate-500"
-                                }
-                              >
-                                {t.status.replace(/_/g, " ")}
-                              </span>
+                return (
+                  <Fragment key={holder.brokerName}>
+                    <TR
+                      clickable
+                      selected={isExpanded}
+                      aria-expanded={isExpanded}
+                      onClick={() => setExpandedBroker(isExpanded ? null : holder.brokerName)}
+                    >
+                      <TD>
+                        <div className="flex items-center gap-2 min-w-0">
+                          {isExpanded ? (
+                            <ChevronDown size={16} className="text-slate-500 shrink-0" aria-hidden />
+                          ) : (
+                            <ChevronRight size={16} className="text-slate-400 shrink-0" aria-hidden />
+                          )}
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-slate-900 truncate">{holder.brokerName}</span>
+                              {hasDemand && (
+                                <Badge tone="accent" className="shrink-0">
+                                  <Users size={12} aria-hidden />
+                                  {holder.demand!.tenantCount} {holder.demand!.tenantCount === 1 ? "tenant" : "tenants"}
+                                </Badge>
+                              )}
                             </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-2 text-xs text-slate-500">
-                      {holder.demand!.selectedListingIds.length} listing{holder.demand!.selectedListingIds.length !== 1 ? "s" : ""} selected across{" "}
-                      {holder.demand!.activeCities.join(", ")}
-                    </div>
-                  </div>
-                )}
-
-                {/* Expanded: Individual Listings */}
-                {isExpanded && holderListings.length > 0 && (
-                  <div className="bg-white border-b border-slate-200">
-                    <div className="px-6 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">
-                      {holderListings.length} Listings
-                    </div>
-                    <div className="max-h-[400px] overflow-y-auto">
-                      {holderListings.map((l, i) => (
-                        <div
-                          key={i}
-                          className="grid grid-cols-[2fr_100px_60px_60px_100px_140px_120px] gap-2 px-6 py-2 text-xs border-b border-slate-200/50 hover:bg-slate-100"
-                        >
-                          <div className="text-slate-600 truncate flex items-center gap-1">
-                            {l.zillowUrl ? (
-                              <a
-                                href={l.zillowUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:text-amber-400 flex items-center gap-1 truncate"
-                              >
-                                {l.address}
-                                <ExternalLink size={10} className="shrink-0" />
-                              </a>
-                            ) : (
-                              l.address
-                            )}
-                          </div>
-                          <div className="text-slate-500">
-                            {l.city}, {l.state}
-                          </div>
-                          <div className="text-green-400 text-right">
-                            {l.price ? fmt(l.price) : "-"}
-                          </div>
-                          <div className="text-slate-500 text-center">
-                            {l.bedrooms ?? "-"}bd / {l.bathrooms ?? "-"}ba
-                          </div>
-                          <div className="text-slate-500">
-                            {l.agentName || "-"}
-                          </div>
-                          <div className="text-slate-500">
-                            {l.agentPhone ? (
-                              <a
-                                href={`tel:${l.agentPhone}`}
-                                className="text-blue-400 hover:underline"
-                              >
-                                {l.agentPhone}
-                              </a>
-                            ) : (
- "-"
-                            )}
-                          </div>
-                          <div className="text-slate-500 truncate">
-                            {l.ownerEmail ? (
-                              <a
-                                href={`mailto:${l.ownerEmail}`}
-                                className="text-amber-400 hover:underline truncate"
-                              >
-                                {l.ownerEmail}
-                              </a>
-                            ) : (
- "-"
+                            {holder.primaryContact && (
+                              <div className="text-xs text-slate-500 truncate">{holder.primaryContact}</div>
                             )}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                      </TD>
 
-                {isExpanded && holderListings.length === 0 && (
-                  <div className="bg-white border-b border-slate-200 px-6 py-4 text-xs text-slate-500">
-                    Listings not loaded for this broker. Try filtering by their market.
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                      <TD>
+                        <div className="flex flex-wrap gap-1">
+                          {holder.markets.slice(0, 3).map((m) => (
+                            <Badge key={m} tone="outline">{m}</Badge>
+                          ))}
+                          {holder.markets.length > 3 && (
+                            <Badge tone="neutral">+{holder.markets.length - 3}</Badge>
+                          )}
+                        </div>
+                      </TD>
+
+                      <TD numeric className="font-semibold">{holder.totalUnits}</TD>
+                      <TD numeric>{fmt(holder.avgRent)}/mo</TD>
+                      <TD numeric className="font-medium">{fmt(holder.annualRevenue)}</TD>
+
+                      <TD>
+                        {holder.email ? (
+                          <a
+                            href={`mailto:${holder.email}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 text-slate-700 hover:text-slate-900 hover:underline max-w-[180px]"
+                          >
+                            <Mail size={12} className="shrink-0" aria-hidden />
+                            <span className="truncate">{holder.email}</span>
+                          </a>
+                        ) : (
+                          <span className="text-slate-400">No email</span>
+                        )}
+                      </TD>
+
+                      <TD>
+                        {holder.phone ? (
+                          <a
+                            href={`tel:${holder.phone}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 text-slate-700 hover:text-slate-900 hover:underline tabular whitespace-nowrap"
+                          >
+                            <Phone size={12} aria-hidden />
+                            {holder.phone}
+                          </a>
+                        ) : (
+                          <span className="text-slate-400">No phone</span>
+                        )}
+                      </TD>
+                    </TR>
+
+                    {isExpanded && (
+                      <tr>
+                        <td colSpan={7} className="p-0 bg-slate-50 border-b border-slate-200">
+                          {/* Tenant demand */}
+                          {hasDemand && (
+                            <div className="px-4 py-3 border-b border-slate-200">
+                              <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+                                <TrendingUp size={12} aria-hidden />
+                                Active Tenant Demand
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {holder.demand!.tenants.map((t) => (
+                                  <div key={t.email} className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg">
+                                    <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-slate-700 text-xs font-semibold" aria-hidden>
+                                      {t.name.charAt(0)}
+                                    </div>
+                                    <div>
+                                      <div className="text-xs font-medium text-slate-900">{t.name}</div>
+                                      <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                                        {t.city}
+                                        <Badge tone={statusTone(t.status)} dot>{t.status.replace(/_/g, " ")}</Badge>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="mt-2 text-xs text-slate-500">
+                                {holder.demand!.selectedListingIds.length} listing{holder.demand!.selectedListingIds.length !== 1 ? "s" : ""} selected across{" "}
+                                {holder.demand!.activeCities.join(", ")}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Listings */}
+                          {holderListings.length > 0 ? (
+                            <div className="bg-white">
+                              <div className="px-4 py-2 text-xs font-medium text-slate-500 uppercase tracking-wide border-b border-slate-200">
+                                {holderListings.length} Listings
+                              </div>
+                              <div className="max-h-[400px] overflow-y-auto">
+                                <Table>
+                                  <THead>
+                                    <tr>
+                                      <TH>Address</TH>
+                                      <TH>City</TH>
+                                      <TH numeric>Price</TH>
+                                      <TH>Beds / Baths</TH>
+                                      <TH>Agent</TH>
+                                      <TH>Phone</TH>
+                                      <TH>Email</TH>
+                                    </tr>
+                                  </THead>
+                                  <TBody>
+                                    {holderListings.map((l, i) => (
+                                      <TR key={i} className="hover:bg-slate-50">
+                                        <TD className="max-w-[260px]">
+                                          {l.zillowUrl ? (
+                                            <a
+                                              href={l.zillowUrl}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="inline-flex items-center gap-1 text-slate-700 hover:text-slate-900 hover:underline max-w-full"
+                                            >
+                                              <span className="truncate">{l.address}</span>
+                                              <ExternalLink size={12} className="shrink-0" aria-hidden />
+                                            </a>
+                                          ) : (
+                                            <span className="truncate block">{l.address}</span>
+                                          )}
+                                        </TD>
+                                        <TD muted className="whitespace-nowrap">{l.city}, {l.state}</TD>
+                                        <TD numeric>{l.price ? fmt(l.price) : "-"}</TD>
+                                        <TD muted className="tabular whitespace-nowrap">{l.bedrooms ?? "-"}bd / {l.bathrooms ?? "-"}ba</TD>
+                                        <TD muted>{l.agentName || "-"}</TD>
+                                        <TD muted className="whitespace-nowrap">
+                                          {l.agentPhone ? (
+                                            <a href={`tel:${l.agentPhone}`} className="text-slate-700 hover:underline tabular">{l.agentPhone}</a>
+                                          ) : (
+                                            "-"
+                                          )}
+                                        </TD>
+                                        <TD muted className="max-w-[200px]">
+                                          {l.ownerEmail ? (
+                                            <a href={`mailto:${l.ownerEmail}`} className="text-slate-700 hover:underline truncate block">{l.ownerEmail}</a>
+                                          ) : (
+                                            "-"
+                                          )}
+                                        </TD>
+                                      </TR>
+                                    ))}
+                                  </TBody>
+                                </Table>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="bg-white px-4 py-3 text-xs text-slate-500">
+                              Listings not loaded for this broker. Try filtering by their market.
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </TBody>
+          </Table>
+        </Card>
       )}
 
       {/* Loading */}
-      {loading && !data && (
-        <div className="flex items-center justify-center py-20">
-          <RefreshCw size={24} className="animate-spin text-amber-400" />
-          <span className="ml-3 text-slate-500">Loading portfolio holders...</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function StatCard({
-  icon,
-  label,
-  value,
-  color,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  color: string;
-}) {
-  const colors: Record<string, string> = {
-    blue: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    purple: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-    green: "bg-green-500/10 text-green-400 border-green-500/20",
-    amber: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  };
-
-  return (
-    <div
-      className={`rounded-lg border p-4 ${colors[color] || colors.blue}`}
-    >
-      <div className="flex items-center gap-2 mb-2 opacity-70">{icon}</div>
-      <div className="text-2xl font-bold text-slate-900">{value}</div>
-      <div className="text-xs mt-1 opacity-60">{label}</div>
+      {loading && !data && <Spinner label="Loading portfolio holders" />}
     </div>
   );
 }

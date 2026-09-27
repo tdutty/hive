@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { sweetleaseApi } from "@/lib/api";
-import { RefreshCw, MapPin, Users, Home, DollarSign, Calendar, Phone, Mail } from "lucide-react";
+import { RefreshCw, Users, Home, Phone, Mail, ChevronDown, ChevronUp } from "lucide-react";
+import { Button, Card, Badge, statusTone, PageHeader, Table, THead, TH, TBody, TR, TD } from "@/components/kit";
+import { Spinner, EmptyState } from "@/components/ui/AsyncState";
 
 interface Tenant {
   name: string;
@@ -37,6 +39,8 @@ interface CityData {
   highPainLandlords: HighPainLandlord[];
 }
 
+const humanize = (s: string) => s.replace(/_/g, " ");
+
 export default function DemandMapPage() {
   const [data, setData] = useState<CityData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,157 +61,146 @@ export default function DemandMapPage() {
     fetchData();
   }, []);
 
-  const STATUS_COLORS: Record<string, string> = {
-    matched: "bg-blue-500",
-    outreach: "bg-purple-500",
-    selections_confirmed: "bg-emerald-500",
-    negotiating: "bg-amber-500",
-    searching: "bg-gray-400",
-    leased: "bg-green-600",
-  };
-
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900 flex items-center gap-3">
-            <MapPin size={24} className="text-amber-500" />
-            Demand Map
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Active tenants by city with high-pain landlord call targets
-          </p>
-        </div>
-        <button
-          onClick={fetchData}
-          className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-500 hover:text-slate-900 rounded-lg text-sm transition"
-        >
-          <RefreshCw size={14} />
-          Refresh
-        </button>
-      </div>
+    <div className="max-w-7xl">
+      <PageHeader
+        title="Demand Map"
+        description="Active tenants by city with high-pain landlord call targets"
+        actions={<Button icon={<RefreshCw size={14} />} onClick={fetchData}>Refresh</Button>}
+      />
 
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <RefreshCw className="animate-spin text-slate-500" size={20} />
-        </div>
+        <Spinner label="Loading demand map" />
       ) : data.length === 0 ? (
-        <div className="text-center text-slate-500 py-12">No active demand</div>
+        <Card><EmptyState title="No active demand" hint="Cities appear here once tenants are searching." /></Card>
       ) : (
-        <div className="space-y-4">
-          {data.map((city) => (
-            <div key={city.city} className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-              {/* City Header */}
-              <div
-                className="px-6 py-4 cursor-pointer hover:bg-slate-50 transition flex items-center justify-between"
-                onClick={() => setExpanded(expanded === city.city ? null : city.city)}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-[#EA580C] rounded-lg flex items-center justify-center text-white font-bold text-lg">
-                    {city.tenants.length}
-                  </div>
-                  <div>
-                    <div className="text-slate-900 font-semibold text-lg">{city.city}, {city.state}</div>
-                    <div className="text-xs text-slate-500 flex items-center gap-3">
-                      <span className="flex items-center gap-1"><Users size={10} /> {city.tenants.length} tenant{city.tenants.length !== 1 ? 's' : ''}</span>
-                      <span className="flex items-center gap-1"><Home size={10} /> {city.approvedListings} listings</span>
-                      <span className="flex items-center gap-1"><Phone size={10} /> {city.highPainLandlords.length} call targets</span>
+        <div className="space-y-3">
+          {data.map((city) => {
+            const isOpen = expanded === city.city;
+            const statusCounts = city.tenants.reduce<Record<string, number>>((acc, t) => {
+              acc[t.status] = (acc[t.status] || 0) + 1;
+              return acc;
+            }, {});
+            return (
+              <Card key={city.city} className="overflow-hidden">
+                {/* City Header */}
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  className="w-full px-4 py-3 text-left hover:bg-slate-50 transition-colors flex flex-wrap items-center justify-between gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-500"
+                  onClick={() => setExpanded(isOpen ? null : city.city)}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 shrink-0 bg-amber-600 rounded-lg flex items-center justify-center text-white font-semibold text-sm tabular">
+                      {city.tenants.length}
                     </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {city.tenants.map((t, i) => (
-                    <div
-                      key={i}
-                      className={`w-2.5 h-2.5 rounded-full ${STATUS_COLORS[t.status] || "bg-gray-400"}`}
-                      title={`${t.name} - ${t.status}`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Expanded */}
-              {expanded === city.city && (
-                <div className="border-t border-slate-200">
-                  {/* Tenants */}
-                  <div className="px-6 py-4">
-                    <div className="text-xs uppercase tracking-wider text-slate-500 mb-3 font-medium">Active Tenants</div>
-                    <div className="space-y-2">
-                      {city.tenants.map((t, i) => (
-                        <div key={i} className="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-2 h-2 rounded-full ${STATUS_COLORS[t.status] || "bg-gray-400"}`} />
-                            <div>
-                              <span className="text-sm font-medium text-slate-900">{t.name}</span>
-                              <span className="text-xs text-slate-500 ml-2">{t.email}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-4 text-xs text-slate-500">
-                            <span className="flex items-center gap-1"><DollarSign size={10} />${t.budgetMax.toLocaleString()}</span>
-                            <span>{t.bedrooms}BR</span>
-                            <span className="flex items-center gap-1"><Calendar size={10} />{t.moveInDate}</span>
-                            <span className={`px-2 py-0.5 rounded text-xs font-medium uppercase ${
-                              t.status === 'outreach' ? 'bg-purple-900 text-purple-300' :
-                              t.status === 'selections_confirmed' ? 'bg-emerald-900 text-emerald-300' :
-                              t.status === 'matched' ? 'bg-blue-900 text-blue-300' :
-                              'bg-slate-700 text-slate-600'
-                            }`}>
-                              {t.status}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* High Pain Landlords */}
-                  {city.highPainLandlords.length > 0 && (
-                    <div className="px-6 py-4 border-t border-slate-200">
-                      <div className="text-xs uppercase tracking-wider text-slate-500 mb-3 font-medium flex items-center gap-2">
-                        <Phone size={10} className="text-amber-500" />
-                        Cold Call Targets (High DOM + Portfolio)
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-slate-900">{city.city}, {city.state}</div>
+                      <div className="text-xs text-slate-500 flex flex-wrap items-center gap-3 tabular">
+                        <span className="inline-flex items-center gap-1"><Users size={12} aria-hidden /> {city.tenants.length} tenant{city.tenants.length !== 1 ? "s" : ""}</span>
+                        <span className="inline-flex items-center gap-1"><Home size={12} aria-hidden /> {city.approvedListings} listings</span>
+                        <span className="inline-flex items-center gap-1"><Phone size={12} aria-hidden /> {city.highPainLandlords.length} call targets</span>
                       </div>
-                      <div className="space-y-2">
-                        {city.highPainLandlords.map((l, i) => (
-                          <div key={i} className="flex items-center justify-between py-2.5 px-3 bg-slate-50 rounded-lg border border-slate-200 hover:border-amber-500/30 transition">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-amber-600/20 text-amber-500 flex items-center justify-center rounded text-xs font-bold">
-                                {l.daysOnMarket > 0 ? l.daysOnMarket + 'd' : l.unitCount + 'u'}
-                              </div>
-                              <div>
-                                <div className="text-sm font-medium text-slate-900">{l.ownerName}</div>
-                                <div className="text-xs text-slate-500">{l.address}</div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-4 text-xs">
-                              <span className="text-slate-500">${l.price.toLocaleString()}/mo</span>
-                              {l.unitCount > 1 && (
-                                <span className="text-amber-400 font-medium">{l.unitCount} units</span>
-                              )}
-                              {l.daysOnMarket > 0 && (
-                                <span className="text-red-400 font-medium">{l.daysOnMarket} DOM</span>
-                              )}
-                              {l.ownerPhone && (
-                                <a href={`tel:${l.ownerPhone}`} className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300">
-                                  <Phone size={10} />
-                                  {l.ownerPhone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3')}
-                                </a>
-                              )}
-                              {l.ownerEmail && (
-                                <a href={`mailto:${l.ownerEmail}`} className="text-blue-400 hover:text-blue-300">
-                                  <Mail size={10} />
-                                </a>
-                              )}
-                            </div>
-                          </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {Object.entries(statusCounts).map(([s, n]) => (
+                      <Badge key={s} tone={statusTone(s)} dot>{humanize(s)} <span className="tabular">{n}</span></Badge>
+                    ))}
+                    {isOpen ? <ChevronUp size={14} className="text-slate-400" aria-hidden /> : <ChevronDown size={14} className="text-slate-400" aria-hidden />}
+                  </div>
+                </button>
+
+                {/* Expanded */}
+                {isOpen && (
+                  <div className="border-t border-slate-200">
+                    {/* Tenants */}
+                    <div className="px-4 pt-3 pb-1">
+                      <h3 className="text-xs font-medium uppercase tracking-wide text-slate-500">Active tenants</h3>
+                    </div>
+                    <Table>
+                      <THead>
+                        <tr>
+                          <TH>Tenant</TH>
+                          <TH numeric>Budget</TH>
+                          <TH numeric>Beds</TH>
+                          <TH>Move-in</TH>
+                          <TH>Status</TH>
+                        </tr>
+                      </THead>
+                      <TBody>
+                        {city.tenants.map((t, i) => (
+                          <TR key={i}>
+                            <TD>
+                              <div className="font-medium text-slate-900">{t.name}</div>
+                              <div className="text-xs text-slate-500 break-all">{t.email}</div>
+                            </TD>
+                            <TD numeric>${t.budgetMax.toLocaleString()}</TD>
+                            <TD numeric muted>{t.bedrooms}BR</TD>
+                            <TD muted className="tabular whitespace-nowrap">{t.moveInDate}</TD>
+                            <TD><Badge tone={statusTone(t.status)} dot>{humanize(t.status)}</Badge></TD>
+                          </TR>
                         ))}
+                      </TBody>
+                    </Table>
+
+                    {/* High Pain Landlords */}
+                    {city.highPainLandlords.length > 0 && (
+                      <div className="border-t border-slate-200">
+                        <div className="px-4 pt-3 pb-1">
+                          <h3 className="text-xs font-medium uppercase tracking-wide text-slate-500 inline-flex items-center gap-1.5">
+                            <Phone size={12} className="text-amber-600" aria-hidden />
+                            Cold call targets (high DOM + portfolio)
+                          </h3>
+                        </div>
+                        <Table>
+                          <THead>
+                            <tr>
+                              <TH>Owner</TH>
+                              <TH numeric>Rent</TH>
+                              <TH numeric>Units</TH>
+                              <TH numeric>DOM</TH>
+                              <TH>Contact</TH>
+                            </tr>
+                          </THead>
+                          <TBody>
+                            {city.highPainLandlords.map((l, i) => (
+                              <TR key={i}>
+                                <TD>
+                                  <div className="font-medium text-slate-900">{l.ownerName}</div>
+                                  <div className="text-xs text-slate-500">{l.address}</div>
+                                </TD>
+                                <TD numeric muted>${l.price.toLocaleString()}/mo</TD>
+                                <TD numeric className={l.unitCount > 1 ? "font-medium" : "text-slate-500"}>{l.unitCount > 1 ? `${l.unitCount} units` : "-"}</TD>
+                                <TD numeric className={l.daysOnMarket > 0 ? "font-medium" : "text-slate-500"}>{l.daysOnMarket > 0 ? `${l.daysOnMarket}d` : "-"}</TD>
+                                <TD>
+                                  <div className="flex items-center gap-3">
+                                    {l.ownerPhone ? (
+                                      <a href={`tel:${l.ownerPhone}`} className="inline-flex items-center gap-1 text-sky-700 hover:text-sky-900 font-medium tabular whitespace-nowrap">
+                                        <Phone size={12} aria-hidden />
+                                        {l.ownerPhone.replace(/(\d{3})(\d{3})(\d{4})/, "($1) $2-$3")}
+                                      </a>
+                                    ) : (
+                                      <span className="text-xs text-slate-400">No phone</span>
+                                    )}
+                                    {l.ownerEmail && (
+                                      <a href={`mailto:${l.ownerEmail}`} aria-label={`Email ${l.ownerEmail}`} className="text-slate-400 hover:text-slate-600">
+                                        <Mail size={12} aria-hidden />
+                                      </a>
+                                    )}
+                                  </div>
+                                </TD>
+                              </TR>
+                            ))}
+                          </TBody>
+                        </Table>
                       </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
+                    )}
+                  </div>
+                )}
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { RefreshCw, Edit2, Save, X, Plus, Trash2 } from "lucide-react";
+import { RefreshCw, Edit2, Save, X, Plus, Trash2, DollarSign, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
-import { MetricCard } from "@/components/ui/MetricCard";
-import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
+import { Button, Card, CardHeader, CardBody, Badge, statusTone, StatTile, PageHeader, Table, THead, TH, TBody, TR, TD, Input, Select } from "@/components/kit";
+import type { BadgeProps } from "@/components/kit/Badge";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
 import { formatCurrency } from "@/lib/utils";
-import { DollarSign, Zap } from "lucide-react";
 
 interface ManualSubscription {
   id: string;
@@ -64,6 +64,11 @@ const EMPTY_SUB: ManualSubscription = {
   costPerCall: "",
   notes: "",
 };
+
+type BadgeTone = NonNullable<BadgeProps["tone"]>;
+/** trial and cancelled are not in the shared status map. */
+const subTone = (status: ManualSubscription["status"]): BadgeTone =>
+  status === "trial" ? "warning" : status === "cancelled" ? "danger" : statusTone(status) ?? "neutral";
 
 export default function APIUsagePage() {
   const [data, setData] = useState<BillingData | null>(null);
@@ -122,20 +127,11 @@ export default function APIUsagePage() {
   };
 
   if (loading) {
-    return <Spinner label="Loading billing data" />;
+    return <div className="max-w-7xl"><PageHeader title="API Usage & Costs" /><Spinner label="Loading billing data" /></div>;
   }
 
   if (error && !data) {
-    return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900 mb-2">
-            API Usage &amp; Costs
-          </h1>
-        </div>
-        <ErrorBanner message={error} onRetry={fetchData} />
-      </div>
-    );
+    return <div className="max-w-7xl"><PageHeader title="API Usage & Costs" /><ErrorBanner message={error} onRetry={fetchData} /></div>;
   }
 
   const summary = data?.summary;
@@ -150,230 +146,135 @@ export default function APIUsagePage() {
     : null;
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900 mb-2">
-            API Usage &amp; Costs
-          </h1>
-          <p className="text-slate-500">
-            Live billing data + manual subscription tracking
-          </p>
-        </div>
-        <button
-          onClick={fetchData}
-          className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50"
-        >
-          <RefreshCw size={14} />
-          Refresh
-        </button>
+    <div className="max-w-7xl">
+      <PageHeader
+        title="API Usage & Costs"
+        description="Live billing data + manual subscription tracking"
+        actions={
+          <Button variant="ghost" size="icon" aria-label="Refresh" onClick={fetchData}>
+            <RefreshCw size={15} />
+          </Button>
+        }
+      />
+
+      {error && <ErrorBanner message={error} onRetry={fetchData} className="mb-5" />}
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <StatTile label="Monthly Burn" value={formatCurrency(summary?.totalMonthlyCost || 0)} icon={<DollarSign size={14} />} />
+        <StatTile label="Active Services" value={String(summary?.activeServices || 0)} icon={<Zap size={14} />} />
+        <StatTile
+          label="DO Month-to-Date"
+          value={summary?.doMtdSpend !== null ? formatCurrency(summary?.doMtdSpend || 0) : "N/A"}
+          hint="Live from DigitalOcean"
+        />
+        <StatTile
+          label="Stripe Balance"
+          value={summary?.stripeBalance !== null ? formatCurrency(summary?.stripeBalance || 0) : "N/A"}
+          hint={summary?.stripeLiveMode ? "LIVE" : "TEST MODE"}
+        />
       </div>
 
-      {error && <ErrorBanner message={error} onRetry={fetchData} />}
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard
-          title="Monthly Burn"
-          value={formatCurrency(summary?.totalMonthlyCost || 0)}
-          icon={DollarSign}
-        />
-        <MetricCard
-          title="Active Services"
-          value={String(summary?.activeServices || 0)}
-          icon={Zap}
-        />
-        <div className="bg-white border border-slate-200 rounded-lg  p-5">
-          <p className="text-xs font-semibold text-slate-500 mb-1">
-            DO Month-to-Date
-          </p>
-          <p className="text-2xl font-semibold text-amber-600">
-            {summary?.doMtdSpend !== null
-              ? formatCurrency(summary?.doMtdSpend || 0)
-              : "N/A"}
-          </p>
-          <p className="text-xs text-slate-400 mt-1">Live from DigitalOcean</p>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-lg  p-5">
-          <p className="text-xs font-semibold text-slate-500 mb-1">
-            Stripe Balance
-          </p>
-          <p className="text-2xl font-semibold text-slate-900">
-            {summary?.stripeBalance !== null
-              ? formatCurrency(summary?.stripeBalance || 0)
-              : "N/A"}
-          </p>
-          <p className="text-xs text-slate-400 mt-1">
-            {summary?.stripeLiveMode ? "LIVE" : "TEST MODE"}
-          </p>
-        </div>
-      </div>
-
-      {/* Live Services */}
       {liveServices.length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            Live Data
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          </h2>
-          <div className="grid grid-cols-2 gap-4">
+        <section className="mb-5">
+          <div className="flex items-center gap-2 mb-3">
+            <h2 className="text-md font-semibold text-slate-900">Live Data</h2>
+            <Badge tone="success" dot>Live</Badge>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {liveServices.map((svc) => (
-              <div
-                key={svc.name}
-                className="bg-white border border-slate-200 rounded-lg  p-6"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="font-semibold text-slate-900">
-                      {svc.name}
-                    </h3>
-                    <span className="text-xs text-slate-500">{svc.plan}</span>
-                  </div>
-                  <span className="px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded">
-                    LIVE
-                  </span>
-                </div>
-
-                {/* DigitalOcean details */}
-                {svc.mtdSpend !== undefined && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">MTD Spend</span>
-                      <span className="font-semibold text-amber-600">
-                        {formatCurrency(svc.mtdSpend)}
-                      </span>
-                    </div>
-                    {svc.lastInvoices?.map((inv) => (
-                      <div
-                        key={inv.period}
-                        className="flex justify-between text-sm"
-                      >
-                        <span className="text-slate-400">{inv.period}</span>
-                        <span className="text-slate-600">
-                          {formatCurrency(inv.amount)}
-                        </span>
+              <Card key={svc.name}>
+                <CardHeader title={svc.name} description={svc.plan} actions={<Badge tone="success" dot>Live</Badge>} />
+                <CardBody>
+                  {svc.mtdSpend !== undefined && (
+                    <dl className="divide-y divide-slate-100">
+                      <div className="flex justify-between items-center py-1.5 gap-4">
+                        <dt className="text-sm text-slate-500">MTD Spend</dt>
+                        <dd className="text-sm font-semibold text-slate-900 tabular">{formatCurrency(svc.mtdSpend)}</dd>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      {svc.lastInvoices?.map((inv) => (
+                        <div key={inv.period} className="flex justify-between items-center py-1.5 gap-4">
+                          <dt className="text-sm text-slate-500">{inv.period}</dt>
+                          <dd className="text-sm text-slate-700 tabular">{formatCurrency(inv.amount)}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
 
-                {/* Stripe details */}
-                {svc.availableBalance !== undefined && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Available</span>
-                      <span className="font-semibold text-slate-900">
-                        {formatCurrency(svc.availableBalance)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Pending</span>
-                      <span className="text-slate-600">
-                        {formatCurrency(svc.pendingBalance || 0)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Mode</span>
-                      <span
-                        className={`font-medium ${svc.isLiveMode ? "text-green-600" : "text-amber-600"}`}
-                      >
-                        {svc.isLiveMode ? "LIVE" : "TEST"}
-                      </span>
-                    </div>
-                    {svc.costPerCall && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-500">Fee</span>
-                        <span className="text-slate-600">
-                          {svc.costPerCall}
-                        </span>
+                  {svc.availableBalance !== undefined && (
+                    <dl className="divide-y divide-slate-100">
+                      <div className="flex justify-between items-center py-1.5 gap-4">
+                        <dt className="text-sm text-slate-500">Available</dt>
+                        <dd className="text-sm font-semibold text-slate-900 tabular">{formatCurrency(svc.availableBalance)}</dd>
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
+                      <div className="flex justify-between items-center py-1.5 gap-4">
+                        <dt className="text-sm text-slate-500">Pending</dt>
+                        <dd className="text-sm text-slate-700 tabular">{formatCurrency(svc.pendingBalance || 0)}</dd>
+                      </div>
+                      <div className="flex justify-between items-center py-1.5 gap-4">
+                        <dt className="text-sm text-slate-500">Mode</dt>
+                        <dd><Badge tone={svc.isLiveMode ? "success" : "warning"}>{svc.isLiveMode ? "LIVE" : "TEST"}</Badge></dd>
+                      </div>
+                      {svc.costPerCall && (
+                        <div className="flex justify-between items-center py-1.5 gap-4">
+                          <dt className="text-sm text-slate-500">Fee</dt>
+                          <dd className="text-sm text-slate-700">{svc.costPerCall}</dd>
+                        </div>
+                      )}
+                    </dl>
+                  )}
+                </CardBody>
+              </Card>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Manual Subscriptions */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-slate-900">
-            Subscriptions &amp; Renewals
-          </h2>
-          {!editing ? (
-            <button
-              onClick={() => setEditing(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-700 rounded-lg text-sm font-medium hover:bg-amber-100"
-            >
-              <Edit2 size={14} />
-              Edit
-            </button>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={addSub}
-                className="flex items-center gap-1 px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50"
-              >
-                <Plus size={14} />
-                Add
-              </button>
-              <button
-                onClick={() => {
-                  setEditing(false);
-                  setEditSubs(data?.manualSubscriptions || []);
-                }}
-                className="flex items-center gap-1 px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50"
-              >
-                <X size={14} />
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex items-center gap-1 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
-              >
-                <Save size={14} />
-                {saving ? "Saving..." : "Save"}
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-lg  overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50">
-                <th className="text-left font-semibold text-slate-600 px-5 py-3">
-                  Service
-                </th>
-                <th className="text-left font-semibold text-slate-600 px-5 py-3">
-                  Category
-                </th>
-                <th className="text-left font-semibold text-slate-600 px-5 py-3">
-                  Plan
-                </th>
-                <th className="text-right font-semibold text-slate-600 px-5 py-3">
-                  Cost
-                </th>
-                <th className="text-left font-semibold text-slate-600 px-5 py-3">
-                  Per Call
-                </th>
-                <th className="text-left font-semibold text-slate-600 px-5 py-3">
-                  Renewal
-                </th>
-                <th className="text-left font-semibold text-slate-600 px-5 py-3">
-                  Status
-                </th>
-                {editing && (
-                  <th className="text-center font-semibold text-slate-600 px-3 py-3">
-                    Del
-                  </th>
-                )}
+      <Card className="mb-5">
+        <CardHeader
+          title="Subscriptions & Renewals"
+          actions={
+            !editing ? (
+              <Button variant="primary" size="sm" icon={<Edit2 size={14} />} onClick={() => setEditing(true)}>
+                Edit
+              </Button>
+            ) : (
+              <>
+                <Button size="sm" icon={<Plus size={14} />} onClick={addSub}>Add</Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={<X size={14} />}
+                  onClick={() => {
+                    setEditing(false);
+                    setEditSubs(data?.manualSubscriptions || []);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button variant="primary" size="sm" icon={<Save size={14} />} loading={saving} onClick={handleSave}>
+                  {saving ? "Saving" : "Save"}
+                </Button>
+              </>
+            )
+          }
+        />
+        {manualSubs.length === 0 ? (
+          <EmptyState title="No subscriptions tracked" hint={editing ? "Use Add to track a service." : "Edit to add a service."} />
+        ) : (
+          <Table>
+            <THead>
+              <tr>
+                <TH>Service</TH>
+                <TH>Category</TH>
+                <TH>Plan</TH>
+                <TH numeric>Cost</TH>
+                <TH>Per Call</TH>
+                <TH>Renewal</TH>
+                <TH>Status</TH>
+                {editing && <TH aria-label="Delete" />}
               </tr>
-            </thead>
-            <tbody>
+            </THead>
+            <TBody>
               {manualSubs.map((sub, idx) => {
                 const daysUntil =
                   sub.renewalDate !== "N/A"
@@ -385,192 +286,144 @@ export default function APIUsagePage() {
 
                 if (editing) {
                   return (
-                    <tr
-                      key={sub.id || idx}
-                      className="border-b border-slate-100"
-                    >
-                      <td className="px-3 py-2">
-                        <input
+                    <TR key={sub.id || idx}>
+                      <TD>
+                        <Input
+                          aria-label="Service name"
                           value={sub.name}
-                          onChange={(e) =>
-                            updateSub(idx, "name", e.target.value)
-                          }
-                          className="w-full px-2 py-1 border border-slate-200 rounded text-sm"
+                          onChange={(e) => updateSub(idx, "name", e.target.value)}
                           placeholder="Service name"
+                          className="h-8 min-w-[9rem]"
                         />
-                      </td>
-                      <td className="px-3 py-2">
-                        <input
+                      </TD>
+                      <TD>
+                        <Input
+                          aria-label="Category"
                           value={sub.category}
-                          onChange={(e) =>
-                            updateSub(idx, "category", e.target.value)
-                          }
-                          className="w-full px-2 py-1 border border-slate-200 rounded text-sm"
+                          onChange={(e) => updateSub(idx, "category", e.target.value)}
                           placeholder="Category"
+                          className="h-8 min-w-[7rem]"
                         />
-                      </td>
-                      <td className="px-3 py-2">
-                        <input
+                      </TD>
+                      <TD>
+                        <Input
+                          aria-label="Plan"
                           value={sub.plan}
-                          onChange={(e) =>
-                            updateSub(idx, "plan", e.target.value)
-                          }
-                          className="w-full px-2 py-1 border border-slate-200 rounded text-sm"
+                          onChange={(e) => updateSub(idx, "plan", e.target.value)}
                           placeholder="Plan"
+                          className="h-8 min-w-[7rem]"
                         />
-                      </td>
-                      <td className="px-3 py-2">
-                        <input
+                      </TD>
+                      <TD numeric>
+                        <Input
+                          aria-label="Monthly cost"
                           type="number"
                           value={sub.monthlyCost}
-                          onChange={(e) =>
-                            updateSub(
-                              idx,
- "monthlyCost",
-                              parseFloat(e.target.value) || 0
-                            )
-                          }
-                          className="w-20 px-2 py-1 border border-slate-200 rounded text-sm text-right"
+                          onChange={(e) => updateSub(idx, "monthlyCost", parseFloat(e.target.value) || 0)}
+                          className="h-8 w-24 text-right tabular"
                         />
-                      </td>
-                      <td className="px-3 py-2">
-                        <input
+                      </TD>
+                      <TD>
+                        <Input
+                          aria-label="Cost per call"
                           value={sub.costPerCall || ""}
-                          onChange={(e) =>
-                            updateSub(idx, "costPerCall", e.target.value)
-                          }
-                          className="w-full px-2 py-1 border border-slate-200 rounded text-sm"
-                          placeholder="—"
+                          onChange={(e) => updateSub(idx, "costPerCall", e.target.value)}
+                          placeholder="-"
+                          className="h-8 min-w-[6rem]"
                         />
-                      </td>
-                      <td className="px-3 py-2">
-                        <input
+                      </TD>
+                      <TD>
+                        <Input
+                          aria-label="Renewal date"
                           value={sub.renewalDate}
-                          onChange={(e) =>
-                            updateSub(idx, "renewalDate", e.target.value)
-                          }
-                          className="w-28 px-2 py-1 border border-slate-200 rounded text-sm"
+                          onChange={(e) => updateSub(idx, "renewalDate", e.target.value)}
                           placeholder="YYYY-MM-DD"
+                          className="h-8 w-32 tabular"
                         />
-                      </td>
-                      <td className="px-3 py-2">
-                        <select
+                      </TD>
+                      <TD>
+                        <Select
+                          aria-label="Status"
                           value={sub.status}
-                          onChange={(e) =>
-                            updateSub(idx, "status", e.target.value)
-                          }
-                          className="px-2 py-1 border border-slate-200 rounded text-sm"
+                          onChange={(e) => updateSub(idx, "status", e.target.value)}
+                          className="h-8 w-auto"
                         >
                           <option value="active">Active</option>
                           <option value="trial">Trial</option>
                           <option value="cancelled">Cancelled</option>
-                        </select>
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        <button
+                        </Select>
+                      </TD>
+                      <TD className="w-10">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          aria-label="Remove subscription"
+                          className="text-red-700 hover:text-red-800 hover:bg-red-50 px-2"
                           onClick={() => removeSub(idx)}
-                          className="text-red-400 hover:text-red-600"
                         >
                           <Trash2 size={14} />
-                        </button>
-                      </td>
-                    </tr>
+                        </Button>
+                      </TD>
+                    </TR>
                   );
                 }
 
                 return (
-                  <tr
-                    key={sub.id || idx}
-                    className="border-b border-slate-100 hover:bg-slate-50"
-                  >
-                    <td className="px-5 py-3">
-                      <div className="font-medium text-slate-900">
-                        {sub.name}
-                      </div>
-                      {sub.notes && (
-                        <div className="text-xs text-slate-400 mt-0.5">
-                          {sub.notes}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-5 py-3 text-slate-600">
-                      {sub.category}
-                    </td>
-                    <td className="px-5 py-3 text-slate-600">{sub.plan}</td>
-                    <td className="px-5 py-3 text-right">
+                  <TR key={sub.id || idx} className="hover:bg-slate-50">
+                    <TD>
+                      <div className="font-medium text-slate-900">{sub.name}</div>
+                      {sub.notes && <div className="text-xs text-slate-500 mt-0.5">{sub.notes}</div>}
+                    </TD>
+                    <TD muted>{sub.category}</TD>
+                    <TD muted>{sub.plan}</TD>
+                    <TD numeric>
                       {sub.monthlyCost > 0 ? (
                         <span className="font-semibold text-slate-900">
                           {formatCurrency(sub.monthlyCost)}
-                          <span className="text-slate-400 font-normal">
-                            /{sub.billingCycle === "annual" ? "yr" : "mo"}
-                          </span>
+                          <span className="text-slate-400 font-normal">/{sub.billingCycle === "annual" ? "yr" : "mo"}</span>
                         </span>
                       ) : (
-                        <span className="text-green-600 font-medium">
-                          Free
-                        </span>
+                        <Badge tone="success">Free</Badge>
                       )}
-                    </td>
-                    <td className="px-5 py-3 text-slate-500">
-                      {sub.costPerCall || "—"}
-                    </td>
-                    <td className="px-5 py-3">
+                    </TD>
+                    <TD muted>{sub.costPerCall || "-"}</TD>
+                    <TD>
                       {sub.renewalDate === "N/A" ? (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-slate-400">-</span>
                       ) : (
-                        <div>
-                          <div className="text-slate-900">
-                            {new Date(sub.renewalDate).toLocaleDateString(
- "en-US",
-                              { month: "short", day: "numeric" }
-                            )}
-                          </div>
+                        <div className="flex items-center gap-2">
+                          <span className="tabular whitespace-nowrap">
+                            {new Date(sub.renewalDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </span>
                           {daysUntil !== null && daysUntil <= 14 && (
-                            <div
-                              className={`text-xs font-medium ${daysUntil <= 3 ? "text-red-600" : "text-amber-600"}`}
-                            >
+                            <Badge tone={daysUntil <= 3 ? "danger" : "warning"}>
                               {daysUntil <= 0 ? "Overdue" : `${daysUntil}d`}
-                            </div>
+                            </Badge>
                           )}
                         </div>
                       )}
-                    </td>
-                    <td className="px-5 py-3">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                          sub.status === "active"
-                            ? "bg-green-50 text-green-700"
-                            : sub.status === "trial"
-                              ? "bg-amber-50 text-amber-700"
-                              : "bg-red-50 text-red-700"
-                        }`}
-                      >
-                        {sub.status}
-                      </span>
-                    </td>
-                  </tr>
+                    </TD>
+                    <TD><Badge tone={subTone(sub.status)} dot>{sub.status}</Badge></TD>
+                  </TR>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            </TBody>
+          </Table>
+        )}
+      </Card>
 
-      {/* Next Renewal Alert */}
       {nextRenewalDays !== null && nextRenewalDays <= 14 && (
-        <div
-          className={`border rounded-lg p-4 flex items-center justify-between ${nextRenewalDays <= 3 ? "bg-red-50 border-red-200" : "bg-amber-50 border-amber-200"}`}
-        >
-          <span
-            className={
-              nextRenewalDays <= 3 ? "text-red-900" : "text-amber-900"
-            }
-          >
-            <strong>{summary?.nextRenewal?.name}</strong> renews in{" "}
-            {nextRenewalDays} days (
-            {new Date(summary?.nextRenewal?.date || "").toLocaleDateString()})
-          </span>
-        </div>
+        <Card>
+          <CardBody className="flex flex-wrap items-center gap-3">
+            <Badge tone={nextRenewalDays <= 3 ? "danger" : "warning"} dot>
+              {nextRenewalDays <= 3 ? "Renews soon" : "Upcoming renewal"}
+            </Badge>
+            <span className="text-sm text-slate-700">
+              <strong>{summary?.nextRenewal?.name}</strong> renews in {nextRenewalDays} days
+              {" "}(<span className="tabular">{new Date(summary?.nextRenewal?.date || "").toLocaleDateString()}</span>)
+            </span>
+          </CardBody>
+        </Card>
       )}
     </div>
   );

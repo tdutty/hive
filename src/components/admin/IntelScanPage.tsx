@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Play, Loader2, Clock, type LucideIcon } from "lucide-react";
 import { sweetleaseApi } from "@/lib/api";
 import { ErrorBanner, EmptyState } from "@/components/ui/AsyncState";
+import { Button, Card, StatTile, PageHeader, Badge, Table, THead, TH, TBody, TR, TD } from "@/components/kit";
 
 export interface IntelColumn { key: string; label?: string; render?: (value: unknown, row: Record<string, unknown>) => React.ReactNode }
 export interface IntelScanConfig {
@@ -50,74 +51,55 @@ export function IntelScanPage({ icon: Icon, title, description, endpoint, body =
 
   return (
     <div className="max-w-6xl">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6 sm:mb-8">
-        <div className="flex items-center gap-4 flex-1 min-w-0">
-          <div className="w-12 h-12 shrink-0 rounded-xl bg-amber-600/20 flex items-center justify-center"><Icon size={24} className="text-amber-500" /></div>
-          <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
-            <p className="text-sm text-slate-500 mt-1">{description}</p>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {lastRun && <span className="flex items-center gap-1.5 text-xs text-slate-500"><Clock size={14} aria-hidden /> Last run: {lastRun}</span>}
-          {results != null && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">{rows.length} results</span>}
-          <button onClick={runScan} disabled={loading} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2">
-            {loading ? <Loader2 size={16} className="animate-spin" aria-hidden /> : <Play size={16} aria-hidden />}
-            {loading ? "Running..." : "Run Scan"}
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title={<span className="inline-flex items-center gap-2"><Icon size={18} className="text-amber-600" aria-hidden />{title}</span>}
+        description={description} meta="Intelligence"
+        actions={<>
+          {lastRun && <span className="inline-flex items-center gap-1.5 text-xs text-slate-500"><Clock size={13} aria-hidden /> Last run {lastRun}</span>}
+          {results != null && <Badge tone="success">{rows.length} results</Badge>}
+          <Button variant="primary" icon={<Play size={14} />} loading={loading} onClick={runScan}>{loading ? "Running" : "Run scan"}</Button>
+        </>}
+      />
 
-      {error && <ErrorBanner message={error} onRetry={runScan} className="mb-6" />}
+      {error && <ErrorBanner message={error} onRetry={runScan} className="mb-4" />}
 
       {loading && (
-        <div className="bg-white border border-slate-200 rounded-xl p-12 flex flex-col items-center justify-center gap-3" role="status" aria-live="polite">
-          <Loader2 size={32} className="animate-spin text-amber-500" aria-hidden />
+        <Card className="p-12 flex flex-col items-center justify-center gap-3" role="status" aria-live="polite">
+          <Loader2 size={28} className="animate-spin text-amber-500" aria-hidden />
           <p className="text-sm text-slate-500">{runningLabel}</p>
-        </div>
+        </Card>
       )}
 
       {!loading && results != null && (
         <div className="space-y-4">
           {summary.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {summary.map(([key, value]) => (
-                <div key={key} className="bg-white border border-slate-200 rounded-xl p-4">
-                  <p className="text-xs text-slate-500 capitalize">{key.replace(/_/g, " ")}</p>
-                  <p className="text-xl font-bold text-slate-900 mt-1 truncate">{String(value)}</p>
-                </div>
-              ))}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {summary.map(([key, value]) => <StatTile key={key} label={key.replace(/_/g, " ")} value={String(value)} />)}
             </div>
           )}
           {rows.length > 0 ? (
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead><tr className="border-b border-slate-200 bg-slate-50">
-                    {cols.map(c => <th key={c.key} scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">{c.label ?? c.key.replace(/_/g, " ")}</th>)}
-                  </tr></thead>
-                  <tbody>
-                    {rows.map((row, i) => (
-                      <tr key={i} className="border-b border-slate-100 hover:bg-slate-50">
-                        {cols.map(c => <td key={c.key} className="px-4 py-3 text-slate-700 max-w-[240px] truncate" title={cell(row[c.key])}>{c.render ? c.render(row[c.key], row) : cell(row[c.key])}</td>)}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <Card>
+              <Table>
+                <THead><tr>{cols.map(c => <TH key={c.key}>{c.label ?? c.key.replace(/_/g, " ")}</TH>)}</tr></THead>
+                <TBody>
+                  {rows.map((row, i) => (
+                    <TR key={i}>{cols.map(c => <TD key={c.key} className="max-w-[240px] truncate" title={cell(row[c.key])}>{c.render ? c.render(row[c.key], row) : cell(row[c.key])}</TD>)}</TR>
+                  ))}
+                </TBody>
+              </Table>
+            </Card>
           ) : (
-            <div className="bg-white border border-slate-200 rounded-xl">
+            <Card>
               <EmptyState title="The scan returned no rows" hint="The raw response is below for reference." />
               <details className="px-4 pb-4"><summary className="text-xs text-slate-500 cursor-pointer">Raw response</summary>
                 <pre className="mt-2 text-xs text-slate-700 overflow-x-auto whitespace-pre-wrap max-h-96">{JSON.stringify(results, null, 2)}</pre></details>
-            </div>
+            </Card>
           )}
         </div>
       )}
 
       {!loading && results == null && !error && (
-        <div className="bg-white border border-slate-200 rounded-xl"><EmptyState icon={<Icon size={32} className="mx-auto text-slate-300" />} title={title} hint={emptyHint} /></div>
+        <Card><EmptyState icon={<Icon size={32} className="mx-auto text-slate-300" />} title={title} hint={emptyHint} /></Card>
       )}
     </div>
   );

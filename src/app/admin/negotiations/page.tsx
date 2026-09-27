@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { ArrowRight, ChevronDown, ChevronRight } from "lucide-react";
 import { api } from "@/lib/api";
-import { ErrorBanner, Spinner } from "@/components/ui/AsyncState";
+import { Button, Card, CardBody, Badge, statusTone, PageHeader, Input } from "@/components/kit";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
+import { cn } from "@/lib/utils";
 
 interface CounteredOffer {
   id: string;
@@ -35,7 +38,7 @@ export default function NegotiationsPage() {
   const fetchOffers = async () => {
     try {
       const data = await api.get<{ offers: CounteredOffer[] }>(
- "/api/admin/tenant-match/counter-response"
+        "/api/admin/tenant-match/counter-response"
       );
       setOffers(data.offers);
       // Pre-fill counter amounts with midpoint between our offer and their counter
@@ -70,9 +73,9 @@ export default function NegotiationsPage() {
         newAmount: action === "counter" ? counterAmounts[offerId] : undefined,
       });
       const messages: Record<string, string> = {
-        accept: "Counter accepted — triggering lease generation",
+        accept: "Counter accepted - triggering lease generation",
         counter: `Counter-offer of $${counterAmounts[offerId]?.toLocaleString()}/mo sent to landlord`,
-        reject: "Offer rejected — landlord notified",
+        reject: "Offer rejected - landlord notified",
       };
       setConfirmation({ offerId, message: messages[action], type: 'success' });
       setTimeout(() => setConfirmation(null), 5000);
@@ -90,35 +93,32 @@ export default function NegotiationsPage() {
   };
 
   if (loading) {
-    return <Spinner label="Loading negotiations" />;
+    return <div><PageHeader title="Negotiations" /><Spinner label="Loading negotiations" /></div>;
   }
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-lg font-semibold text-slate-900">Negotiations</h1>
-        <p className="text-slate-500 mt-1">
-          Landlord counter offers requiring your response
-        </p>
-      </div>
+    <div className="max-w-7xl">
+      <PageHeader title="Negotiations" description="Landlord counter offers requiring your response" />
 
       {confirmation && (
-        <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium ${confirmation.type === 'success' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>
-          {confirmation.message}
-        </div>
+        <Card className="mb-4" role="status">
+          <CardBody className="flex items-center gap-3 py-3">
+            <Badge tone={statusTone(confirmation.type === 'success' ? 'success' : 'error')} dot>
+              {confirmation.type === 'success' ? 'Done' : 'Failed'}
+            </Badge>
+            <span className="text-sm text-slate-800">{confirmation.message}</span>
+          </CardBody>
+        </Card>
       )}
 
       {error ? (
         <ErrorBanner message={error} onRetry={fetchOffers} />
       ) : offers.length === 0 ? (
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-12 text-center">
-          <p className="text-slate-500 text-lg">No active counter offers</p>
-          <p className="text-slate-500 text-sm mt-2">
-            Counter offers from landlords will appear here for you to review
-          </p>
-        </div>
+        <Card>
+          <EmptyState title="No active counter offers" hint="Counter offers from landlords will appear here for you to review" />
+        </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {offers.map((offer) => {
             const isExpanded = expandedId === offer.id;
             const diff =
@@ -129,131 +129,104 @@ export default function NegotiationsPage() {
               offer.finalRentPerUnit > 0
                 ? Math.round((diff / offer.finalRentPerUnit) * 100)
                 : 0;
+            const busy = actionLoading === offer.id;
 
             return (
-              <div
-                key={offer.id}
-                className="bg-slate-50 border border-slate-200 rounded-lg overflow-hidden"
-              >
-                {/* Header Row */}
-                <div
-                  className="p-6 cursor-pointer hover:bg-slate-100 transition-colors"
-                  onClick={() =>
-                    setExpandedId(isExpanded ? null : offer.id)
-                  }
+              <Card key={offer.id} className="overflow-hidden">
+                {/* Header row */}
+                <button
+                  type="button"
+                  aria-expanded={isExpanded}
+                  onClick={() => setExpandedId(isExpanded ? null : offer.id)}
+                  className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-500"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-slate-900 font-semibold text-lg">
-                          {offer.propertyTitle ||
-                            offer.propertyAddress?.street ||
- "Unknown Property"}
-                        </h3>
-                        <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs font-medium rounded">
-                          COUNTERED
-                        </span>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-start gap-2 min-w-0">
+                      {isExpanded ? <ChevronDown size={16} className="text-slate-400 shrink-0 mt-1" aria-hidden /> : <ChevronRight size={16} className="text-slate-400 shrink-0 mt-1" aria-hidden />}
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-sm font-semibold text-slate-900 truncate">
+                            {offer.propertyTitle || offer.propertyAddress?.street || "Unknown Property"}
+                          </h3>
+                          <Badge tone={statusTone(offer.status)} dot>Countered</Badge>
+                        </div>
+                        <p className="text-sm text-slate-500 mt-0.5">
+                          {offer.landlordName || "Unknown Landlord"} &middot;{" "}
+                          {offer.tenantCount} tenant(s) &middot;{" "}
+                          {offer.leaseTermMonths}mo lease
+                        </p>
                       </div>
-                      <p className="text-slate-500 text-sm mt-1">
-                        {offer.landlordName || "Unknown Landlord"} &middot;{" "}
-                        {offer.tenantCount} tenant(s) &middot;{" "}
-                        {offer.leaseTermMonths}mo lease
-                      </p>
                     </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-4">
+                    <div className="sm:text-right shrink-0 pl-6 sm:pl-0">
+                      <div className="flex items-center gap-3">
                         <div>
-                          <div className="text-slate-500 text-xs">Our Offer</div>
-                          <div className="text-slate-600 font-medium">
+                          <div className="text-xs text-slate-500">Our Offer</div>
+                          <div className="text-sm font-medium text-slate-700 tabular">
                             ${offer.finalRentPerUnit.toLocaleString()}/mo
                           </div>
                         </div>
-                        <div className="text-slate-500">&rarr;</div>
+                        <ArrowRight size={14} className="text-slate-400" aria-hidden />
                         <div>
-                          <div className="text-amber-400 text-xs">
-                            Their Counter
-                          </div>
-                          <div className="text-amber-400 font-bold text-lg">
-                            $
-                            {(
-                              offer.counterAmount || offer.finalRentPerUnit
-                            ).toLocaleString()}
-                            /mo
+                          <div className="text-xs text-slate-500">Their Counter</div>
+                          <div className="text-md font-semibold text-slate-900 tabular">
+                            ${(offer.counterAmount || offer.finalRentPerUnit).toLocaleString()}/mo
                           </div>
                         </div>
                       </div>
-                      <div
-                        className={`text-xs mt-1 ${diff > 0 ? "text-red-400" : "text-green-400"}`}
-                      >
-                        {diff > 0 ? "+" : ""}${diff.toLocaleString()}/mo ({diffPct > 0 ? "+" : ""}
-                        {diffPct}%)
+                      <div className={cn("text-xs font-medium tabular mt-1", diff > 0 ? "text-red-700" : "text-emerald-700")}>
+                        {diff > 0 ? "+" : ""}${diff.toLocaleString()}/mo ({diffPct > 0 ? "+" : ""}{diffPct}%)
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
 
-                {/* Expanded Actions */}
+                {/* Expanded actions */}
                 {isExpanded && (
-                  <div className="border-t border-slate-200 p-6 bg-slate-50">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
+                  <CardBody className="border-t border-slate-200 bg-slate-50">
+                    <dl className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-5">
                       <div>
-                        <div className="text-slate-500 text-xs uppercase tracking-wider">
-                          Landlord
-                        </div>
-                        <div className="text-slate-900 mt-1">
-                          {offer.landlordName}
-                        </div>
-                        <div className="text-slate-500 text-sm">
-                          {offer.landlordEmail}
-                        </div>
+                        <dt className="text-xs font-medium text-slate-500 uppercase tracking-wide">Landlord</dt>
+                        <dd className="text-sm text-slate-900 mt-1">{offer.landlordName}</dd>
+                        <dd className="text-sm text-slate-500 break-all">{offer.landlordEmail}</dd>
                         {offer.landlordPhone && (
-                          <a href={`tel:${offer.landlordPhone}`} className="text-blue-400 hover:text-blue-300 text-sm mt-1 inline-block">
-                            {offer.landlordPhone}
-                          </a>
+                          <dd>
+                            <a href={`tel:${offer.landlordPhone}`} className="text-sm text-sky-700 hover:underline mt-1 inline-block tabular">
+                              {offer.landlordPhone}
+                            </a>
+                          </dd>
                         )}
                       </div>
                       <div>
-                        <div className="text-slate-500 text-xs uppercase tracking-wider">
-                          Annual Value
-                        </div>
-                        <div className="text-slate-900 mt-1">
-                          $
-                          {(
-                            (offer.counterAmount || offer.finalRentPerUnit) *
-                            12 *
-                            offer.tenantCount
-                          ).toLocaleString()}
-                        </div>
+                        <dt className="text-xs font-medium text-slate-500 uppercase tracking-wide">Annual Value</dt>
+                        <dd className="text-sm text-slate-900 mt-1 tabular">
+                          ${((offer.counterAmount || offer.finalRentPerUnit) * 12 * offer.tenantCount).toLocaleString()}
+                        </dd>
                       </div>
                       <div>
-                        <div className="text-slate-500 text-xs uppercase tracking-wider">
-                          Countered
-                        </div>
-                        <div className="text-slate-900 mt-1">
-                          {offer.counteredAt
-                            ? new Date(offer.counteredAt).toLocaleDateString()
-                            : "Unknown"}
-                        </div>
+                        <dt className="text-xs font-medium text-slate-500 uppercase tracking-wide">Countered</dt>
+                        <dd className="text-sm text-slate-900 mt-1 tabular">
+                          {offer.counteredAt ? new Date(offer.counteredAt).toLocaleDateString() : "Unknown"}
+                        </dd>
                       </div>
-                    </div>
+                    </dl>
 
-                    <div className="flex items-center gap-3">
-                      {/* Accept Counter */}
-                      <button
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* Accept counter: the one primary action */}
+                      <Button
+                        variant="primary"
                         onClick={() => handleAction(offer.id, "accept")}
-                        disabled={actionLoading === offer.id}
-                        className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded transition-colors disabled:opacity-50"
+                        disabled={busy}
+                        loading={busy}
                       >
-                        {actionLoading === offer.id ? 'Processing...' : `Accept $${(offer.counterAmount || 0).toLocaleString()}/mo`}
-                      </button>
+                        {busy ? "Processing" : `Accept $${(offer.counterAmount || 0).toLocaleString()}/mo`}
+                      </Button>
 
-                      {/* Counter Back */}
-                      <div className="flex items-center border border-slate-200 rounded overflow-hidden">
-                        <span className="px-3 py-3 bg-white text-slate-500 text-sm border-r border-slate-200">
-                          $
-                        </span>
-                        <input
+                      {/* Counter back */}
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm text-slate-500" aria-hidden>$</span>
+                        <Input
                           type="number"
+                          aria-label="Counter amount"
                           value={counterAmounts[offer.id] || ""}
                           onChange={(e) =>
                             setCounterAmounts((prev) => ({
@@ -261,33 +234,30 @@ export default function NegotiationsPage() {
                               [offer.id]: Number(e.target.value),
                             }))
                           }
-                          className="w-28 px-3 py-3 bg-white text-slate-900 text-sm focus:outline-none"
+                          className="w-28 tabular"
                           placeholder="Amount"
                         />
-                        <button
+                        <Button
                           onClick={() => handleAction(offer.id, "counter")}
-                          disabled={
-                            actionLoading === offer.id ||
-                            !counterAmounts[offer.id]
-                          }
-                          className="px-4 py-3 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium transition-colors disabled:opacity-50"
+                          disabled={busy || !counterAmounts[offer.id]}
                         >
-                          {actionLoading === offer.id ? '...' : 'Counter'}
-                        </button>
+                          Counter
+                        </Button>
                       </div>
 
-                      {/* Walk Away */}
-                      <button
+                      {/* Walk away */}
+                      <Button
+                        variant="ghost"
                         onClick={() => handleAction(offer.id, "reject")}
-                        disabled={actionLoading === offer.id}
-                        className="px-6 py-3 text-slate-500 hover:text-red-400 text-sm font-medium transition-colors disabled:opacity-50"
+                        disabled={busy}
+                        className="hover:text-red-700"
                       >
-                        {actionLoading === offer.id ? 'Processing...' : 'Walk Away'}
-                      </button>
+                        {busy ? "Processing" : "Walk Away"}
+                      </Button>
                     </div>
-                  </div>
+                  </CardBody>
                 )}
-              </div>
+              </Card>
             );
           })}
         </div>

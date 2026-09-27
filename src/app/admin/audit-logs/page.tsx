@@ -4,9 +4,8 @@ import { useState, useEffect } from "react";
 import { Shield } from "lucide-react";
 import { useApi } from "@/lib/hooks";
 import { auditLogsService } from "@/lib/services/audit-logs";
-import { DataTable } from "@/components/ui/DataTable";
-import { FilterBar } from "@/components/ui/FilterBar";
-import { SearchInput } from "@/components/ui/SearchInput";
+import { Card, CardHeader, CardBody, Badge, statusTone, PageHeader, FilterChips, Table, THead, TH, TBody, TR, TD, Input } from "@/components/kit";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
 
 interface AuditLogRow {
   id: string;
@@ -20,46 +19,49 @@ interface AuditLogRow {
   riskScore: number;
 }
 
+type CategoryKey = "all" | "authentication" | "admin" | "data" | "payment" | "compliance";
+type LevelKey = "all" | "critical" | "error" | "warning" | "info";
+
+const CATEGORIES: { key: CategoryKey; label: string }[] = [
+  { key: "all", label: "All Categories" },
+  { key: "authentication", label: "Authentication" },
+  { key: "admin", label: "Admin Action" },
+  { key: "data", label: "Data Modification" },
+  { key: "payment", label: "Payment" },
+  { key: "compliance", label: "Compliance" },
+];
+
+const LEVELS: { key: LevelKey; label: string }[] = [
+  { key: "all", label: "All Levels" },
+  { key: "critical", label: "Critical" },
+  { key: "error", label: "Error" },
+  { key: "warning", label: "Warning" },
+  { key: "info", label: "Info" },
+];
+
+const categoryMap: Record<CategoryKey, string | undefined> = {
+  all: undefined,
+  authentication: "Authentication",
+  admin: "Admin Action",
+  data: "Data Modification",
+  payment: "Payment",
+  compliance: "Compliance",
+};
+
+const levelMap: Record<LevelKey, string | undefined> = {
+  all: undefined,
+  critical: "CRITICAL",
+  error: "ERROR",
+  warning: "WARNING",
+  info: "INFO",
+};
+
 export default function AuditLogsPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [levelFilter, setLevelFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState<CategoryKey>("all");
+  const [levelFilter, setLevelFilter] = useState<LevelKey>("all");
   const [page] = useState(1);
   const [filteredLogs, setFilteredLogs] = useState<AuditLogRow[]>([]);
-
-  const categories = [
-    { key: "all", label: "All Categories" },
-    { key: "authentication", label: "Authentication" },
-    { key: "admin", label: "Admin Action" },
-    { key: "data", label: "Data Modification" },
-    { key: "payment", label: "Payment" },
-    { key: "compliance", label: "Compliance" },
-  ];
-
-  const levels = [
-    { key: "all", label: "All Levels" },
-    { key: "critical", label: "Critical" },
-    { key: "error", label: "Error" },
-    { key: "warning", label: "Warning" },
-    { key: "info", label: "Info" },
-  ];
-
-  const categoryMap: Record<string, string | undefined> = {
-    all: undefined,
-    authentication: "Authentication",
-    admin: "Admin Action",
-    data: "Data Modification",
-    payment: "Payment",
-    compliance: "Compliance",
-  };
-
-  const levelMap: Record<string, string | undefined> = {
-    all: undefined,
-    critical: "CRITICAL",
-    error: "ERROR",
-    warning: "WARNING",
-    info: "INFO",
-  };
 
   const { data, loading, error, refetch } = useApi(
     () =>
@@ -92,130 +94,86 @@ export default function AuditLogsPage() {
   }, [data, searchTerm]);
 
   if (loading) {
-    return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900">Audit Logs</h1>
-        </div>
-        <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    );
+    return <div className="max-w-7xl"><PageHeader title="Audit Logs" /><Spinner /></div>;
   }
 
   if (error) {
-    return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900">Audit Logs</h1>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700">
-          <p className="font-medium">Failed to load data</p>
-          <p className="text-sm mt-1">{error}</p>
-          <button
-            onClick={refetch}
-            className="mt-3 bg-red-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-red-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
+    return <div className="max-w-7xl"><PageHeader title="Audit Logs" /><ErrorBanner message={error} onRetry={refetch} /></div>;
   }
 
   return (
-    <div className="space-y-8">
-      {/* Page Title */}
-      <div>
-        <h1 className="text-lg font-semibold text-slate-900 mb-2">Audit Logs</h1>
-        <p className="text-slate-500">Track all system activities and compliance events</p>
-      </div>
+    <div className="max-w-7xl">
+      <PageHeader title="Audit Logs" description="Track all system activities and compliance events" />
 
-      {/* Search and Filters */}
-      <div className="space-y-4">
-        <SearchInput
+      <div className="flex flex-col gap-3 mb-4">
+        <Input
+          type="search"
+          aria-label="Search audit logs"
           value={searchTerm}
-          onChange={setSearchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Search by action, user, or IP..."
+          className="sm:max-w-xs"
         />
-
-        <div className="space-y-3">
-          <div>
-            <p className="text-sm font-semibold text-slate-700 mb-2">Category</p>
-            <FilterBar
-              filters={categories}
-              selected={categoryFilter}
-              onChange={setCategoryFilter}
-            />
-          </div>
-
-          <div>
-            <p className="text-sm font-semibold text-slate-700 mb-2">Log Level</p>
-            <FilterBar
-              filters={levels}
-              selected={levelFilter}
-              onChange={setLevelFilter}
-            />
-          </div>
+        <div>
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Category</p>
+          <FilterChips items={CATEGORIES} value={categoryFilter} onChange={setCategoryFilter} />
+        </div>
+        <div>
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Log Level</p>
+          <FilterChips items={LEVELS} value={levelFilter} onChange={setLevelFilter} />
         </div>
       </div>
 
-      {/* Audit Logs Table */}
-      <DataTable
-        columns={[
-          { key: "timestamp", label: "Timestamp" },
-          {
-            key: "level",
-            label: "Level",
-            render: (value) => {
-              const colorMap: Record<string, string> = {
-                CRITICAL: "bg-red-100 text-red-900 border-red-200",
-                ERROR: "bg-orange-100 text-orange-900 border-orange-200",
-                WARNING: "bg-amber-100 text-amber-900 border-amber-200",
-                INFO: "bg-blue-100 text-blue-900 border-blue-200",
-              };
-              return (
-                <span
-                  className={`inline-flex items-center border rounded-md px-3 py-1.5 text-sm font-medium ${
-                    colorMap[value] || colorMap.INFO
-                  }`}
-                >
-                  {value}
-                </span>
-              );
-            },
-          },
-          { key: "category", label: "Category" },
-          { key: "action", label: "Action" },
-          { key: "user", label: "User" },
-          { key: "ipAddress", label: "IP Address" },
-          {
-            key: "complianceFlag",
-            label: "Compliance",
-            render: (value) =>
-              value ? (
-                <div className="flex items-center gap-2">
-                  <Shield size={16} className="text-amber-600" />
-                  <span className="text-sm text-slate-700">Flagged</span>
-                </div>
-              ) : (
-                <span className="text-sm text-slate-500">-</span>
-              ),
-          },
-          { key: "riskScore", label: "Risk Score" },
-        ]}
-        data={filteredLogs}
-        emptyMessage="No audit logs found"
-      />
+      <Card className="mb-5">
+        <CardHeader title={`Logs (${filteredLogs.length})`} />
+        {filteredLogs.length === 0 ? (
+          <EmptyState title="No audit logs found" />
+        ) : (
+          <Table>
+            <THead>
+              <tr>
+                <TH>Timestamp</TH>
+                <TH>Level</TH>
+                <TH>Category</TH>
+                <TH>Action</TH>
+                <TH>User</TH>
+                <TH>IP Address</TH>
+                <TH>Compliance</TH>
+                <TH numeric>Risk Score</TH>
+              </tr>
+            </THead>
+            <TBody>
+              {filteredLogs.map((log, i) => (
+                <TR key={log.id ?? i}>
+                  <TD muted className="tabular whitespace-nowrap">{log.timestamp || "-"}</TD>
+                  <TD><Badge tone={statusTone(log.level)} dot>{log.level || "-"}</Badge></TD>
+                  <TD>{log.category || "-"}</TD>
+                  <TD className="font-medium">{log.action || "-"}</TD>
+                  <TD muted>{log.user || "-"}</TD>
+                  <TD muted className="tabular">{log.ipAddress || "-"}</TD>
+                  <TD>
+                    {log.complianceFlag ? (
+                      <span className="inline-flex items-center gap-1.5 text-slate-700">
+                        <Shield size={14} className="text-amber-600" aria-hidden />
+                        Flagged
+                      </span>
+                    ) : (
+                      <span className="text-slate-500">-</span>
+                    )}
+                  </TD>
+                  <TD numeric>{log.riskScore ?? "-"}</TD>
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+        )}
+      </Card>
 
-      {/* Footer Note */}
-      <div className="bg-white border border-slate-200 rounded-lg  p-4 text-sm text-slate-500">
-        <p>
-          Showing {filteredLogs.length} of {data?.pagination?.total || 0} logs. All
-          timestamps are in UTC.
-        </p>
-      </div>
+      <Card>
+        <CardBody className="text-sm text-slate-500">
+          Showing {filteredLogs.length} of {data?.pagination?.total || 0} logs. All timestamps are in UTC.
+        </CardBody>
+      </Card>
     </div>
   );
 }

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { RefreshCw, CheckCircle, AlertTriangle } from "lucide-react";
+import { Button, Card, CardBody, Badge, PageHeader } from "@/components/kit";
+import { Spinner, EmptyState } from "@/components/ui/AsyncState";
 
 export default function AlertsPage() {
   const [loading, setLoading] = useState(false);
@@ -31,49 +33,53 @@ export default function AlertsPage() {
   }, []);
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900 flex items-center gap-3">
-            <AlertTriangle size={24} className="text-amber-500" />
-            System Alerts
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">Monitor system health and background processes</p>
-        </div>
-        <button
-          onClick={checkHealth}
-          disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-500 hover:text-slate-900 rounded-lg text-sm transition disabled:opacity-50"
-        >
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          Refresh
-        </button>
-      </div>
+    <div className="max-w-7xl">
+      <PageHeader
+        title="System Alerts"
+        description="Monitor system health and background processes"
+        actions={
+          <Button variant="primary" icon={<RefreshCw size={14} />} loading={loading} onClick={checkHealth}>
+            Refresh
+          </Button>
+        }
+      />
+
+      {loading && !status && <Spinner label="Checking system health" />}
 
       {status === "ok" && (
-        <div className="bg-white border border-emerald-500/30 rounded-lg p-6 flex items-center gap-4">
-          <CheckCircle size={24} className="text-emerald-500" />
-          <div>
-            <div className="text-slate-900 font-medium">All systems operating normally</div>
-            <div className="text-xs text-slate-500 mt-1">Pipeline API responding. Background processes running.</div>
-          </div>
-        </div>
+        <Card>
+          <CardBody className="flex items-start gap-4">
+            <CheckCircle size={22} className="text-emerald-600 shrink-0 mt-0.5" aria-hidden />
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-medium text-slate-900">All systems operating normally</p>
+                <Badge tone="success" dot>Healthy</Badge>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">Pipeline API responding. Background processes running.</p>
+            </div>
+          </CardBody>
+        </Card>
       )}
 
       {status === "error" && (
-        <div className="bg-white border border-red-500/30 rounded-lg p-6 flex items-center gap-4">
-          <AlertTriangle size={24} className="text-red-500" />
-          <div>
-            <div className="text-slate-900 font-medium">System Issue Detected</div>
-            <div className="text-xs text-red-400 mt-1">{errorMsg}</div>
-          </div>
-        </div>
+        <Card>
+          <CardBody className="flex items-start gap-4">
+            <AlertTriangle size={22} className="text-red-600 shrink-0 mt-0.5" aria-hidden />
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-medium text-slate-900">System Issue Detected</p>
+                <Badge tone="danger" dot>Error</Badge>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">{errorMsg}</p>
+            </div>
+          </CardBody>
+        </Card>
       )}
 
       {!status && !loading && (
-        <div className="bg-white border border-slate-200 rounded-lg p-6 text-center text-slate-500 text-sm">
-          Checking system health...
-        </div>
+        <Card>
+          <EmptyState title="Checking system health..." />
+        </Card>
       )}
     </div>
   );

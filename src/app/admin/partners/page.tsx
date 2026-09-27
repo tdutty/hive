@@ -4,9 +4,9 @@ import { useState } from "react";
 import { Plus, Edit2, Trash2 } from "lucide-react";
 import { useApi } from "@/lib/hooks";
 import { partnersService } from "@/lib/services/partners";
-import { FilterBar } from "@/components/ui/FilterBar";
+import { Button, Card, CardHeader, CardBody, Badge, statusTone, PageHeader, FilterChips, type Chip, Field, Input, Select } from "@/components/kit";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
 import { Modal } from "@/components/ui/Modal";
-import { StatusBadge } from "@/components/ui/StatusBadge";
 
 interface Partner {
   id: string;
@@ -20,6 +20,13 @@ interface Partner {
   agreementStartDate?: string;
   agreementEndDate?: string;
 }
+
+const STATUS_CHIPS: Chip<string>[] = [
+  { key: "all", label: "All Partners" },
+  { key: "active", label: "Active" },
+  { key: "suspended", label: "Suspended" },
+  { key: "expired", label: "Expired" },
+];
 
 export default function PartnersPage() {
   const [statusFilter, setStatusFilter] = useState("all");
@@ -40,13 +47,6 @@ export default function PartnersPage() {
     contactEmail: "",
     status: "active",
   });
-
-  const statusFilters = [
-    { key: "all", label: "All Partners" },
-    { key: "active", label: "Active" },
-    { key: "suspended", label: "Suspended" },
-    { key: "expired", label: "Expired" },
-  ];
 
   const { data, loading, error, refetch } = useApi(
     () =>
@@ -109,197 +109,109 @@ export default function PartnersPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold text-slate-900">Corporate Partners</h1>
-          </div>
-        </div>
-        <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold text-slate-900">Corporate Partners</h1>
-          </div>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700">
-          <p className="font-medium">Failed to load data</p>
-          <p className="text-sm mt-1">{error}</p>
-          <button
-            onClick={refetch}
-            className="mt-3 bg-red-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-red-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div><PageHeader title="Corporate Partners" /><Spinner /></div>;
+  if (error) return <div><PageHeader title="Corporate Partners" /><ErrorBanner message={error} onRetry={refetch} /></div>;
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900 mb-2">Corporate Partners</h1>
-          <p className="text-slate-500">Manage partner relationships and employee discounts</p>
-        </div>
-        <button
-          onClick={handleCreate}
-          className="bg-amber-600 text-white rounded-md px-6 py-3 font-medium flex items-center gap-2 hover:bg-amber-700 transition-colors"
-        >
-          <Plus size={20} />
-          Add Partner
-        </button>
-      </div>
-
-      {/* Status Filter */}
-      <FilterBar
-        filters={statusFilters}
-        selected={statusFilter}
-        onChange={setStatusFilter}
+    <div className="max-w-7xl">
+      <PageHeader
+        title="Corporate Partners"
+        description="Manage partner relationships and employee discounts"
+        actions={
+          <Button variant="primary" icon={<Plus size={14} />} onClick={handleCreate}>
+            Add Partner
+          </Button>
+        }
       />
 
-      {/* Partners Grid */}
-      <div className="grid grid-cols-2 gap-6">
-        {partners.map((partner: any) => (
-          <div
-            key={partner.id}
-            className="bg-white border border-slate-200 rounded-lg  p-6 space-y-4"
-          >
-            {/* Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-slate-200">
-              <div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-1">
-                  {partner.name}
-                </h3>
-                <p className="text-xs text-slate-500">{partner.slug}</p>
-              </div>
-              <StatusBadge status={partner.status} size="sm" />
-            </div>
+      <FilterChips items={STATUS_CHIPS} value={statusFilter} onChange={setStatusFilter} className="mb-4" />
 
-            {/* Discount Badge */}
-            <div className="inline-block border border-amber-200 bg-amber-50 rounded-lg px-4 py-2">
-              <span className="font-semibold text-amber-900">
-                {partner.discountPercentage}% off
-              </span>
-            </div>
+      {partners.length === 0 ? (
+        <Card>
+          <EmptyState title="No partners found" hint="Add a partner or change the status filter" />
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {partners.map((partner: any) => (
+            <Card key={partner.id}>
+              <CardHeader
+                title={partner.name}
+                description={partner.slug}
+                actions={<Badge tone={statusTone(partner.status)} dot>{partner.status}</Badge>}
+              />
+              <CardBody>
+                <dl className="divide-y divide-slate-100">
+                  <div className="flex justify-between items-center py-2 gap-4">
+                    <dt className="text-sm text-slate-600">Discount</dt>
+                    <dd><Badge tone="accent">{partner.discountPercentage}% off</Badge></dd>
+                  </div>
+                  <div className="flex justify-between items-start py-2 gap-4">
+                    <dt className="text-sm text-slate-600">Contact</dt>
+                    <dd className="text-right min-w-0">
+                      <p className="text-sm font-medium text-slate-900">{partner.contactName}</p>
+                      <p className="text-sm text-slate-500 break-all">{partner.contactEmail}</p>
+                    </dd>
+                  </div>
+                  {(partner.agreementStartDate || partner.agreementEndDate) && (
+                    <div className="flex justify-between items-center py-2 gap-4">
+                      <dt className="text-sm text-slate-600">Agreement Period</dt>
+                      <dd className="text-sm font-medium text-slate-900 tabular text-right">
+                        {partner.agreementStartDate} to {partner.agreementEndDate}
+                      </dd>
+                    </div>
+                  )}
+                  {partner.domains && partner.domains.length > 0 && (
+                    <div className="flex justify-between items-start py-2 gap-4">
+                      <dt className="text-sm text-slate-600 shrink-0">Domains</dt>
+                      <dd className="flex flex-wrap justify-end gap-1">
+                        {partner.domains.map((domain: string) => (
+                          <Badge key={domain} tone="outline">{domain}</Badge>
+                        ))}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
 
-            {/* Contact Info */}
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-              <p className="text-xs text-slate-500 mb-1">
-                Contact
-              </p>
-              <p className="font-semibold text-slate-900 text-sm">
-                {partner.contactName}
-              </p>
-              <p className="text-sm text-slate-600">{partner.contactEmail}</p>
-            </div>
-
-            {/* Agreement Dates */}
-            {(partner.agreementStartDate || partner.agreementEndDate) && (
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                <p className="text-xs text-slate-500 mb-1">
-                  Agreement Period
-                </p>
-                <p className="text-sm font-semibold text-slate-900">
-                  {partner.agreementStartDate} to {partner.agreementEndDate}
-                </p>
-              </div>
-            )}
-
-            {/* Domains */}
-            {partner.domains && partner.domains.length > 0 && (
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                <p className="text-xs text-slate-500 mb-2">
-                  Domains
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  {partner.domains.map((domain: string) => (
-                    <span
-                      key={domain}
-                      className="inline-block border border-slate-200 rounded px-2 py-1 text-xs text-slate-700 bg-white"
-                    >
-                      {domain}
-                    </span>
-                  ))}
+                <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-200">
+                  <Button size="sm" icon={<Edit2 size={14} />} onClick={() => handleEdit(partner)}>
+                    Edit
+                  </Button>
+                  <Button size="sm" variant="dangerOutline" icon={<Trash2 size={14} />} onClick={() => handleDelete(partner.id)}>
+                    Delete
+                  </Button>
                 </div>
-              </div>
-            )}
+              </CardBody>
+            </Card>
+          ))}
+        </div>
+      )}
 
-            {/* Actions */}
-            <div className="flex gap-2 pt-4 border-t border-slate-200">
-              <button
-                onClick={() => handleEdit(partner)}
-                className="flex-1 border border-slate-200 bg-white text-slate-700 rounded-md px-4 py-2 font-medium flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors"
-              >
-                <Edit2 size={16} />
-                Edit
-              </button>
-              <button
-                onClick={() => handleDelete(partner.id)}
-                className="flex-1 border border-red-200 bg-red-50 text-red-700 rounded-md px-4 py-2 font-medium flex items-center justify-center gap-2 hover:bg-red-100 transition-colors"
-              >
-                <Trash2 size={16} />
-                Delete
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingPartner ? "Edit Partner" : "Add Partner"}
       >
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Partner Name
-            </label>
-            <input
+          <Field label="Partner Name">
+            <Input
               type="text"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g., Google"
-              className="w-full border border-slate-200 rounded-md px-4 py-2 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
             />
-          </div>
+          </Field>
 
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Slug
-            </label>
-            <input
+          <Field label="Slug">
+            <Input
               type="text"
               value={formData.slug}
-              onChange={(e) =>
-                setFormData({ ...formData, slug: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
               placeholder="e.g., google-corp"
-              className="w-full border border-slate-200 rounded-md px-4 py-2 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
             />
-          </div>
+          </Field>
 
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Discount Percentage
-            </label>
-            <input
+          <Field label="Discount Percentage">
+            <Input
               type="number"
               value={formData.discountPercentage}
               onChange={(e) =>
@@ -309,45 +221,30 @@ export default function PartnersPage() {
                 })
               }
               placeholder="15"
-              className="w-full border border-slate-200 rounded-md px-4 py-2 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+              className="tabular"
             />
-          </div>
+          </Field>
 
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Contact Name
-            </label>
-            <input
+          <Field label="Contact Name">
+            <Input
               type="text"
               value={formData.contactName}
-              onChange={(e) =>
-                setFormData({ ...formData, contactName: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
               placeholder="Sarah Bennett"
-              className="w-full border border-slate-200 rounded-md px-4 py-2 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
             />
-          </div>
+          </Field>
 
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Contact Email
-            </label>
-            <input
+          <Field label="Contact Email">
+            <Input
               type="email"
               value={formData.contactEmail}
-              onChange={(e) =>
-                setFormData({ ...formData, contactEmail: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
               placeholder="name@company.com"
-              className="w-full border border-slate-200 rounded-md px-4 py-2 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
             />
-          </div>
+          </Field>
 
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Status
-            </label>
-            <select
+          <Field label="Status">
+            <Select
               value={formData.status}
               onChange={(e) =>
                 setFormData({
@@ -355,27 +252,16 @@ export default function PartnersPage() {
                   status: e.target.value as "active" | "suspended" | "expired",
                 })
               }
-              className="w-full border border-slate-200 rounded-md px-4 py-2 text-slate-900 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 bg-white"
             >
               <option value="active">Active</option>
               <option value="suspended">Suspended</option>
               <option value="expired">Expired</option>
-            </select>
-          </div>
+            </Select>
+          </Field>
 
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={handleSave}
-              className="flex-1 bg-amber-600 text-white rounded-md px-4 py-2 font-medium hover:bg-amber-700 transition-colors"
-            >
-              Save
-            </button>
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="flex-1 border border-slate-200 bg-white text-slate-700 rounded-md px-4 py-2 font-medium hover:bg-slate-50 transition-colors"
-            >
-              Cancel
-            </button>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleSave}>Save</Button>
           </div>
         </div>
       </Modal>
