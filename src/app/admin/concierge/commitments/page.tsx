@@ -43,7 +43,7 @@ function isOverdue(c: Commitment): boolean {
 function statusBadge(status: string, overdue: boolean) {
   if (overdue || status === "OVERDUE") {
     return (
-      <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-red-500/20 text-red-400 flex items-center gap-1">
+      <span className="text-xs font-medium px-2 py-0.5 rounded bg-red-500/20 text-red-400 flex items-center gap-1">
         <AlertTriangle size={10} />
         Overdue
       </span>
@@ -56,7 +56,7 @@ function statusBadge(status: string, overdue: boolean) {
   };
   const s = styles[status] || styles.OPEN;
   return (
-    <span className={`text-[10px] font-medium px-2 py-0.5 rounded ${s.bg} ${s.text} flex items-center gap-1`}>
+    <span className={`text-xs font-medium px-2 py-0.5 rounded ${s.bg} ${s.text} flex items-center gap-1`}>
       {s.icon}
       {status}
     </span>
@@ -80,7 +80,7 @@ export default function CommitmentsPage() {
         params.status = filter;
       }
       const data = await sweetleaseApi.get<CommitmentsResponse>(
-        "/api/admin/concierge/commitments",
+ "/api/admin/concierge/commitments",
         params
       );
       setCommitments(data.commitments);
@@ -126,7 +126,7 @@ export default function CommitmentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+          <h1 className="text-lg font-semibold text-slate-900 flex items-center gap-3">
             <CheckCheck size={24} className="text-amber-500" />
             Commitments
             {total > 0 && (
@@ -166,7 +166,7 @@ export default function CommitmentsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
         {loading ? (
           <Spinner />
         ) : error ? (
@@ -225,7 +225,7 @@ export default function CommitmentsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`text-[10px] font-medium px-2 py-0.5 rounded ${
+                        className={`text-xs font-medium px-2 py-0.5 rounded ${
                           c.owner === "US"
                             ? "bg-amber-500/20 text-amber-400"
                             : "bg-blue-500/20 text-blue-400"
@@ -252,14 +252,14 @@ export default function CommitmentsPage() {
                           <button
                             onClick={() => handleMarkStatus(c.id, "FULFILLED")}
                             disabled={actionLoading === c.id}
-                            className="text-[10px] font-medium px-2 py-1 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 transition disabled:opacity-50"
+                            className="text-xs font-medium px-2 py-1 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 transition disabled:opacity-50"
                           >
                             {actionLoading === c.id ? "..." : "Fulfilled"}
                           </button>
                           <button
                             onClick={() => handleMarkStatus(c.id, "MISSED")}
                             disabled={actionLoading === c.id}
-                            className="text-[10px] font-medium px-2 py-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition disabled:opacity-50"
+                            className="text-xs font-medium px-2 py-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition disabled:opacity-50"
                           >
                             {actionLoading === c.id ? "..." : "Missed"}
                           </button>

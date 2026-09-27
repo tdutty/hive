@@ -5,16 +5,21 @@ import { Users, UserCheck, Clock, CheckCircle, XCircle } from "lucide-react";
 import { useApi } from "@/lib/hooks";
 import { dashboardService } from "@/lib/services/dashboard";
 import { usersService } from "@/lib/services/users";
-import { MetricCard } from "@/components/ui/MetricCard";
-import { DataTable } from "@/components/ui/DataTable";
-import { SearchInput } from "@/components/ui/SearchInput";
-import { FilterBar } from "@/components/ui/FilterBar";
-import { StatusBadge } from "@/components/ui/StatusBadge";
+import { Button, Card, CardHeader, CardBody, Badge, statusTone, StatTile, PageHeader, FilterChips, Table, THead, TH, TBody, TR, TD, Input } from "@/components/kit";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
 import { formatDate } from "@/lib/utils";
+
+type RoleFilter = "all" | "tenants" | "landlords" | "admins";
+const ROLE_CHIPS: { key: RoleFilter; label: string }[] = [
+  { key: "all", label: "All Users" },
+  { key: "tenants", label: "Tenants" },
+  { key: "landlords", label: "Landlords" },
+  { key: "admins", label: "Admins" },
+];
 
 export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
 
   // Fetch dashboard metrics for user counts
@@ -34,39 +39,10 @@ export default function UsersPage() {
 
   const loading = metricsLoading || roleLoading || waitlistLoading;
   const error = metricsError || roleError || waitlistError;
+  const retryAll = () => { refetchMetrics(); refetchRoles(); refetchWaitlist(); };
 
-  if (loading) {
-    return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">User Management</h1>
-        </div>
-        <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">User Management</h1>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700">
-          <p className="font-medium">Failed to load data</p>
-          <p className="text-sm mt-1">{error}</p>
-          <button
-            onClick={() => { refetchMetrics(); refetchRoles(); refetchWaitlist(); }}
-            className="mt-3 bg-red-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-red-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div><PageHeader title="User Management" /><Spinner /></div>;
+  if (error) return <div><PageHeader title="User Management" /><ErrorBanner message={error} onRetry={retryAll} /></div>;
 
   // Extract metrics from dashboard
   const businessMetrics = metricsData?.businessMetrics || {};
@@ -107,218 +83,132 @@ export default function UsersPage() {
     return matchesSearch && matchesRole;
   });
 
+  const openUser = (row: any) => {
+    setSelectedUser(row);
+    setTimeout(() => document.getElementById('user-detail')?.scrollIntoView({ behavior: 'smooth' }), 100);
+  };
+
+  const checklist = selectedUser ? [
+    { label: "ID Verified", checked: selectedUser.verified },
+    { label: "Background Check", checked: selectedUser.verified },
+    { label: "Salary Verified", checked: selectedUser.verified && selectedUser.newRole === "USER" },
+    { label: "Credit Verified", checked: selectedUser.verified && selectedUser.newRole === "USER" },
+  ] : [];
+
   return (
-    <div className="space-y-8">
-      {/* Page Title */}
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900 mb-2">
-          User Management
-        </h1>
-        <p className="text-slate-500">Manage and monitor user accounts and permissions</p>
+    <div className="max-w-7xl">
+      <PageHeader title="User Management" description="Manage and monitor user accounts and permissions" />
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <StatTile label="Total Users" value={totalUsers} hint="All registered users" icon={<Users size={14} />} />
+        <StatTile label="Active (24h)" value={activeUsers24h} delta="+12.3%" deltaTone="up" hint="vs last period" icon={<UserCheck size={14} />} />
+        <StatTile label="Completed Onboarding" value={completedOnboarding} hint={`${totalUsers > 0 ? Math.round((completedOnboarding / totalUsers) * 100) : 0}% verified`} icon={<CheckCircle size={14} />} />
+        <StatTile label="Pending Verification" value={pendingVerification} hint="Awaiting documents" icon={<Clock size={14} />} />
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <MetricCard
-          title="Total Users"
-          value={totalUsers.toString()}
-          subtitle="All registered users"
-          icon={Users}
-        />
-        <MetricCard
-          title="Active (24h)"
-          value={activeUsers24h.toString()}
-          trend={12.3}
-          icon={UserCheck}
-        />
-        <MetricCard
-          title="Completed Onboarding"
-          value={completedOnboarding.toString()}
-          subtitle={`${totalUsers > 0 ? Math.round((completedOnboarding / totalUsers) * 100) : 0}% verified`}
-          icon={CheckCircle}
-        />
-        <MetricCard
-          title="Pending Verification"
-          value={pendingVerification.toString()}
-          subtitle="Awaiting documents"
-          icon={Clock}
-        />
-      </div>
-
-      {/* Search & Filters */}
-      <div className="flex gap-6 items-end">
-        <SearchInput
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+        <Input
+          type="search"
+          aria-label="Search users"
           value={searchQuery}
-          onChange={setSearchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search by name or email..."
+          className="sm:max-w-xs"
         />
-        <FilterBar
-          filters={[
-            { key: "all", label: "All Users" },
-            { key: "tenants", label: "Tenants" },
-            { key: "landlords", label: "Landlords" },
-            { key: "admins", label: "Admins" },
-          ]}
-          selected={roleFilter}
-          onChange={setRoleFilter}
-        />
+        <FilterChips items={ROLE_CHIPS} value={roleFilter} onChange={setRoleFilter} />
       </div>
 
-      {/* Users Table */}
-      <div>
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">
-          Users ({filteredUsers.length})
-        </h2>
-        <DataTable
-          columns={[
-            { key: "userName", label: "Name" },
-            { key: "userEmail", label: "Email" },
-            {
-              key: "newRole",
-              label: "Role",
-              render: (value) => (
-                <StatusBadge status={value} size="sm" />
-              ),
-            },
-            {
-              key: "verified",
-              label: "Verified",
-              render: (value) =>
-                value ? (
-                  <CheckCircle size={18} className="text-green-600" />
-                ) : (
-                  <XCircle size={18} className="text-red-600" />
-                ),
-            },
-            {
-              key: "createdAt",
-              label: "Created",
-              render: (value) => formatDate(value),
-            },
-            {
-              key: "changedAt",
-              label: "Last Updated",
-              render: (value) => formatDate(value),
-            },
-            {
-              key: "userId",
-              label: "Actions",
-              render: (_value, row) => (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedUser(row);
-                    setTimeout(() => document.getElementById('user-detail')?.scrollIntoView({ behavior: 'smooth' }), 100);
-                  }}
-                  className="px-3 py-1 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700 transition-colors"
-                >
-                  View
-                </button>
-              ),
-            },
-          ]}
-          data={filteredUsers}
-          onRowClick={setSelectedUser}
-          emptyMessage="No users found matching your criteria"
-        />
-      </div>
+      <Card className="mb-5">
+        <CardHeader title={`Users (${filteredUsers.length})`} />
+        {filteredUsers.length === 0 ? (
+          <EmptyState title="No users found matching your criteria" />
+        ) : (
+          <Table>
+            <THead>
+              <tr>
+                <TH>Name</TH>
+                <TH>Email</TH>
+                <TH>Role</TH>
+                <TH>Verified</TH>
+                <TH>Created</TH>
+                <TH>Last Updated</TH>
+                <TH>Actions</TH>
+              </tr>
+            </THead>
+            <TBody>
+              {filteredUsers.map((u: any, i: number) => (
+                <TR key={`${u.source}-${u.id ?? i}`} clickable selected={!!selectedUser && selectedUser.source === u.source && selectedUser.id === u.id} onClick={() => setSelectedUser(u)}>
+                  <TD className="font-medium">{u.userName || "-"}</TD>
+                  <TD muted>{u.userEmail || "-"}</TD>
+                  <TD><Badge tone={statusTone(u.newRole)} dot>{u.newRole}</Badge></TD>
+                  <TD>
+                    {u.verified ? (
+                      <CheckCircle size={16} className="text-emerald-600" aria-label="Verified" />
+                    ) : (
+                      <XCircle size={16} className="text-red-600" aria-label="Not verified" />
+                    )}
+                  </TD>
+                  <TD muted className="tabular whitespace-nowrap">{formatDate(u.createdAt)}</TD>
+                  <TD muted className="tabular whitespace-nowrap">{formatDate(u.changedAt)}</TD>
+                  <TD>
+                    <Button size="sm" onClick={(e) => { e.stopPropagation(); openUser(u); }}>View</Button>
+                  </TD>
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+        )}
+      </Card>
 
-      {/* User Detail Section */}
       {selectedUser && (
-        <div id="user-detail" className="bg-white border border-slate-200 rounded-lg shadow-sm p-8">
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <h2 className="text-2xl font-semibold text-slate-900 mb-2">
-                {selectedUser.userName}
-              </h2>
-              <p className="text-slate-500">{selectedUser.userEmail}</p>
-            </div>
-            <button
-              onClick={() => setSelectedUser(null)}
-              className="px-4 py-2 border border-slate-200 bg-white text-slate-700 font-medium rounded-md hover:bg-slate-50 transition-colors"
-            >
-              Close
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-8 mb-8">
-            {/* Summary Stats */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                Summary
-              </h3>
-              <div className="flex justify-between items-center py-3 border-b border-gray-300">
-                <span className="text-slate-700">Old Role</span>
-                <span className="text-2xl font-bold text-amber-600">
-                  {selectedUser.oldRole}
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-3 border-b border-gray-300">
-                <span className="text-slate-700">New Role</span>
-                <span className="text-2xl font-bold text-amber-600">
-                  {selectedUser.newRole}
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-3 border-b border-gray-300">
-                <span className="text-slate-700">Changed At</span>
-                <span className="text-lg font-bold text-amber-600">
-                  {formatDate(selectedUser.changedAt)}
-                </span>
-              </div>
-            </div>
-
-            {/* Verification Checklist */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                Verification
-              </h3>
-              <div className="space-y-3">
-                {[
-                  { label: "ID Verified", checked: selectedUser.verified },
-                  { label: "Background Check", checked: selectedUser.verified },
-                  {
-                    label: "Salary Verified",
-                    checked:
-                      selectedUser.verified &&
-                      selectedUser.newRole === "USER",
-                  },
-                  {
-                    label: "Credit Verified",
-                    checked:
-                      selectedUser.verified &&
-                      selectedUser.newRole === "USER",
-                  },
-                ].map((item) => (
-                  <div key={item.label} className="flex items-center gap-3">
-                    <div
-                      className={`w-5 h-5 border border-slate-200 rounded-md flex items-center justify-center ${
-                        item.checked ? "bg-green-600" : "bg-slate-100"
-                      }`}
-                    >
-                      {item.checked && (
-                        <CheckCircle size={16} className="text-white" />
-                      )}
-                    </div>
-                    <span className="text-slate-700">{item.label}</span>
+        <Card id="user-detail">
+          <CardHeader
+            title={selectedUser.userName}
+            description={selectedUser.userEmail}
+            actions={<Button size="sm" variant="ghost" onClick={() => setSelectedUser(null)}>Close</Button>}
+          />
+          <CardBody>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Summary</h3>
+                <dl className="divide-y divide-slate-100">
+                  <div className="flex justify-between items-center py-2 gap-4">
+                    <dt className="text-sm text-slate-600">Old Role</dt>
+                    <dd className="text-sm font-medium text-slate-900">{selectedUser.oldRole}</dd>
                   </div>
-                ))}
+                  <div className="flex justify-between items-center py-2 gap-4">
+                    <dt className="text-sm text-slate-600">New Role</dt>
+                    <dd className="text-sm font-medium text-slate-900">{selectedUser.newRole}</dd>
+                  </div>
+                  <div className="flex justify-between items-center py-2 gap-4">
+                    <dt className="text-sm text-slate-600">Changed At</dt>
+                    <dd className="text-sm font-medium text-slate-900 tabular">{formatDate(selectedUser.changedAt)}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div>
+                <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Verification</h3>
+                <ul className="space-y-2">
+                  {checklist.map((item) => (
+                    <li key={item.label} className="flex items-center gap-2.5">
+                      <span className={`w-4 h-4 rounded-sm border flex items-center justify-center shrink-0 ${item.checked ? "bg-emerald-600 border-emerald-600" : "bg-slate-50 border-slate-300"}`} aria-hidden>
+                        {item.checked && <CheckCircle size={12} className="text-white" />}
+                      </span>
+                      <span className="text-sm text-slate-700">{item.label}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-4">
-            <button className="px-6 py-3 border border-slate-200 bg-white text-slate-700 font-medium rounded-md hover:bg-slate-50 transition-colors">
-              Edit User
-            </button>
-            <button className="px-6 py-3 border border-slate-200 bg-white text-slate-700 font-medium rounded-md hover:bg-slate-50 transition-colors">
-              Suspend Account
-            </button>
-            <button className="px-6 py-3 bg-red-600 text-white font-medium rounded-md hover:bg-red-700 transition-colors">
-              Delete User
-            </button>
-          </div>
-        </div>
+            <div className="flex flex-wrap gap-2 mt-5 pt-4 border-t border-slate-200">
+              <Button>Edit User</Button>
+              <Button>Suspend Account</Button>
+              <Button variant="danger">Delete User</Button>
+            </div>
+          </CardBody>
+        </Card>
       )}
     </div>
   );

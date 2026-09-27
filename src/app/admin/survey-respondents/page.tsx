@@ -73,7 +73,7 @@ export default function SurveyRespondentsPage() {
       if (cityFilter) params.city = cityFilter;
       if (statusFilter) params.status = statusFilter;
       const result = await api.get<SurveyData>(
-        "/api/admin/survey-respondents",
+ "/api/admin/survey-respondents",
         params
       );
       setData(result);
@@ -104,7 +104,7 @@ export default function SurveyRespondentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-lg font-semibold text-gray-900">
             Survey Respondents
           </h1>
           <p className="text-sm text-gray-500 mt-1">

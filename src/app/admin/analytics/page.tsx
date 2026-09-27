@@ -14,7 +14,7 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+          <h1 className="text-lg font-semibold text-slate-900 flex items-center gap-3">
             <BarChart3 size={24} className="text-amber-500" />
             Analytics & Monitoring
           </h1>
@@ -52,7 +52,7 @@ export default function AnalyticsPage() {
         <div className="space-y-6">
           {/* Quick Stats Embeds */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white border border-slate-200 rounded-xl p-5">
+            <div className="bg-white border border-slate-200 rounded-lg p-5">
               <div className="text-xs uppercase tracking-wider text-slate-500 mb-2 font-medium">
                 What PostHog Tracks
               </div>
@@ -80,7 +80,7 @@ export default function AnalyticsPage() {
               </ul>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-5">
+            <div className="bg-white border border-slate-200 rounded-lg p-5">
               <div className="text-xs uppercase tracking-wider text-slate-500 mb-2 font-medium">
                 Key Pages Tracked
               </div>
@@ -112,7 +112,7 @@ export default function AnalyticsPage() {
               </ul>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-5">
+            <div className="bg-white border border-slate-200 rounded-lg p-5">
               <div className="text-xs uppercase tracking-wider text-slate-500 mb-2 font-medium">
                 Quick Actions
               </div>
@@ -142,7 +142,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* PostHog Embed */}
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
               <div className="text-sm font-medium text-slate-900">PostHog Dashboard</div>
               <a
@@ -169,7 +169,7 @@ export default function AnalyticsPage() {
       {activeTab === "sentry" && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white border border-slate-200 rounded-xl p-5">
+            <div className="bg-white border border-slate-200 rounded-lg p-5">
               <div className="text-xs uppercase tracking-wider text-slate-500 mb-2 font-medium">
                 What Sentry Tracks
               </div>
@@ -193,7 +193,7 @@ export default function AnalyticsPage() {
               </ul>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-5">
+            <div className="bg-white border border-slate-200 rounded-lg p-5">
               <div className="text-xs uppercase tracking-wider text-slate-500 mb-2 font-medium">
                 Quick Actions
               </div>
@@ -220,7 +220,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Link to existing bugs page */}
-          <div className="bg-white border border-slate-200 rounded-xl p-6 text-center">
+          <div className="bg-white border border-slate-200 rounded-lg p-6 text-center">
             <p className="text-slate-500 text-sm mb-4">
               Sentry error reports are available on the Bugs page with full issue details, stack traces, and resolution status.
             </p>

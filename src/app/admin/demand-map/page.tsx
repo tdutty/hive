@@ -70,7 +70,7 @@ export default function DemandMapPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+          <h1 className="text-lg font-semibold text-slate-900 flex items-center gap-3">
             <MapPin size={24} className="text-amber-500" />
             Demand Map
           </h1>
@@ -96,7 +96,7 @@ export default function DemandMapPage() {
       ) : (
         <div className="space-y-4">
           {data.map((city) => (
-            <div key={city.city} className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div key={city.city} className="bg-white border border-slate-200 rounded-lg overflow-hidden">
               {/* City Header */}
               <div
                 className="px-6 py-4 cursor-pointer hover:bg-slate-50 transition flex items-center justify-between"
@@ -131,7 +131,7 @@ export default function DemandMapPage() {
                 <div className="border-t border-slate-200">
                   {/* Tenants */}
                   <div className="px-6 py-4">
-                    <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-3 font-medium">Active Tenants</div>
+                    <div className="text-xs uppercase tracking-wider text-slate-500 mb-3 font-medium">Active Tenants</div>
                     <div className="space-y-2">
                       {city.tenants.map((t, i) => (
                         <div key={i} className="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg">
@@ -146,7 +146,7 @@ export default function DemandMapPage() {
                             <span className="flex items-center gap-1"><DollarSign size={10} />${t.budgetMax.toLocaleString()}</span>
                             <span>{t.bedrooms}BR</span>
                             <span className="flex items-center gap-1"><Calendar size={10} />{t.moveInDate}</span>
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-medium uppercase ${
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium uppercase ${
                               t.status === 'outreach' ? 'bg-purple-900 text-purple-300' :
                               t.status === 'selections_confirmed' ? 'bg-emerald-900 text-emerald-300' :
                               t.status === 'matched' ? 'bg-blue-900 text-blue-300' :
@@ -163,7 +163,7 @@ export default function DemandMapPage() {
                   {/* High Pain Landlords */}
                   {city.highPainLandlords.length > 0 && (
                     <div className="px-6 py-4 border-t border-slate-200">
-                      <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-3 font-medium flex items-center gap-2">
+                      <div className="text-xs uppercase tracking-wider text-slate-500 mb-3 font-medium flex items-center gap-2">
                         <Phone size={10} className="text-amber-500" />
                         Cold Call Targets (High DOM + Portfolio)
                       </div>
@@ -171,7 +171,7 @@ export default function DemandMapPage() {
                         {city.highPainLandlords.map((l, i) => (
                           <div key={i} className="flex items-center justify-between py-2.5 px-3 bg-slate-50 rounded-lg border border-slate-200 hover:border-amber-500/30 transition">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-amber-600/20 text-amber-500 flex items-center justify-center rounded text-[10px] font-bold">
+                              <div className="w-8 h-8 bg-amber-600/20 text-amber-500 flex items-center justify-center rounded text-xs font-bold">
                                 {l.daysOnMarket > 0 ? l.daysOnMarket + 'd' : l.unitCount + 'u'}
                               </div>
                               <div>

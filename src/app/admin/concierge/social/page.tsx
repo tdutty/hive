@@ -48,71 +48,71 @@ const CITY_COLORS: Record<string, { bg: string; text: string }> = {
   National: { bg: "bg-gray-100", text: "text-gray-700" },
   NYC: { bg: "bg-orange-100", text: "text-orange-700" },
   Baltimore: { bg: "bg-indigo-100", text: "text-indigo-700" },
-  "Los Angeles": { bg: "bg-sky-100", text: "text-sky-700" },
-  "San Francisco": { bg: "bg-teal-100", text: "text-teal-700" },
-  "Ann Arbor": { bg: "bg-amber-100", text: "text-amber-700" },
+ "Los Angeles": { bg: "bg-sky-100", text: "text-sky-700" },
+ "San Francisco": { bg: "bg-teal-100", text: "text-teal-700" },
+ "Ann Arbor": { bg: "bg-amber-100", text: "text-amber-700" },
   Durham: { bg: "bg-violet-100", text: "text-violet-700" },
   Philadelphia: { bg: "bg-rose-100", text: "text-rose-700" },
   Chicago: { bg: "bg-cyan-100", text: "text-cyan-700" },
   Atlanta: { bg: "bg-emerald-100", text: "text-emerald-700" },
   Seattle: { bg: "bg-fuchsia-100", text: "text-fuchsia-700" },
   Dallas: { bg: "bg-lime-100", text: "text-lime-700" },
-  "Rochester MN": { bg: "bg-stone-100", text: "text-stone-700" },
+ "Rochester MN": { bg: "bg-stone-100", text: "text-stone-700" },
   Indianapolis: { bg: "bg-zinc-100", text: "text-zinc-700" },
   Birmingham: { bg: "bg-red-100", text: "text-red-700" },
   Cincinnati: { bg: "bg-orange-100", text: "text-orange-700" },
   Minneapolis: { bg: "bg-blue-100", text: "text-blue-700" },
   Charleston: { bg: "bg-green-100", text: "text-green-700" },
-  "New Orleans": { bg: "bg-purple-100", text: "text-purple-700" },
+ "New Orleans": { bg: "bg-purple-100", text: "text-purple-700" },
   Madison: { bg: "bg-pink-100", text: "text-pink-700" },
   Denver: { bg: "bg-sky-100", text: "text-sky-700" },
   Gainesville: { bg: "bg-orange-100", text: "text-orange-700" },
-  "Chapel Hill": { bg: "bg-blue-100", text: "text-blue-700" },
+ "Chapel Hill": { bg: "bg-blue-100", text: "text-blue-700" },
   Charlottesville: { bg: "bg-indigo-100", text: "text-indigo-700" },
-  "Iowa City": { bg: "bg-amber-100", text: "text-amber-700" },
+ "Iowa City": { bg: "bg-amber-100", text: "text-amber-700" },
   Lexington: { bg: "bg-cyan-100", text: "text-cyan-700" },
   Tampa: { bg: "bg-emerald-100", text: "text-emerald-700" },
-  "Kansas City": { bg: "bg-violet-100", text: "text-violet-700" },
+ "Kansas City": { bg: "bg-violet-100", text: "text-violet-700" },
   Omaha: { bg: "bg-rose-100", text: "text-rose-700" },
   Memphis: { bg: "bg-teal-100", text: "text-teal-700" },
-  "Rochester NY": { bg: "bg-fuchsia-100", text: "text-fuchsia-700" },
-  "Washington DC": { bg: "bg-lime-100", text: "text-lime-700" },
+ "Rochester NY": { bg: "bg-fuchsia-100", text: "text-fuchsia-700" },
+ "Washington DC": { bg: "bg-lime-100", text: "text-lime-700" },
   Detroit: { bg: "bg-stone-100", text: "text-stone-700" },
-  "Winston-Salem": { bg: "bg-zinc-100", text: "text-zinc-700" },
-  "Danville PA": { bg: "bg-slate-100", text: "text-slate-700" },
-  "Travel Nurse": { bg: "bg-red-100", text: "text-red-700" },
+ "Winston-Salem": { bg: "bg-zinc-100", text: "text-zinc-700" },
+ "Danville PA": { bg: "bg-slate-100", text: "text-slate-700" },
+ "Travel Nurse": { bg: "bg-red-100", text: "text-red-700" },
   Medical: { bg: "bg-emerald-100", text: "text-emerald-700" },
-  "East Tennessee": { bg: "bg-amber-100", text: "text-amber-700" },
+ "East Tennessee": { bg: "bg-amber-100", text: "text-amber-700" },
   Connecticut: { bg: "bg-indigo-100", text: "text-indigo-700" },
   Oakland: { bg: "bg-stone-100", text: "text-stone-700" },
   Florida: { bg: "bg-orange-100", text: "text-orange-700" },
-  "New Haven": { bg: "bg-blue-100", text: "text-blue-700" },
+ "New Haven": { bg: "bg-blue-100", text: "text-blue-700" },
   Albany: { bg: "bg-purple-100", text: "text-purple-700" },
-  "Burlington VT": { bg: "bg-green-100", text: "text-green-700" },
+ "Burlington VT": { bg: "bg-green-100", text: "text-green-700" },
   Richmond: { bg: "bg-red-100", text: "text-red-700" },
-  "Columbus OH": { bg: "bg-rose-100", text: "text-rose-700" },
-  "St. Louis": { bg: "bg-sky-100", text: "text-sky-700" },
+ "Columbus OH": { bg: "bg-rose-100", text: "text-rose-700" },
+ "St. Louis": { bg: "bg-sky-100", text: "text-sky-700" },
   Milwaukee: { bg: "bg-amber-100", text: "text-amber-700" },
-  "East Lansing": { bg: "bg-green-100", text: "text-green-700" },
+ "East Lansing": { bg: "bg-green-100", text: "text-green-700" },
   Orlando: { bg: "bg-orange-100", text: "text-orange-700" },
   Louisville: { bg: "bg-red-100", text: "text-red-700" },
   Sacramento: { bg: "bg-yellow-100", text: "text-yellow-700" },
-  "San Antonio": { bg: "bg-teal-100", text: "text-teal-700" },
+ "San Antonio": { bg: "bg-teal-100", text: "text-teal-700" },
   Austin: { bg: "bg-violet-100", text: "text-violet-700" },
-  "San Diego": { bg: "bg-cyan-100", text: "text-cyan-700" },
+ "San Diego": { bg: "bg-cyan-100", text: "text-cyan-700" },
   Irvine: { bg: "bg-blue-100", text: "text-blue-700" },
   Portland: { bg: "bg-emerald-100", text: "text-emerald-700" },
   Tucson: { bg: "bg-orange-100", text: "text-orange-700" },
-  "Salt Lake City": { bg: "bg-sky-100", text: "text-sky-700" },
+ "Salt Lake City": { bg: "bg-sky-100", text: "text-sky-700" },
   Albuquerque: { bg: "bg-rose-100", text: "text-rose-700" },
-  "Oklahoma City": { bg: "bg-red-100", text: "text-red-700" },
+ "Oklahoma City": { bg: "bg-red-100", text: "text-red-700" },
   Galveston: { bg: "bg-teal-100", text: "text-teal-700" },
   Aurora: { bg: "bg-indigo-100", text: "text-indigo-700" },
   Toledo: { bg: "bg-amber-100", text: "text-amber-700" },
-  "Loma Linda": { bg: "bg-purple-100", text: "text-purple-700" },
+ "Loma Linda": { bg: "bg-purple-100", text: "text-purple-700" },
   Tallahassee: { bg: "bg-fuchsia-100", text: "text-fuchsia-700" },
   Augusta: { bg: "bg-lime-100", text: "text-lime-700" },
-  "Columbia SC": { bg: "bg-green-100", text: "text-green-700" },
+ "Columbia SC": { bg: "bg-green-100", text: "text-green-700" },
 };
 
 const GROUPS: GroupData[] = [
@@ -395,71 +395,71 @@ const CITY_HOSPITALS: Record<string, string> = {
   Houston: "UTHealth, MD Anderson, Memorial Hermann, and Houston Methodist",
   NYC: "NewYork-Presbyterian, Mount Sinai, Montefiore, and NYU Langone",
   Baltimore: "Johns Hopkins Hospital and University of Maryland Medical Center",
-  "Los Angeles": "UCLA Medical Center and Cedars-Sinai",
-  "San Francisco": "UCSF Medical Center and Stanford Health Care",
-  "Ann Arbor": "University of Michigan Health",
+ "Los Angeles": "UCLA Medical Center and Cedars-Sinai",
+ "San Francisco": "UCSF Medical Center and Stanford Health Care",
+ "Ann Arbor": "University of Michigan Health",
   Durham: "Duke University Hospital",
   Philadelphia: "Penn Medicine and Thomas Jefferson University Hospital",
   Chicago: "Northwestern Memorial, Rush University Medical Center, and UChicago Medicine",
   Atlanta: "Emory University Hospital and Grady Memorial",
   Seattle: "UW Medical Center and Harborview Medical Center",
   Dallas: "UT Southwestern Medical Center and Parkland Hospital",
-  "Rochester MN": "Mayo Clinic",
+ "Rochester MN": "Mayo Clinic",
   Indianapolis: "IU Health and Eskenazi Health",
   Birmingham: "UAB Hospital",
   Cincinnati: "UC Medical Center and Cincinnati Children's",
   Minneapolis: "University of Minnesota Medical Center",
   Charleston: "Medical University of South Carolina (MUSC)",
-  "New Orleans": "Ochsner Medical Center and Tulane Medical Center",
+ "New Orleans": "Ochsner Medical Center and Tulane Medical Center",
   Madison: "UW Health and University of Wisconsin Hospital",
   Denver: "University of Colorado Hospital and Denver Health",
   Gainesville: "UF Health Shands Hospital",
-  "Chapel Hill": "UNC Medical Center",
+ "Chapel Hill": "UNC Medical Center",
   Charlottesville: "UVA Health",
-  "Iowa City": "University of Iowa Hospitals and Clinics",
+ "Iowa City": "University of Iowa Hospitals and Clinics",
   Lexington: "UK HealthCare and UK Chandler Hospital",
   Tampa: "Tampa General Hospital and Moffitt Cancer Center",
-  "Kansas City": "University of Kansas Medical Center",
+ "Kansas City": "University of Kansas Medical Center",
   Omaha: "Nebraska Medicine and UNMC",
   Memphis: "Methodist Le Bonheur and Regional One Health",
-  "Rochester NY": "Strong Memorial Hospital and Rochester General",
-  "Washington DC": "MedStar, GW Hospital, and Georgetown University Hospital",
+ "Rochester NY": "Strong Memorial Hospital and Rochester General",
+ "Washington DC": "MedStar, GW Hospital, and Georgetown University Hospital",
   Detroit: "Henry Ford Hospital and Detroit Medical Center",
-  "Winston-Salem": "Wake Forest Baptist Medical Center",
-  "Danville PA": "Geisinger Medical Center",
-  "Travel Nurse": "hospitals nationwide",
+ "Winston-Salem": "Wake Forest Baptist Medical Center",
+ "Danville PA": "Geisinger Medical Center",
+ "Travel Nurse": "hospitals nationwide",
   Medical: "teaching hospitals and medical centers nationwide",
-  "East Tennessee": "ETSU/Quillen College of Medicine",
+ "East Tennessee": "ETSU/Quillen College of Medicine",
   Connecticut: "UConn Health Center",
   Oakland: "Highland Hospital, Kaiser Oakland, and UCSF-affiliated sites",
   Florida: "hospitals across Florida",
-  "New Haven": "Yale-New Haven Hospital",
+ "New Haven": "Yale-New Haven Hospital",
   Albany: "Albany Medical Center",
-  "Burlington VT": "UVM Medical Center",
+ "Burlington VT": "UVM Medical Center",
   Richmond: "VCU Medical Center and McGuire VA",
-  "Columbus OH": "Ohio State Wexner Medical Center and Nationwide Children's",
-  "St. Louis": "Barnes-Jewish Hospital, St. Louis University Hospital, and Washington University",
+ "Columbus OH": "Ohio State Wexner Medical Center and Nationwide Children's",
+ "St. Louis": "Barnes-Jewish Hospital, St. Louis University Hospital, and Washington University",
   Milwaukee: "Froedtert Hospital and Medical College of Wisconsin",
-  "East Lansing": "Sparrow Hospital and MSU affiliated sites",
+ "East Lansing": "Sparrow Hospital and MSU affiliated sites",
   Orlando: "Orlando Health, AdventHealth, and Nemours Children's",
   Louisville: "UofL Hospital, Norton Healthcare, and Baptist Health",
   Sacramento: "UC Davis Medical Center and Sutter Medical Center",
-  "San Antonio": "UT Health San Antonio, University Hospital, and Brooke Army Medical Center",
+ "San Antonio": "UT Health San Antonio, University Hospital, and Brooke Army Medical Center",
   Austin: "Dell Seton Medical Center and Ascension Seton",
-  "San Diego": "UC San Diego Health and Scripps Health",
+ "San Diego": "UC San Diego Health and Scripps Health",
   Irvine: "UC Irvine Medical Center and CHOC",
   Portland: "OHSU Hospital and Providence Portland",
   Tucson: "Banner University Medical Center Tucson",
-  "Salt Lake City": "University of Utah Hospital and Intermountain Health",
+ "Salt Lake City": "University of Utah Hospital and Intermountain Health",
   Albuquerque: "UNM Hospital",
-  "Oklahoma City": "OU Medical Center and Oklahoma Children's",
+ "Oklahoma City": "OU Medical Center and Oklahoma Children's",
   Galveston: "UTMB Health",
   Aurora: "University of Colorado Hospital (Anschutz Medical Campus)",
   Toledo: "University of Toledo Medical Center and ProMedica",
-  "Loma Linda": "Loma Linda University Medical Center",
+ "Loma Linda": "Loma Linda University Medical Center",
   Tallahassee: "Tallahassee Memorial and FSU-affiliated sites",
   Augusta: "Augusta University Medical Center (MCG)",
-  "Columbia SC": "Prisma Health Richland and USC School of Medicine",
+ "Columbia SC": "Prisma Health Richland and USC School of Medicine",
 };
 
 const GROUP_LINK_FOOTER = `\nAlso join our Medical Resident Housing group for more resources and to connect with other relocating residents: ${SWEETLEASE_GROUP_SHORT}`;
@@ -594,7 +594,7 @@ function emailAllPosts() {
   if (bodyText.length > maxLen) {
     body = encodeURIComponent(
       bodyText.substring(0, maxLen) +
-        "\n\n... (Download full file for all posts - too long for email link)"
+ "\n\n... (Download full file for all posts - too long for email link)"
     );
   } else {
     body = encodeURIComponent(bodyText);
@@ -636,10 +636,10 @@ function SweetLeaseGroupHero() {
   };
 
   return (
-    <div className="bg-white rounded-xl border-2 border-orange-400 shadow-md overflow-hidden">
+    <div className="bg-white rounded-lg border-2 border-orange-400  overflow-hidden">
       <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-6">
         <div className="flex items-start gap-4">
-          <div className="bg-orange-100 rounded-xl p-3">
+          <div className="bg-orange-100 rounded-lg p-3">
             <Star size={28} className="text-orange-500" />
           </div>
           <div className="flex-1">
@@ -729,7 +729,7 @@ function GroupCard({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200  overflow-hidden">
       <div className="flex flex-col lg:flex-row">
         {/* Left side */}
         <div className="lg:w-72 p-5 border-b lg:border-b-0 lg:border-r border-slate-100 flex flex-col gap-3">
@@ -874,7 +874,7 @@ export default function SocialOutreachPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Share2 size={22} className="text-amber-600" />
-            <h1 className="text-2xl font-bold text-slate-900">Social Outreach</h1>
+            <h1 className="text-lg font-semibold text-slate-900">Social Outreach</h1>
           </div>
           <p className="text-sm text-slate-500">
             Copy and paste into Facebook groups - {totalGroups} groups across {uniqueCities} cities
@@ -903,19 +903,19 @@ export default function SocialOutreachPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="bg-white rounded-lg border border-slate-200 p-4">
           <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Groups</p>
           <p className="text-2xl font-bold text-slate-900 mt-1">{totalGroups}</p>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="bg-white rounded-lg border border-slate-200 p-4">
           <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Posted This Week</p>
           <p className="text-2xl font-bold text-green-600 mt-1">{postedThisWeek}</p>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="bg-white rounded-lg border border-slate-200 p-4">
           <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Due for Repost</p>
           <p className="text-2xl font-bold text-amber-600 mt-1">{dueForRepost}</p>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="bg-white rounded-lg border border-slate-200 p-4">
           <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Never Posted</p>
           <p className="text-2xl font-bold text-red-600 mt-1">{neverPosted}</p>
         </div>
@@ -929,7 +929,7 @@ export default function SocialOutreachPage() {
             onClick={() => setFilter(tab.key)}
             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
               filter === tab.key
-                ? "bg-white text-slate-900 shadow-sm"
+                ? "bg-white text-slate-900 "
                 : "text-slate-500 hover:text-slate-700"
             }`}
           >
@@ -942,7 +942,7 @@ export default function SocialOutreachPage() {
       {/* Group Cards */}
       <div className="space-y-4">
         {filteredGroups.length === 0 ? (
-          <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+          <div className="bg-white rounded-lg border border-slate-200 p-12 text-center">
             <Filter size={32} className="text-slate-300 mx-auto mb-3" />
             <p className="text-sm text-slate-500">No groups match this filter</p>
           </div>

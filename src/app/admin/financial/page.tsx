@@ -32,7 +32,7 @@ export default function FinancialPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">
+          <h1 className="text-lg font-semibold text-slate-900">
             Financial Dashboard
           </h1>
         </div>
@@ -47,7 +47,7 @@ export default function FinancialPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">
+          <h1 className="text-lg font-semibold text-slate-900">
             Financial Dashboard
           </h1>
         </div>
@@ -96,7 +96,7 @@ export default function FinancialPage() {
     <div className="space-y-8">
       {/* Page Title */}
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900 mb-2">
+        <h1 className="text-lg font-semibold text-slate-900 mb-2">
           Financial Dashboard
         </h1>
         <p className="text-slate-500">Track revenue, payments, and financial metrics</p>
@@ -246,7 +246,7 @@ export default function FinancialPage() {
               </div>
 
               <div className="grid grid-cols-1 gap-4">
-                <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
+                <div className="bg-white border border-slate-200 rounded-lg  p-6">
                   <p className="text-xs font-semibold text-slate-500 mb-2">
                     Success Rate
                   </p>
@@ -256,7 +256,7 @@ export default function FinancialPage() {
                   </div>
                 </div>
 
-                <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
+                <div className="bg-white border border-slate-200 rounded-lg  p-6">
                   <p className="text-xs font-semibold text-slate-500 mb-2">
                     Avg Processing Time
                   </p>
@@ -266,7 +266,7 @@ export default function FinancialPage() {
                   </div>
                 </div>
 
-                <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
+                <div className="bg-white border border-slate-200 rounded-lg  p-6">
                   <p className="text-xs font-semibold text-slate-500 mb-2">
                     Failed Payments
                   </p>
@@ -315,7 +315,7 @@ export default function FinancialPage() {
           </div>
 
           {/* Security Summary */}
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
+          <div className="bg-white border border-slate-200 rounded-lg  p-6">
             <h3 className="text-lg font-semibold text-slate-900 mb-4">
               Payment Security Overview
             </h3>
@@ -449,7 +449,7 @@ export default function FinancialPage() {
             ].map((stat) => (
               <div
                 key={stat.region}
-                className="bg-white border border-slate-200 rounded-lg shadow-sm p-6"
+                className="bg-white border border-slate-200 rounded-lg  p-6"
               >
                 <h3 className="text-lg font-semibold text-slate-900 mb-4">
                   {stat.region}

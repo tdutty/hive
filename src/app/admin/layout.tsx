@@ -45,6 +45,9 @@ import {
   Inbox,
   Share2,
   Menu,
+  ChevronDown,
+  Search as SearchIcon,
+  Command,
 } from "lucide-react";
 import {
   useNotifications,
@@ -94,7 +97,6 @@ const navSections: NavSection[] = [
         icon: <Inbox size={20} />,
       },
       { label: "Email Triage", href: "/admin/triage", icon: <Inbox size={20} /> },
-      { label: "Triage (preview)", href: "/admin/triage-v2", icon: <Inbox size={20} /> },
       {
         label: "Negotiations",
         href: "/admin/negotiations",
@@ -296,6 +298,9 @@ function Sidebar() {
   const router = useRouter();
   const { data: session } = useSession();
   const { open, setOpen } = useContext(DrawerCtx);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  useEffect(() => { try { setCollapsed(JSON.parse(localStorage.getItem("hive.nav.collapsed") || "{}")); } catch {} }, []);
+  useEffect(() => { try { localStorage.setItem("hive.nav.collapsed", JSON.stringify(collapsed)); } catch {} }, [collapsed]);
 
   // close the drawer on navigation and lock body scroll while it is open
   useEffect(() => { setOpen(false); }, [pathname, setOpen]);
@@ -351,31 +356,42 @@ function Sidebar() {
         <button onClick={() => setOpen(false)} className="lg:hidden p-2 -mr-2 text-[#a0a3b1] hover:text-white" aria-label="Close menu"><X size={20} /></button>
       </div>
 
-      {/* Navigation */}
-      <nav className="space-y-8 px-3 flex-1 overflow-y-auto pb-4">
-        {navSections.map((section) => (
-          <div key={section.title}>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] px-3 mb-3">
-              {section.title}
-            </h3>
-            <div className="space-y-1">
-              {section.items.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors border-l-4 ${
-                    isActive(item.href)
-                      ? "border-l-amber-500 bg-[#32324a] text-white"
-                      : "border-l-transparent text-[#a0a3b1] hover:bg-[#2a2a3e]"
-                  }`}
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
-                </Link>
-              ))}
+      {/* Navigation: sections collapse and remember their state; the section holding the current page always opens */}
+      <nav className="space-y-4 px-3 flex-1 overflow-y-auto pb-4">
+        {navSections.map((section) => {
+          const holdsActive = section.items.some((i) => isActive(i.href));
+          const open = holdsActive || !collapsed[section.title];
+          return (
+            <div key={section.title}>
+              <button
+                onClick={() => setCollapsed((c) => ({ ...c, [section.title]: !c[section.title] }))}
+                aria-expanded={open}
+                className="w-full flex items-center justify-between px-3 mb-1 text-xs font-semibold uppercase tracking-wider text-[#6b7280] hover:text-[#a0a3b1]"
+              >
+                {section.title}
+                <ChevronDown size={14} className={`transition-transform ${open ? "" : "-rotate-90"}`} aria-hidden />
+              </button>
+              {open && (
+                <div className="space-y-0.5">
+                  {section.items.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`flex items-center gap-2.5 px-3 py-1.5 text-sm rounded-md transition-colors border-l-2 ${
+                        isActive(item.href)
+                          ? "border-l-amber-500 bg-[#32324a] text-white"
+                          : "border-l-transparent text-[#a0a3b1] hover:bg-[#2a2a3e] hover:text-white"
+                      }`}
+                    >
+                      <span className="[&>svg]:w-4 [&>svg]:h-4">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </nav>
 
       {/* User / Logout */}
@@ -603,18 +619,81 @@ function NotificationDropdown() {
   );
 }
 
+/** Cmd-K page switcher: type to filter the 46 pages, Enter to go. */
+function CommandPalette() {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const [idx, setIdx] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const all = navSections.flatMap((s) => s.items.map((i) => ({ ...i, section: s.title })));
+  const hits = (q.trim() ? all.filter((i) => (i.label + " " + i.section).toLowerCase().includes(q.trim().toLowerCase())) : all).slice(0, 12);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setOpen((v) => !v); }
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+  useEffect(() => { if (open) { setQ(""); setIdx(0); setTimeout(() => inputRef.current?.focus(), 0); } }, [open]);
+  useEffect(() => { setIdx(0); }, [q]);
+
+  const go = (href: string) => { setOpen(false); router.push(href); };
+
+  return (
+    <>
+      <button onClick={() => setOpen(true)} className="hidden sm:inline-flex items-center gap-2 h-8 px-2.5 rounded-md border border-slate-200 bg-slate-50 text-xs text-slate-500 hover:border-slate-400" aria-label="Open page switcher">
+        <SearchIcon size={13} aria-hidden /> Jump to page <kbd className="ml-1 inline-flex items-center gap-0.5 rounded border border-slate-300 bg-white px-1 text-[11px] text-slate-500"><Command size={10} aria-hidden />K</kbd>
+      </button>
+      {open && (
+        <div className="fixed inset-0 z-[60]">
+          <div className="absolute inset-0 bg-slate-950/40" onClick={() => setOpen(false)} aria-hidden />
+          <div role="dialog" aria-modal="true" aria-label="Jump to page" className="absolute left-1/2 top-[12vh] -translate-x-1/2 w-[calc(100vw-2rem)] max-w-lg bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden">
+            <div className="flex items-center gap-2 px-3 border-b border-slate-200">
+              <SearchIcon size={16} className="text-slate-400" aria-hidden />
+              <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Type a page name" className="w-full h-11 text-sm outline-none placeholder:text-slate-400"
+                onKeyDown={(e) => { if (e.key === "ArrowDown") { e.preventDefault(); setIdx((i) => Math.min(i + 1, hits.length - 1)); } if (e.key === "ArrowUp") { e.preventDefault(); setIdx((i) => Math.max(i - 1, 0)); } if (e.key === "Enter" && hits[idx]) go(hits[idx].href); }} />
+            </div>
+            <ul role="listbox" className="max-h-[50vh] overflow-y-auto py-1">
+              {hits.length === 0 && <li className="px-4 py-6 text-sm text-slate-500 text-center">No page matches</li>}
+              {hits.map((h, i) => (
+                <li key={h.href} role="option" aria-selected={i === idx}>
+                  <button onMouseEnter={() => setIdx(i)} onClick={() => go(h.href)} className={`w-full flex items-center gap-3 px-4 py-2 text-sm text-left ${i === idx ? "bg-amber-50 text-slate-900" : "text-slate-700"}`}>
+                    <span className="text-slate-400 [&>svg]:w-4 [&>svg]:h-4">{h.icon}</span>
+                    <span className="flex-1">{h.label}</span>
+                    <span className="text-xs text-slate-400">{h.section}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function TopHeader() {
   const { data: session } = useSession();
   const { setOpen } = useContext(DrawerCtx);
+  const pathname = usePathname();
+  const crumb = navSections.flatMap((s) => s.items.map((i) => ({ ...i, section: s.title }))).find((i) => (i.href === "/admin" ? pathname === "/admin" : pathname.startsWith(i.href)));
 
   return (
     <header className="fixed top-0 left-0 lg:left-64 right-0 h-16 border-b border-slate-200 bg-white flex items-center justify-between px-4 sm:px-6 lg:px-8 z-30">
       <div className="flex items-center gap-3 text-sm text-gray-600">
         <button onClick={() => setOpen(true)} className="lg:hidden p-2 -ml-2 rounded-md hover:bg-slate-100 text-slate-700" aria-label="Open menu"><Menu size={22} /></button>
-        <span className="font-semibold text-sm">Admin Dashboard</span>
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm min-w-0">
+          <span className="text-slate-400 hidden sm:inline">{crumb?.section ?? "Hive"}</span>
+          {crumb && <span className="text-slate-300 hidden sm:inline" aria-hidden>/</span>}
+          <span className="font-semibold text-slate-900 truncate">{crumb?.label ?? "Admin"}</span>
+        </nav>
       </div>
 
-      <div className="flex items-center gap-3 sm:gap-6">
+      <div className="flex items-center gap-3 sm:gap-4">
+        <CommandPalette />
         <NotificationDropdown />
 
         <div className="flex items-center gap-3">

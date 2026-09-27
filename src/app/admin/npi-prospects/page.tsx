@@ -58,9 +58,9 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const CREDENTIAL_LABELS: Record<string, string> = {
-  "M.D.": "MD",
+ "M.D.": "MD",
   MD: "MD",
-  "D.O.": "DO",
+ "D.O.": "DO",
   DO: "DO",
   DMD: "DMD",
   DDS: "DDS",
@@ -82,7 +82,7 @@ export default function NpiProspectsPage() {
     setLoading(true);
     try {
       const result = await api.get<ProspectResponse>(
-        "/api/admin/npi-prospects",
+ "/api/admin/npi-prospects",
         {
           limit: pageSize,
           offset: page * pageSize,
@@ -133,7 +133,7 @@ export default function NpiProspectsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 flex items-center gap-3">
+          <h1 className="text-lg font-semibold text-slate-900 flex items-center gap-3">
             <GraduationCap size={28} />
             NPI Prospects
           </h1>
@@ -386,7 +386,7 @@ export default function NpiProspectsPage() {
                       <span
                         className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
                           STATUS_COLORS[p.outreachStatus] ||
-                          "bg-slate-100 text-slate-600"
+ "bg-slate-100 text-slate-600"
                         }`}
                       >
                         {p.outreachStatus}

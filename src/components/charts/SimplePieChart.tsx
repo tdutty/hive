@@ -16,6 +16,8 @@ interface PieDataItem {
 }
 
 interface SimplePieChartProps {
+  /** no border/padding wrapper (when rendered inside a kit Card) */
+  bare?: boolean;
   data: PieDataItem[];
   height?: number;
   innerRadius?: number;
@@ -31,6 +33,7 @@ const defaultColors = [
 ];
 
 export function SimplePieChart({
+  bare,
   data,
   height = 300,
   innerRadius,
@@ -41,7 +44,7 @@ export function SimplePieChart({
   }));
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6 transition-all duration-200">
+    <div className={bare ? "" : "bg-white border border-slate-200 rounded-lg p-6"}>
       <ResponsiveContainer width="100%" height={height}>
         <PieChart>
           <Pie

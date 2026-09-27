@@ -35,7 +35,7 @@ export default function NegotiationsPage() {
   const fetchOffers = async () => {
     try {
       const data = await api.get<{ offers: CounteredOffer[] }>(
-        "/api/admin/tenant-match/counter-response"
+ "/api/admin/tenant-match/counter-response"
       );
       setOffers(data.offers);
       // Pre-fill counter amounts with midpoint between our offer and their counter
@@ -96,7 +96,7 @@ export default function NegotiationsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">Negotiations</h1>
+        <h1 className="text-lg font-semibold text-slate-900">Negotiations</h1>
         <p className="text-slate-500 mt-1">
           Landlord counter offers requiring your response
         </p>
@@ -148,7 +148,7 @@ export default function NegotiationsPage() {
                         <h3 className="text-slate-900 font-semibold text-lg">
                           {offer.propertyTitle ||
                             offer.propertyAddress?.street ||
-                            "Unknown Property"}
+ "Unknown Property"}
                         </h3>
                         <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs font-medium rounded">
                           COUNTERED

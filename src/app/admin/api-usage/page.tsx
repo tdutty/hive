@@ -129,7 +129,7 @@ export default function APIUsagePage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 mb-2">
+          <h1 className="text-lg font-semibold text-slate-900 mb-2">
             API Usage &amp; Costs
           </h1>
         </div>
@@ -153,7 +153,7 @@ export default function APIUsagePage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 mb-2">
+          <h1 className="text-lg font-semibold text-slate-900 mb-2">
             API Usage &amp; Costs
           </h1>
           <p className="text-slate-500">
@@ -183,7 +183,7 @@ export default function APIUsagePage() {
           value={String(summary?.activeServices || 0)}
           icon={Zap}
         />
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-5">
+        <div className="bg-white border border-slate-200 rounded-lg  p-5">
           <p className="text-xs font-semibold text-slate-500 mb-1">
             DO Month-to-Date
           </p>
@@ -194,7 +194,7 @@ export default function APIUsagePage() {
           </p>
           <p className="text-xs text-slate-400 mt-1">Live from DigitalOcean</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-5">
+        <div className="bg-white border border-slate-200 rounded-lg  p-5">
           <p className="text-xs font-semibold text-slate-500 mb-1">
             Stripe Balance
           </p>
@@ -220,7 +220,7 @@ export default function APIUsagePage() {
             {liveServices.map((svc) => (
               <div
                 key={svc.name}
-                className="bg-white border border-slate-200 rounded-lg shadow-sm p-6"
+                className="bg-white border border-slate-200 rounded-lg  p-6"
               >
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -341,7 +341,7 @@ export default function APIUsagePage() {
           )}
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-lg  overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50">
@@ -426,7 +426,7 @@ export default function APIUsagePage() {
                           onChange={(e) =>
                             updateSub(
                               idx,
-                              "monthlyCost",
+ "monthlyCost",
                               parseFloat(e.target.value) || 0
                             )
                           }
@@ -521,7 +521,7 @@ export default function APIUsagePage() {
                         <div>
                           <div className="text-slate-900">
                             {new Date(sub.renewalDate).toLocaleDateString(
-                              "en-US",
+ "en-US",
                               { month: "short", day: "numeric" }
                             )}
                           </div>

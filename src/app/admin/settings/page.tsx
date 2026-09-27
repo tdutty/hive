@@ -102,7 +102,7 @@ export default function SettingsPage() {
       {dialog}
       {/* Page Title */}
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900 mb-2">Settings</h1>
+        <h1 className="text-lg font-semibold text-slate-900 mb-2">Settings</h1>
         <p className="text-slate-500">Manage your admin account and system configuration</p>
       </div>
 
@@ -132,7 +132,7 @@ export default function SettingsPage() {
       {!isLoading && (
         <>
           {/* Account Section */}
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6 space-y-6">
+          <div className="bg-white border border-slate-200 rounded-lg  p-6 space-y-6">
             <div>
               <h2 className="text-lg font-semibold text-slate-900 mb-4">
                 Account
@@ -172,7 +172,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Security Section */}
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6 space-y-6">
+          <div className="bg-white border border-slate-200 rounded-lg  p-6 space-y-6">
             <h2 className="text-lg font-semibold text-slate-900">
               Security
             </h2>
@@ -231,7 +231,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Notifications Section */}
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6 space-y-6">
+          <div className="bg-white border border-slate-200 rounded-lg  p-6 space-y-6">
             <h2 className="text-lg font-semibold text-slate-900">
               Notifications
             </h2>
@@ -276,7 +276,7 @@ export default function SettingsPage() {
           </div>
 
           {/* System Configuration Section */}
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6 space-y-6">
+          <div className="bg-white border border-slate-200 rounded-lg  p-6 space-y-6">
             <h2 className="text-lg font-semibold text-slate-900">
               System Configuration
             </h2>
@@ -364,7 +364,7 @@ export default function SettingsPage() {
           </div>
 
           {/* About Section */}
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6 space-y-4">
+          <div className="bg-white border border-slate-200 rounded-lg  p-6 space-y-4">
             <h2 className="text-lg font-semibold text-slate-900 mb-6">
               About
             </h2>

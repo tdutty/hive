@@ -69,7 +69,7 @@ export default function CallLogPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+          <h1 className="text-lg font-semibold text-slate-900 flex items-center gap-3">
             <Phone size={24} className="text-amber-500" />
             Call Log
           </h1>
@@ -94,15 +94,15 @@ export default function CallLogPage() {
           { label: "Follow-up", value: calls.filter(c => c.outcome === "needs_followup").length, color: "text-blue-400" },
           { label: "Not Interested", value: calls.filter(c => c.outcome === "not_interested").length, color: "text-red-400" },
         ].map(s => (
-          <div key={s.label} className="bg-white border border-slate-200 rounded-xl p-4 text-center">
+          <div key={s.label} className="bg-white border border-slate-200 rounded-lg p-4 text-center">
             <div className={`text-2xl font-semibold ${s.color}`}>{s.value}</div>
-            <div className="text-[10px] uppercase tracking-wider text-slate-500 mt-1">{s.label}</div>
+            <div className="text-xs uppercase tracking-wider text-slate-500 mt-1">{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Call List */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <RefreshCw className="animate-spin text-slate-500" size={20} />
@@ -114,7 +114,7 @@ export default function CallLogPage() {
         ) : (
           <div>
             {/* Header */}
-            <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-slate-200 text-[10px] uppercase tracking-wider text-slate-500 font-medium">
+            <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-medium">
               <div className="col-span-1">Type</div>
               <div className="col-span-2">Caller</div>
               <div className="col-span-2">Date</div>
@@ -149,7 +149,7 @@ export default function CallLogPage() {
                   </div>
                   <div className="col-span-2">
                     {call.outcome && (
-                      <span className={`text-[10px] px-2 py-0.5 rounded font-medium uppercase tracking-wider ${OUTCOME_COLORS[call.outcome] || "bg-gray-100 text-slate-500"}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded font-medium uppercase tracking-wider ${OUTCOME_COLORS[call.outcome] || "bg-gray-100 text-slate-500"}`}>
                         {call.outcome.replace("_", " ")}
                       </span>
                     )}
@@ -158,10 +158,10 @@ export default function CallLogPage() {
                     {call.keyTopics || "-"}
                   </div>
                   <div className="col-span-2 flex items-center justify-between">
-                    <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
+                    <span className={`text-xs px-2 py-0.5 rounded font-medium ${
                       call.call_status === "ended" ? "bg-slate-700 text-slate-600" :
                       call.call_status === "ongoing" ? "bg-emerald-900 text-emerald-300" :
-                      "bg-slate-800 text-slate-500"
+ "bg-slate-800 text-slate-500"
                     }`}>
                       {call.call_status}
                     </span>
@@ -176,7 +176,7 @@ export default function CallLogPage() {
                       {/* Left - Details */}
                       <div className="space-y-3">
                         <div>
-                          <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1 font-medium">Call Details</div>
+                          <div className="text-xs uppercase tracking-wider text-slate-500 mb-1 font-medium">Call Details</div>
                           <div className="text-xs text-slate-600 space-y-1">
                             <div>From: {call.from_number}</div>
                             <div>To: {call.to_number}</div>
@@ -186,7 +186,7 @@ export default function CallLogPage() {
                         </div>
                         {call.outcome && (
                           <div>
-                            <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1 font-medium">AI Analysis</div>
+                            <div className="text-xs uppercase tracking-wider text-slate-500 mb-1 font-medium">AI Analysis</div>
                             <div className="text-xs text-slate-600 space-y-1">
                               <div>Outcome: <span className="font-medium text-slate-900">{call.outcome}</span></div>
                               {call.timeline && <div>Timeline: {call.timeline}</div>}
@@ -196,7 +196,7 @@ export default function CallLogPage() {
                         )}
                         {call.recording_url && (
                           <div>
-                            <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1 font-medium">Recording</div>
+                            <div className="text-xs uppercase tracking-wider text-slate-500 mb-1 font-medium">Recording</div>
                             <audio controls className="w-full h-8" src={call.recording_url} />
                           </div>
                         )}
@@ -204,7 +204,7 @@ export default function CallLogPage() {
 
                       {/* Right - Transcript */}
                       <div>
-                        <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1 font-medium">Transcript</div>
+                        <div className="text-xs uppercase tracking-wider text-slate-500 mb-1 font-medium">Transcript</div>
                         <div className="bg-white rounded-lg p-3 max-h-64 overflow-y-auto text-xs text-slate-600 whitespace-pre-wrap leading-relaxed">
                           {call.transcript || "No transcript available"}
                         </div>

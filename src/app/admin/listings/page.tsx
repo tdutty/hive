@@ -5,17 +5,23 @@ import { Building2, Eye, Heart, Zap, MapPin } from "lucide-react";
 import { useApi } from "@/lib/hooks";
 import { listingsService } from "@/lib/services/listings";
 import { dashboardService } from "@/lib/services/dashboard";
-import { MetricCard } from "@/components/ui/MetricCard";
-import { DataTable } from "@/components/ui/DataTable";
-import { SearchInput } from "@/components/ui/SearchInput";
-import { FilterBar } from "@/components/ui/FilterBar";
-import { StatusBadge } from "@/components/ui/StatusBadge";
+import { Button, Card, CardHeader, CardBody, Badge, statusTone, StatTile, PageHeader, FilterChips, Table, THead, TH, TBody, TR, TD, Field, Input, Select } from "@/components/kit";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
 import { SimpleBarChart } from "@/components/charts/SimpleBarChart";
 import { formatCurrency, formatNumber, formatDate } from "@/lib/utils";
 
+type StatusFilter = "all" | "active" | "pending" | "rented" | "inactive";
+const STATUS_CHIPS: { key: StatusFilter; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "active", label: "Active" },
+  { key: "pending", label: "Pending" },
+  { key: "rented", label: "Rented" },
+  { key: "inactive", label: "Inactive" },
+];
+
 export default function ListingsPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortBy, setSortBy] = useState("newest");
   const [page, setPage] = useState(1);
 
@@ -39,42 +45,8 @@ export default function ListingsPage() {
 
   const loading = metricsLoading || listingsLoading;
 
-  if (loading) {
-    return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">
-            Listings Management
-          </h1>
-        </div>
-        <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">
-            Listings Management
-          </h1>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700">
-          <p className="font-medium">Failed to load data</p>
-          <p className="text-sm mt-1">{error}</p>
-          <button
-            onClick={() => { refetchMetrics(); refetchListings(); }}
-            className="mt-3 bg-red-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-red-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div><PageHeader title="Listings Management" /><Spinner /></div>;
+  if (error) return <div><PageHeader title="Listings Management" /><ErrorBanner message={error} onRetry={() => { refetchMetrics(); refetchListings(); }} /></div>;
 
   // Extract metrics from dashboard
   const businessMetrics = metricsData?.businessMetrics || {};
@@ -101,223 +73,134 @@ export default function ListingsPage() {
     ];
 
   return (
-    <div className="space-y-8">
-      {/* Page Title */}
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900 mb-2">
-          Listings Management
-        </h1>
-        <p className="text-slate-500">
-          Monitor and manage property listings across the platform
-        </p>
+    <div className="max-w-7xl">
+      <PageHeader title="Listings Management" description="Monitor and manage property listings across the platform" />
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <StatTile label="Total Listings" value={totalListings} delta="+3.2%" deltaTone="up" hint="vs last period" icon={<Building2 size={14} />} />
+        <StatTile label="Active" value={activeListings} hint={`${totalListings > 0 ? Math.round((activeListings / totalListings) * 100) : 0}% of total`} icon={<Eye size={14} />} />
+        <StatTile label="Sponsored" value={sponsoredCount} delta="+7.1%" deltaTone="up" hint="vs last period" icon={<Zap size={14} />} />
+        <StatTile label="Avg Quality Score" value={avgQualityScore} hint="Out of 10" icon={<Heart size={14} />} />
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <MetricCard
-          title="Total Listings"
-          value={totalListings.toString()}
-          trend={3.2}
-          icon={Building2}
-        />
-        <MetricCard
-          title="Active"
-          value={activeListings.toString()}
-          subtitle={`${totalListings > 0 ? Math.round((activeListings / totalListings) * 100) : 0}% of total`}
-          icon={Eye}
-        />
-        <MetricCard
-          title="Sponsored"
-          value={sponsoredCount.toString()}
-          trend={7.1}
-          icon={Zap}
-        />
-        <MetricCard
-          title="Avg Quality Score"
-          value={avgQualityScore.toString()}
-          subtitle="Out of 10"
-          icon={Heart}
-        />
-      </div>
-
-      {/* Search, Filters & Sort */}
-      <div className="flex gap-6 items-end flex-wrap">
-        <SearchInput
+      <div className="flex flex-col lg:flex-row lg:items-end gap-3 mb-4">
+        <Input
+          type="search"
+          aria-label="Search listings"
           value={searchQuery}
-          onChange={(value) => {
-            setSearchQuery(value);
-            setPage(1);
-          }}
+          onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
           placeholder="Search listings by title or city..."
+          className="lg:max-w-xs"
         />
-        <FilterBar
-          filters={[
-            { key: "all", label: "All" },
-            { key: "active", label: "Active" },
-            { key: "pending", label: "Pending" },
-            { key: "rented", label: "Rented" },
-            { key: "inactive", label: "Inactive" },
-          ]}
-          selected={statusFilter}
-          onChange={(filter) => {
-            setStatusFilter(filter);
-            setPage(1);
-          }}
-        />
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-slate-700">Sort:</label>
-          <select
-            value={sortBy}
-            onChange={(e) => {
-              setSortBy(e.target.value);
-              setPage(1);
-            }}
-            className="px-4 py-2 border border-slate-200 bg-white text-slate-900 font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-          >
+        <FilterChips items={STATUS_CHIPS} value={statusFilter} onChange={(f) => { setStatusFilter(f); setPage(1); }} className="lg:flex-1" />
+        <Field label="Sort" className="w-full sm:w-56">
+          <Select value={sortBy} onChange={(e) => { setSortBy(e.target.value); setPage(1); }}>
             <option value="newest">Newest</option>
             <option value="price-high">Price: High to Low</option>
             <option value="price-low">Price: Low to High</option>
             <option value="views">Most Views</option>
-          </select>
-        </div>
+          </Select>
+        </Field>
       </div>
 
-      {/* Listings Table */}
-      <div>
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">
-          Listings ({pagination.total})
-        </h2>
-        <DataTable
-          columns={[
-            {
-              key: "title",
-              label: "Title",
-              render: (value) => <span className="font-medium">{value}</span>,
-            },
-            { key: "price", label: "Price", render: (value) => formatCurrency(value) },
-            { key: "propertyType", label: "Type" },
-            {
-              key: "city",
-              label: "Location",
-              render: (value, row) => (
-                <div className="flex items-center gap-1">
-                  <MapPin size={16} className="text-gray-400" />
-                  {value}, {row.state}
-                </div>
-              ),
-            },
-            {
-              key: "status",
-              label: "Status",
-              render: (value) => <StatusBadge status={value} size="sm" />,
-            },
-            { key: "views", label: "Views", render: (value) => formatNumber(value) },
-            { key: "saves", label: "Saves", render: (value) => formatNumber(value) },
-            {
-              key: "isSponsored",
-              label: "Sponsored",
-              render: (value) =>
-                value ? (
-                  <Zap size={18} className="text-amber-600" />
-                ) : (
-                  <span className="text-gray-400">—</span>
-                ),
-            },
-            {
-              key: "createdAt",
-              label: "Created",
-              render: (value) => formatDate(value),
-            },
-          ]}
-          data={listings}
-          emptyMessage="No listings found matching your criteria"
-        />
+      <Card className="mb-5">
+        <CardHeader title={`Listings (${pagination.total})`} />
+        {listings.length === 0 ? (
+          <EmptyState title="No listings found matching your criteria" />
+        ) : (
+          <Table>
+            <THead>
+              <tr>
+                <TH>Title</TH>
+                <TH numeric>Price</TH>
+                <TH>Type</TH>
+                <TH>Location</TH>
+                <TH>Status</TH>
+                <TH numeric>Views</TH>
+                <TH numeric>Saves</TH>
+                <TH>Sponsored</TH>
+                <TH>Created</TH>
+              </tr>
+            </THead>
+            <TBody>
+              {listings.map((l: any, i: number) => (
+                <TR key={l.id ?? i}>
+                  <TD className="font-medium">{l.title}</TD>
+                  <TD numeric>{formatCurrency(l.price)}</TD>
+                  <TD muted>{l.propertyType || "-"}</TD>
+                  <TD muted>
+                    <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                      <MapPin size={13} className="text-slate-400" aria-hidden />
+                      {l.city}, {l.state}
+                    </span>
+                  </TD>
+                  <TD><Badge tone={statusTone(l.status)} dot>{l.status}</Badge></TD>
+                  <TD numeric>{formatNumber(l.views)}</TD>
+                  <TD numeric>{formatNumber(l.saves)}</TD>
+                  <TD>
+                    {l.isSponsored ? (
+                      <Zap size={15} className="text-amber-600" aria-label="Sponsored" />
+                    ) : (
+                      <span className="text-slate-400">-</span>
+                    )}
+                  </TD>
+                  <TD muted className="tabular whitespace-nowrap">{formatDate(l.createdAt)}</TD>
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+        )}
 
-        {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div className="flex justify-center gap-2 mt-6">
-            <button
-              onClick={() => setPage(Math.max(1, page - 1))}
-              disabled={page === 1}
-              className="px-4 py-2 border border-slate-200 bg-white text-slate-700 font-medium rounded-md hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-600">
-                Page {pagination.page} of {pagination.totalPages}
-              </span>
-            </div>
-            <button
-              onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
-              disabled={page >= pagination.totalPages}
-              className="px-4 py-2 border border-slate-200 bg-white text-slate-700 font-medium rounded-md hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
+          <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-slate-200">
+            <Button size="sm" onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1}>Previous</Button>
+            <span className="text-xs text-slate-500 tabular">Page {pagination.page} of {pagination.totalPages}</span>
+            <Button size="sm" onClick={() => setPage(Math.min(pagination.totalPages, page + 1))} disabled={page >= pagination.totalPages}>Next</Button>
           </div>
         )}
-      </div>
+      </Card>
 
-      {/* Sponsored Performance */}
-      <div>
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">
-          Sponsored vs Organic Performance
-        </h2>
-        <SimpleBarChart
-          data={sponsoredComparisonData}
-          dataKey="impressions"
-          nameKey="name"
-          color="#D97706"
-          height={320}
-        />
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mt-6">
-          {sponsoredComparisonData.map((data: any) => (
-            <div
-              key={data.name}
-              className="bg-white border border-slate-200 rounded-lg shadow-sm p-6"
-            >
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                {data.name}
-              </h3>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 mb-1">
-                    Impressions
-                  </p>
-                  <p className="text-2xl font-bold text-slate-900">
-                    {formatNumber(data.impressions)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 mb-1">
-                    Clicks
-                  </p>
-                  <p className="text-2xl font-bold text-amber-600">
-                    {formatNumber(data.clicks)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 mb-1">
-                    Conversions
-                  </p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {formatNumber(data.conversions)}
-                  </p>
-                </div>
-                <div className="pt-3 border-t border-slate-200">
-                  <p className="text-xs font-semibold text-slate-500 mb-1">
-                    CTR
-                  </p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {data.impressions ? ((data.clicks / data.impressions) * 100).toFixed(2) : "0.00"}%
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <Card>
+        <CardHeader title="Sponsored vs Organic Performance" description="Impressions, clicks and conversions by placement." />
+        <CardBody className="space-y-4">
+          <SimpleBarChart
+            data={sponsoredComparisonData}
+            dataKey="impressions"
+            nameKey="name"
+            color="#D97706"
+            height={320}
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {sponsoredComparisonData.map((data: any) => (
+              <Card key={data.name}>
+                <CardHeader title={data.name} />
+                <CardBody>
+                  <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+                    <div>
+                      <dt className="text-xs font-medium text-slate-500 uppercase tracking-wide">Impressions</dt>
+                      <dd className="text-lg font-semibold text-slate-900 tabular mt-0.5">{formatNumber(data.impressions)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-medium text-slate-500 uppercase tracking-wide">Clicks</dt>
+                      <dd className="text-lg font-semibold text-slate-900 tabular mt-0.5">{formatNumber(data.clicks)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-medium text-slate-500 uppercase tracking-wide">Conversions</dt>
+                      <dd className="text-lg font-semibold text-slate-900 tabular mt-0.5">{formatNumber(data.conversions)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-medium text-slate-500 uppercase tracking-wide">CTR</dt>
+                      <dd className="text-lg font-semibold text-slate-900 tabular mt-0.5">
+                        {data.impressions ? ((data.clicks / data.impressions) * 100).toFixed(2) : "0.00"}%
+                      </dd>
+                    </div>
+                  </dl>
+                </CardBody>
+              </Card>
+            ))}
+          </div>
+        </CardBody>
+      </Card>
     </div>
   );
 }

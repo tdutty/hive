@@ -143,7 +143,7 @@ export default function CadencesPage() {
     setLoading(true);
     try {
       const data = await sweetleaseApi.get<CadencesResponse>(
-        "/api/admin/concierge/cadences"
+ "/api/admin/concierge/cadences"
       );
       setCadences(data.cadences);
       setStats(data.stats);
@@ -159,7 +159,7 @@ export default function CadencesPage() {
     setInitiativesLoading(true);
     try {
       const data = await sweetleaseApi.get<InitiativesResponse>(
-        "/api/admin/concierge/initiatives"
+ "/api/admin/concierge/initiatives"
       );
       setInitiatives(data.initiatives);
       setInitiativesError(null);
@@ -176,7 +176,7 @@ export default function CadencesPage() {
       const params: Record<string, string> = {};
       if (enrollSearch) params.search = enrollSearch;
       const data = await sweetleaseApi.get<ContactsResponse>(
-        "/api/admin/concierge/contacts",
+ "/api/admin/concierge/contacts",
         params
       );
       setEnrollContacts(data.contacts);
@@ -430,7 +430,7 @@ export default function CadencesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Cadences</h1>
+          <h1 className="text-lg font-semibold text-slate-900">Cadences</h1>
           <p className="text-sm text-slate-500 mt-1">
             Automated outreach sequences for concierge contacts
           </p>
@@ -452,7 +452,7 @@ export default function CadencesPage() {
         {statCards.map((card) => (
           <div
             key={card.label}
-            className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4"
+            className="bg-white rounded-lg border border-slate-200 p-4 flex items-center gap-4"
           >
             <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center">
               {card.icon}
@@ -468,7 +468,7 @@ export default function CadencesPage() {
       </div>
 
       {/* Active Initiatives */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
+      <div className="bg-white rounded-lg border border-slate-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
             <Target size={20} className="text-amber-600" />
@@ -554,13 +554,13 @@ export default function CadencesPage() {
         <h2 className="text-lg font-semibold text-slate-900">All Cadences</h2>
 
         {loading ? (
-          <div className="bg-white rounded-xl border border-slate-200">
+          <div className="bg-white rounded-lg border border-slate-200">
             <Spinner label="Loading cadences..." />
           </div>
         ) : error ? (
           <ErrorBanner message={error} onRetry={fetchCadences} />
         ) : cadences.length === 0 ? (
-          <div className="bg-white rounded-xl border border-slate-200 flex flex-col items-center justify-center py-20 text-slate-400">
+          <div className="bg-white rounded-lg border border-slate-200 flex flex-col items-center justify-center py-20 text-slate-400">
             <GitBranch size={40} className="mb-3" />
             <p className="text-sm">No cadences yet. Create your first one.</p>
           </div>
@@ -572,7 +572,7 @@ export default function CadencesPage() {
             return (
               <div
                 key={cadence.id}
-                className="bg-white rounded-xl border border-slate-200 overflow-hidden"
+                className="bg-white rounded-lg border border-slate-200 overflow-hidden"
               >
                 {/* Card Header */}
                 <div className="p-4">
@@ -650,7 +650,7 @@ export default function CadencesPage() {
                           key={step.stepNumber}
                           className="flex items-center gap-2 text-xs text-slate-500"
                         >
-                          <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600">
+                          <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600">
                             {step.stepNumber}
                           </span>
                           <span className="text-slate-400">
@@ -748,7 +748,7 @@ export default function CadencesPage() {
       {/* New / Edit Cadence Modal */}
       {showNewCadenceModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-slate-100">
               <h2 className="text-lg font-semibold text-slate-900">
                 {editingCadence ? "Edit Cadence" : "New Cadence"}
@@ -830,7 +830,7 @@ export default function CadencesPage() {
 
                       <div className="grid grid-cols-2 gap-3 mb-2">
                         <div>
-                          <label className="block text-[11px] text-slate-400 mb-0.5">
+                          <label className="block text-xs text-slate-400 mb-0.5">
                             Delay (days)
                           </label>
                           <input
@@ -844,7 +844,7 @@ export default function CadencesPage() {
                           />
                         </div>
                         <div>
-                          <label className="block text-[11px] text-slate-400 mb-0.5">
+                          <label className="block text-xs text-slate-400 mb-0.5">
                             Channel
                           </label>
                           <select
@@ -861,7 +861,7 @@ export default function CadencesPage() {
                       </div>
 
                       <div className="mb-2">
-                        <label className="block text-[11px] text-slate-400 mb-0.5">
+                        <label className="block text-xs text-slate-400 mb-0.5">
                           Subject
                         </label>
                         <input
@@ -874,7 +874,7 @@ export default function CadencesPage() {
                       </div>
 
                       <div>
-                        <label className="block text-[11px] text-slate-400 mb-0.5">
+                        <label className="block text-xs text-slate-400 mb-0.5">
                           Body
                         </label>
                         <textarea
@@ -917,7 +917,7 @@ export default function CadencesPage() {
       {/* New Initiative Modal */}
       {showNewInitiativeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-slate-100">
               <h2 className="text-lg font-semibold text-slate-900">Add Initiative</h2>
               <button
@@ -1056,7 +1056,7 @@ export default function CadencesPage() {
       {/* Enroll Contacts Modal */}
       {showEnrollModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-slate-100">
               <h2 className="text-lg font-semibold text-slate-900">Enroll Contacts</h2>
               <button
@@ -1125,7 +1125,7 @@ export default function CadencesPage() {
                         {contact.email || contact.phone || "No contact info"}
                       </p>
                     </div>
-                    <span className="ml-auto text-[10px] font-medium text-slate-400 uppercase flex-shrink-0">
+                    <span className="ml-auto text-xs font-medium text-slate-400 uppercase flex-shrink-0">
                       {contact.type}
                     </span>
                   </button>

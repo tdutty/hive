@@ -8,52 +8,29 @@ import {
   AlertCircle,
   Clock,
   CheckCircle,
+  RefreshCw,
 } from "lucide-react";
 import { useApi } from "@/lib/hooks";
 import { dashboardService } from "@/lib/services/dashboard";
-import { MetricCard } from "@/components/ui/MetricCard";
-import { DataTable } from "@/components/ui/DataTable";
+import { Button, Card, CardHeader, CardBody, Badge, statusTone, StatTile, PageHeader, Table, THead, TH, TBody, TR, TD } from "@/components/kit";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
 import { SimpleLineChart } from "@/components/charts/SimpleLineChart";
 import { SimplePieChart } from "@/components/charts/SimplePieChart";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 
+type ActivityRow = { time?: string; user?: string; action?: string; resource?: string; status?: string; [key: string]: any };
+
+/** MetricCard showed an up/down arrow with the absolute percent; StatTile takes the same as a signed delta. */
+const trendDelta = (trend: number) => ({ delta: `${trend > 0 ? "+" : trend < 0 ? "-" : ""}${Math.abs(trend)}%`, deltaTone: (trend > 0 ? "up" : trend < 0 ? "down" : "flat") as "up" | "down" | "flat" });
+const cell = (v: unknown) => String(v || "-");
+
 export default function AdminDashboard() {
-  const { data: metrics, loading, error, refetch } = useApi(() =>
+  const { data: metrics, loading, refreshing, error, refetch } = useApi(() =>
     dashboardService.getMetrics()
   );
 
-  if (loading) {
-    return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Dashboard Overview</h1>
-        </div>
-        <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Dashboard Overview</h1>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700">
-          <p className="font-medium">Failed to load data</p>
-          <p className="text-sm mt-1">{error}</p>
-          <button
-            onClick={refetch}
-            className="mt-3 bg-red-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-red-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div><PageHeader title="Dashboard Overview" /><Spinner /></div>;
+  if (error) return <div><PageHeader title="Dashboard Overview" /><ErrorBanner message={error} onRetry={refetch} /></div>;
 
   // Extract metrics from API response
   const businessMetrics = metrics?.businessMetrics || {};
@@ -89,164 +66,81 @@ export default function AdminDashboard() {
     ];
 
   // Activity data from API or fallback
-  const activityData = performanceMetrics.recentActivity || [];
+  const activityData: ActivityRow[] = performanceMetrics.recentActivity || [];
 
   const failedPayments = performanceMetrics.failedPayments || 23;
   const pendingVerifications = performanceMetrics.pendingVerifications || 89;
   const refundsThisMonth = performanceMetrics.refundsThisMonth || 4230;
 
   return (
-    <div className="space-y-8">
-      {/* Page Title */}
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900 mb-2">
-          Dashboard Overview
-        </h1>
-        <p className="text-slate-500">Real-time system performance and user metrics</p>
-      </div>
+    <div className="max-w-7xl">
+      <PageHeader
+        title="Dashboard Overview"
+        description="Real-time system performance and user metrics"
+        actions={<Button variant="ghost" size="icon" aria-label="Refresh" onClick={refetch}><RefreshCw size={15} className={refreshing ? "animate-spin" : ""} /></Button>}
+      />
 
       {/* Row 1: Key Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <MetricCard
-          title="Total Revenue"
-          value={formatCurrency(totalRevenue)}
-          trend={revenueTrend}
-          icon={DollarSign}
-        />
-        <MetricCard
-          title="Active Users"
-          value={formatNumber(activeUsers)}
-          trend={usersTrend}
-          icon={Users}
-        />
-        <MetricCard
-          title="Total Listings"
-          value={formatNumber(totalListings)}
-          trend={listingsTrend}
-          icon={Building2}
-        />
-        <MetricCard
-          title="System Uptime"
-          value={systemUptime}
-          trend={0.02}
-          icon={Activity}
-        />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <StatTile label="Total Revenue" value={formatCurrency(totalRevenue)} {...trendDelta(revenueTrend)} hint="vs last period" icon={<DollarSign size={14} />} />
+        <StatTile label="Active Users" value={formatNumber(activeUsers)} {...trendDelta(usersTrend)} hint="vs last period" icon={<Users size={14} />} />
+        <StatTile label="Total Listings" value={formatNumber(totalListings)} {...trendDelta(listingsTrend)} hint="vs last period" icon={<Building2 size={14} />} />
+        <StatTile label="System Uptime" value={systemUptime} {...trendDelta(0.02)} hint="vs last period" icon={<Activity size={14} />} />
       </div>
 
       {/* Row 2: Charts */}
-      <div className="grid grid-cols-2 gap-6">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">
-            Revenue Trend
-          </h2>
-          <SimpleLineChart
-            data={revenueChartData}
-            lines={[
-              { dataKey: "revenue", color: "#D97706", name: "Revenue" },
-              { dataKey: "referrals", color: "#9ca3af", name: "Referrals" },
-            ]}
-            xAxisKey="month"
-            height={320}
-          />
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
+        <Card>
+          <CardHeader title="Revenue Trend" />
+          <CardBody>
+            <SimpleLineChart
+              data={revenueChartData}
+              lines={[
+                { dataKey: "revenue", color: "#D97706", name: "Revenue" },
+                { dataKey: "referrals", color: "#9ca3af", name: "Referrals" },
+              ]}
+              xAxisKey="month"
+              height={320}
+            />
+          </CardBody>
+        </Card>
 
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">
-            Listings by Status
-          </h2>
-          <SimplePieChart data={listingStatusData} height={320} />
-        </div>
+        <Card>
+          <CardHeader title="Listings by Status" />
+          <CardBody>
+            <SimplePieChart bare data={listingStatusData} height={320} />
+          </CardBody>
+        </Card>
       </div>
 
       {/* Row 3: Recent Activity */}
-      <div>
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">
-          Recent Activity
-        </h2>
-        <DataTable
-          columns={[
-            { key: "time", label: "Time" },
-            { key: "user", label: "User" },
-            { key: "action", label: "Action" },
-            { key: "resource", label: "Resource" },
-            {
-              key: "status",
-              label: "Status",
-              render: (value) => {
-                const statusStyles: Record<string, string> = {
-                  Completed: "bg-green-100 text-green-900 border-green-600",
-                  Active: "bg-green-100 text-green-900 border-green-600",
-                  Success: "bg-green-100 text-green-900 border-green-600",
-                  Approved: "bg-green-100 text-green-900 border-green-600",
-                  Modified: "bg-blue-100 text-blue-900 border-blue-600",
-                  Failed: "bg-red-100 text-red-900 border-red-600",
-                  Open: "bg-yellow-100 text-yellow-900 border-yellow-600",
-                  Processed: "bg-green-100 text-green-900 border-green-600",
-                };
-                return (
-                  <span
-                    className={`inline-flex items-center border rounded-md px-3 py-1.5 text-sm font-medium ${
-                      statusStyles[value] ||
-                      "bg-gray-100 text-gray-900 border-gray-600"
-                    }`}
-                  >
-                    {value}
-                  </span>
-                );
-              },
-            },
-          ]}
-          data={activityData}
-          emptyMessage="No recent activity"
-        />
-      </div>
+      <Card className="mb-5">
+        <CardHeader title="Recent Activity" />
+        {activityData.length === 0 ? (
+          <EmptyState title="No recent activity" />
+        ) : (
+          <Table>
+            <THead><tr><TH>Time</TH><TH>User</TH><TH>Action</TH><TH>Resource</TH><TH>Status</TH></tr></THead>
+            <TBody>
+              {activityData.map((row, i) => (
+                <TR key={i}>
+                  <TD muted className="tabular whitespace-nowrap">{cell(row.time)}</TD>
+                  <TD className="font-medium">{cell(row.user)}</TD>
+                  <TD>{cell(row.action)}</TD>
+                  <TD muted>{cell(row.resource)}</TD>
+                  <TD>{row.status ? <Badge tone={statusTone(row.status)} dot>{row.status}</Badge> : "-"}</TD>
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+        )}
+      </Card>
 
       {/* Row 4: Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs font-semibold text-slate-500 mb-2">
-                Failed Payments
-              </p>
-              <p className="text-3xl font-bold text-red-600 mb-2">
-                {failedPayments}
-              </p>
-              <p className="text-sm text-slate-500">Require manual review</p>
-            </div>
-            <AlertCircle size={24} className="text-red-500" />
-          </div>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs font-semibold text-slate-500 mb-2">
-                Pending Verifications
-              </p>
-              <p className="text-3xl font-bold text-amber-600 mb-2">
-                {pendingVerifications}
-              </p>
-              <p className="text-sm text-slate-500">Awaiting completion</p>
-            </div>
-            <Clock size={24} className="text-amber-600" />
-          </div>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs font-semibold text-slate-500 mb-2">
-                Refunds This Month
-              </p>
-              <p className="text-3xl font-bold text-blue-600 mb-2">
-                {formatCurrency(refundsThisMonth)}
-              </p>
-              <p className="text-sm text-slate-500">12 transactions</p>
-            </div>
-            <CheckCircle size={24} className="text-blue-600" />
-          </div>
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <StatTile label="Failed Payments" value={failedPayments} hint="Require manual review" icon={<AlertCircle size={14} />} />
+        <StatTile label="Pending Verifications" value={pendingVerifications} hint="Awaiting completion" icon={<Clock size={14} />} />
+        <StatTile label="Refunds This Month" value={formatCurrency(refundsThisMonth)} hint="12 transactions" icon={<CheckCircle size={14} />} />
       </div>
     </div>
   );

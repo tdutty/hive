@@ -56,10 +56,10 @@ const PM_PLATFORMS: PMPlatform[] = [
 ];
 
 const STATUS_BADGE_COLOR: Record<PMPlatform["status"], BadgeColor> = {
-  "Not Applied": "gray",
+ "Not Applied": "gray",
   Applied: "yellow",
   Approved: "green",
-  "Via Propify": "blue",
+ "Via Propify": "blue",
 };
 
 // --- City Demand Data ---
@@ -191,7 +191,7 @@ export default function PropifyPage() {
       <div>
         <div className="flex items-center gap-3 mb-1">
           <Zap size={24} className="text-amber-500" />
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-lg font-semibold text-slate-900">
             Propify Integration & Predictive Placement
           </h1>
         </div>
@@ -357,7 +357,7 @@ export default function PropifyPage() {
                   </p>
                   <p className="text-xs text-slate-400">{phase.description}</p>
                   {phase.isCurrent && (
-                    <span className="inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                    <span className="inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
                       WE ARE HERE
                     </span>
                   )}

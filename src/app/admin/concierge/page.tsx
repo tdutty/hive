@@ -120,7 +120,7 @@ function contactTypeBadge(type: string) {
     PARTNER: "bg-purple-500/20 text-purple-400",
   };
   return (
-    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${styles[type] || "bg-slate-500/20 text-slate-500"}`}>
+    <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${styles[type] || "bg-slate-500/20 text-slate-500"}`}>
       {type}
     </span>
   );
@@ -140,7 +140,7 @@ function intentBadge(intent: string | null | undefined) {
   };
   const label = intent.replace(/_/g, " ");
   return (
-    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded capitalize ${styles[intent] || "bg-slate-500/20 text-slate-500"}`}>
+    <span className={`text-xs font-medium px-1.5 py-0.5 rounded capitalize ${styles[intent] || "bg-slate-500/20 text-slate-500"}`}>
       {label}
     </span>
   );
@@ -276,7 +276,7 @@ export default function ConciergeInboxPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+          <h1 className="text-lg font-semibold text-slate-900 flex items-center gap-3">
             <Inbox size={24} className="text-amber-500" />
             Concierge Inbox
             {stats.needsReply > 0 && (
@@ -324,7 +324,7 @@ export default function ConciergeInboxPage() {
 
       <div className="flex gap-4 h-[calc(100%-120px)]">
         {/* Left Panel - Thread List */}
-        <div className="w-96 max-w-[calc(100vw-2rem)] shrink-0 bg-white border border-slate-200 rounded-xl overflow-y-auto">
+        <div className="w-96 max-w-[calc(100vw-2rem)] shrink-0 bg-white border border-slate-200 rounded-lg overflow-y-auto">
           {error && (
             <div className="p-3">
               <ErrorBanner message={error} onRetry={fetchThreads} />
@@ -369,7 +369,7 @@ export default function ConciergeInboxPage() {
                       </span>
                       {contactTypeBadge(thread.contact.type)}
                     </div>
-                    <span className="text-[10px] text-slate-500 shrink-0">
+                    <span className="text-xs text-slate-500 shrink-0">
                       {relativeTime(thread.lastMessageAt)}
                     </span>
                   </div>
@@ -381,7 +381,7 @@ export default function ConciergeInboxPage() {
 
                   {/* Row 3: AI summary */}
                   {summary && (
-                    <div className="text-[11px] text-slate-500 truncate mb-1.5 italic">
+                    <div className="text-xs text-slate-500 truncate mb-1.5 italic">
                       {summary}
                     </div>
                   )}
@@ -390,7 +390,7 @@ export default function ConciergeInboxPage() {
                   <div className="flex items-center gap-1.5">
                     {intentBadge(intent)}
                     {thread.needsReply && (
-                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">
+                      <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">
                         needs reply
                       </span>
                     )}
@@ -402,7 +402,7 @@ export default function ConciergeInboxPage() {
         </div>
 
         {/* Right Panel - Thread Detail */}
-        <div className="flex-1 bg-white border border-slate-200 rounded-xl flex flex-col">
+        <div className="flex-1 bg-white border border-slate-200 rounded-lg flex flex-col">
           {selectedId && detail ? (
             detailLoading ? (
               <div className="flex-1 flex items-center justify-center">
@@ -437,7 +437,7 @@ export default function ConciergeInboxPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       {detail.needsReply && (
-                        <span className="text-[10px] font-medium px-2 py-1 rounded bg-red-500/20 text-red-400">
+                        <span className="text-xs font-medium px-2 py-1 rounded bg-red-500/20 text-red-400">
                           Needs Reply
                         </span>
                       )}
@@ -469,7 +469,7 @@ export default function ConciergeInboxPage() {
                           >
                             {msg.direction === "OUTBOUND" ? "SweetLease" : detail.contact.name}
                           </span>
-                          <span className="text-[10px] text-slate-500">
+                          <span className="text-xs text-slate-500">
                             {formatDate(msg.sentAt || msg.receivedAt || msg.createdAt)}
                           </span>
                         </div>

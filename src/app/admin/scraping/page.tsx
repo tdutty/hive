@@ -117,7 +117,7 @@ export default function ScrapingPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 mb-2">Web Scraping</h1>
+          <h1 className="text-lg font-semibold text-slate-900 mb-2">Web Scraping</h1>
           <p className="text-slate-500">Manage property data collection and processing jobs</p>
         </div>
         <button
@@ -178,7 +178,7 @@ export default function ScrapingPage() {
                 {activeJobs.map((job) => (
                   <div
                     key={job.jobId}
-                    className="bg-white border border-slate-200 rounded-lg shadow-sm p-6 space-y-4"
+                    className="bg-white border border-slate-200 rounded-lg  p-6 space-y-4"
                   >
                     <div className="flex items-center justify-between mb-4">
                       <div>
@@ -337,7 +337,7 @@ export default function ScrapingPage() {
                 {sitesData.sites.map((site: any) => (
                   <div
                     key={site.id}
-                    className="bg-white border border-slate-200 rounded-lg shadow-sm p-6"
+                    className="bg-white border border-slate-200 rounded-lg  p-6"
                   >
                     <div className="flex items-start justify-between mb-4">
                       <h3 className="text-lg font-semibold text-slate-900">{site.name}</h3>

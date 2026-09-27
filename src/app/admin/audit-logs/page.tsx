@@ -95,7 +95,7 @@ export default function AuditLogsPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Audit Logs</h1>
+          <h1 className="text-lg font-semibold text-slate-900">Audit Logs</h1>
         </div>
         <div className="flex items-center justify-center py-20">
           <div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
@@ -108,7 +108,7 @@ export default function AuditLogsPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Audit Logs</h1>
+          <h1 className="text-lg font-semibold text-slate-900">Audit Logs</h1>
         </div>
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700">
           <p className="font-medium">Failed to load data</p>
@@ -128,7 +128,7 @@ export default function AuditLogsPage() {
     <div className="space-y-8">
       {/* Page Title */}
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900 mb-2">Audit Logs</h1>
+        <h1 className="text-lg font-semibold text-slate-900 mb-2">Audit Logs</h1>
         <p className="text-slate-500">Track all system activities and compliance events</p>
       </div>
 
@@ -210,7 +210,7 @@ export default function AuditLogsPage() {
       />
 
       {/* Footer Note */}
-      <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 text-sm text-slate-500">
+      <div className="bg-white border border-slate-200 rounded-lg  p-4 text-sm text-slate-500">
         <p>
           Showing {filteredLogs.length} of {data?.pagination?.total || 0} logs. All
           timestamps are in UTC.

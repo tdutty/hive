@@ -1,25 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Inbox, Send, RefreshCw, BellRing, ArrowLeft, CheckCircle2, XCircle, Link2, HelpCircle, Bot, MessageSquare, Sparkles, CalendarClock, Trash2, PenLine, Archive, CheckCheck, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
+import { Send, RefreshCw, BellRing, Sparkles, CalendarClock, Trash2, PenLine, Archive, CheckCheck, RotateCcw, ArrowLeft, Inbox } from "lucide-react";
 import { useApi, useUrlState } from "@/lib/hooks";
 import { triageService, type Conversation, type Classification, type ScheduledRow } from "@/lib/services/triage";
+import { Button, Card, CardHeader, Badge, statusTone, StatTile, PageHeader, FilterChips, Field, Input, Select, Textarea } from "@/components/kit";
+import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 
-const CLS: Record<Classification, { label: string; cls: string; icon: JSX.Element }> = {
-  CONSENTED: { label: "Consented", cls: "bg-emerald-100 text-emerald-800", icon: <CheckCircle2 size={14} /> },
-  SENT_INVENTORY: { label: "Sent inventory", cls: "bg-sky-100 text-sky-800", icon: <Link2 size={14} /> },
-  INTERESTED: { label: "Interested", cls: "bg-amber-100 text-amber-800", icon: <HelpCircle size={14} /> },
-  DECLINED: { label: "Declined", cls: "bg-slate-200 text-slate-700", icon: <XCircle size={14} /> },
-  AUTO: { label: "Auto-reply", cls: "bg-slate-100 text-slate-500", icon: <Bot size={14} /> },
-  OTHER: { label: "Other", cls: "bg-slate-100 text-slate-600", icon: <MessageSquare size={14} /> },
-};
+type Filter = "actionable" | "active" | "all" | "resolved" | "archived" | Classification;
+const CLS_LABEL: Record<Classification, string> = { CONSENTED: "Consented", SENT_INVENTORY: "Sent inventory", INTERESTED: "Interested", DECLINED: "Declined", AUTO: "Auto-reply", OTHER: "Other" };
 const STAGES = ["Lead Drop", "Responded", "Interested", "Consented", "Partnership", "Declined"];
-const JOB: Record<ScheduledRow["status"], string> = { waiting: "bg-amber-100 text-amber-800", active: "bg-sky-100 text-sky-800", completed: "bg-emerald-100 text-emerald-800", failed: "bg-red-100 text-red-800" };
-/** Active = a live two-way conversation: the PM replied, it is not a decline or an autoresponder. */
 const isActive = (c: Conversation) => c.classification !== "DECLINED" && c.classification !== "AUTO";
 const lastActivity = (c: Conversation) => [c.lastInboundAt, c.lastOutboundAt].filter(Boolean).sort().slice(-1)[0] || "";
 const fmt = (iso?: string | null) => (iso ? new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "-");
-/** default schedule slot: next weekday 9:00 local, as a datetime-local value */
+const ago = (iso?: string | null) => { if (!iso) return "-"; const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000); if (m < 60) return `${m}m`; const h = Math.round(m / 60); if (h < 48) return `${h}h`; return `${Math.round(h / 24)}d`; };
 function defaultSlot(): string {
   const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0);
   while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
@@ -29,214 +25,210 @@ function defaultSlot(): string {
 
 export default function TriagePage() {
   const [fresh, setFresh] = useState(false);
-  const { data, loading, error, refetch } = useApi(() => triageService.list(fresh), [fresh]);
+  const { data, loading, refreshing, error, refetch } = useApi(() => triageService.list(fresh), [fresh]);
   const sched = useApi(() => triageService.scheduled());
   const fu = useApi(() => triageService.followupPreview());
-  const [filter, setFilter] = useUrlState<"actionable" | "active" | "all" | "resolved" | "archived" | Classification>("filter", "actionable");
+  const [filter, setFilter] = useUrlState<Filter>("filter", "actionable");
   const [selected, setSelected] = useUrlState<string>("pm", "");
   const [thread, setThread] = useState<Conversation | null>(null);
   const [threadLoading, setThreadLoading] = useState(false);
   const [draftText, setDraftText] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
-  const [flash, setFlash] = useState<string | null>(null);
-  // compose state
   const [composeOpen, setComposeOpen] = useState(false);
   const [instructions, setInstructions] = useState("");
   const [composeText, setComposeText] = useState("");
   const [sendAt, setSendAt] = useState(defaultSlot());
-  const [showSched, setShowSched] = useState(false);
   const [stateNote, setStateNote] = useState("");
+  const [showSched, setShowSched] = useState(false);
+  const { confirm, dialog } = useConfirm();
 
   useEffect(() => {
     if (!selected) { setThread(null); return; }
     setThreadLoading(true); setComposeOpen(false); setComposeText(""); setInstructions("");
-    triageService.thread(selected).then(t => { setThread(t); setDraftText(t.pendingDraft?.draft || ""); setNotes(""); }).finally(() => setThreadLoading(false));
+    triageService.thread(selected).then(t => { setThread(t); setDraftText(t.pendingDraft?.draft || ""); setNotes(""); }).catch(e => toast.error("Could not load thread", { description: e.message })).finally(() => setThreadLoading(false));
   }, [selected]);
 
-  const openConvs = (data?.conversations || []).filter(c => c.state === "OPEN");
-  const activeCount = openConvs.filter(isActive).length;
-  const rows = (filter === "resolved" || filter === "archived" ? (data?.conversations || []).filter(c => c.state === filter.toUpperCase()) : openConvs)
-    .filter(c => filter === "all" || filter === "resolved" || filter === "archived" ? true : filter === "actionable" ? c.awaitingReply : filter === "active" ? isActive(c) : c.classification === filter)
-    .sort((a, b) => filter === "active" ? (lastActivity(b) < lastActivity(a) ? -1 : 1) : 0);
   const reloadThread = async () => { if (selected) { const t = await triageService.thread(selected); setThread(t); setDraftText(t.pendingDraft?.draft || ""); } };
-
   const act = async (fn: () => Promise<any>, ok: string, after?: (r: any) => void) => {
-    setBusy(ok); setFlash(null);
-    try { const r = await fn(); if (r?.error) throw new Error(r.error); setFlash(ok); after?.(r); await reloadThread(); refetch(); sched.refetch(); }
-    catch (e: any) { setFlash("Error: " + (e.message || "failed")); }
+    setBusy(ok);
+    try { const r = await fn(); if (r?.error) throw new Error(r.error); toast.success(ok); after?.(r); await reloadThread(); refetch(); sched.refetch(); }
+    catch (e: any) { toast.error(ok.replace(/ed$/, "") + " failed", { description: e.message || "failed" }); }
     finally { setBusy(null); }
   };
 
-  if (loading) return <div className="space-y-8"><h1 className="text-2xl font-semibold text-slate-900">Email Triage</h1><div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" /></div></div>;
-  if (error) return <div className="space-y-8"><h1 className="text-2xl font-semibold text-slate-900">Email Triage</h1><div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700"><p className="font-medium">Failed to load</p><p className="text-sm mt-1">{error}</p><button onClick={refetch} className="mt-3 bg-red-600 text-white rounded-md px-4 py-2 text-sm">Retry</button></div></div>;
-
-  const waiting = sched.data?.waiting ?? 0;
+  const all = data?.conversations || [];
+  const openConvs = all.filter(c => c.state === "OPEN");
+  const rows = (filter === "resolved" || filter === "archived" ? all.filter(c => c.state === filter.toUpperCase()) : openConvs)
+    .filter(c => ["all", "resolved", "archived"].includes(filter) ? true : filter === "actionable" ? c.awaitingReply : filter === "active" ? isActive(c) : c.classification === filter)
+    .sort((a, b) => filter === "active" ? (lastActivity(b) < lastActivity(a) ? -1 : 1) : 0);
+  const chips = [
+    { key: "actionable" as Filter, label: "Needs reply", count: data?.awaitingReply ?? 0 },
+    { key: "active" as Filter, label: "Active", count: openConvs.filter(isActive).length },
+    { key: "all" as Filter, label: "All open", count: data?.count ?? 0 },
+    ...(Object.keys(CLS_LABEL) as Classification[]).map(k => ({ key: k as Filter, label: CLS_LABEL[k], count: data?.counts?.[k] ?? 0 })),
+    { key: "resolved" as Filter, label: "Resolved", count: data?.states?.RESOLVED ?? 0 },
+    { key: "archived" as Filter, label: "Archived", count: data?.states?.ARCHIVED ?? 0 },
+  ];
   const nextScheduled = new Map<string, ScheduledRow>();
   for (const r of sched.data?.rows || []) if (r.status === "waiting" || r.status === "active") { const cur = nextScheduled.get(r.pm_email); if (!cur || r.scheduledFor < cur.scheduledFor) nextScheduled.set(r.pm_email, r); }
-  const schedRows = (sched.data?.rows || []).filter(r => showSched ? true : r.status === "waiting" || r.status === "active" || r.status === "failed");
+  const schedRows = (sched.data?.rows || []).filter(r => showSched ? true : r.status !== "completed");
+  const stale = (data as any)?.source?.lastError as string | null | undefined;
+
+  if (loading) return <div><PageHeader title="Email Triage" /><Spinner /></div>;
+  if (error && !data) return <div><PageHeader title="Email Triage" /><ErrorBanner message={error} onRetry={refetch} /></div>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Email Triage</h1>
-          <p className="text-sm text-slate-500 mt-1">{data?.count} PM conversations · <span className="font-medium text-amber-700">{data?.awaitingReply} awaiting a reply</span>{waiting > 0 && <> · <span className="font-medium text-sky-700">{waiting} scheduled</span></>}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-          <button disabled={busy !== null} title={`Drafts a nudge for every interested PM quiet ${fu.data?.gapDays ?? 4}+ days after our reply (max ${fu.data?.max ?? 2} per thread). Drafts wait for your approval; nothing sends.`} onClick={() => act(() => triageService.runFollowups(), "Follow-ups drafted", r => { fu.refetch(); setFlash(`Follow-ups: ${r.queued.length} drafted for approval${r.queued.length ? " (" + r.queued.map((q: any) => q.company).join(", ") + ")" : ""}${r.skipped.length ? `, ${r.skipped.length} skipped` : ""}`); })} className="inline-flex items-center gap-2 text-sm border border-slate-300 rounded-md px-3 py-1.5 hover:border-slate-500 disabled:opacity-50"><BellRing size={14} /> {busy === "Follow-ups drafted" ? "Drafting…" : `Run follow-up sweep${fu.data?.count ? ` (${fu.data.count} due)` : ""}`}</button>
-          <button onClick={() => { setFresh(true); refetch(); sched.refetch(); fu.refetch(); }} className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"><RefreshCw size={16} /> Refresh</button>
-        </div>
+    <div className="max-w-7xl">
+      {dialog}
+      <PageHeader
+        title="Email Triage" meta="Outreach · property managers"
+        description="Every PM who replied, classified, with the thread and the next action in one place."
+        actions={<>
+          <Button icon={<BellRing size={14} />} loading={busy === "Follow-ups drafted"} onClick={() => act(() => triageService.runFollowups(), "Follow-ups drafted", r => { fu.refetch(); toast.message(`${r.queued.length} drafted for approval`, { description: r.queued.map((q: any) => q.company).join(", ") || undefined }); })}>Follow-up sweep{fu.data?.count ? ` · ${fu.data.count} due` : ""}</Button>
+          <Button variant="ghost" size="icon" aria-label="Refresh" onClick={() => { setFresh(true); refetch(); sched.refetch(); fu.refetch(); }}><RefreshCw size={15} className={refreshing ? "animate-spin" : ""} /></Button>
+        </>}
+      />
+
+      {stale && <ErrorBanner className="mb-4" message={`Showing the last good snapshot. ${stale}`} onRetry={() => { setFresh(true); refetch(); }} />}
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <StatTile label="Needs reply" value={data?.awaitingReply ?? 0} hint="last message is theirs" />
+        <StatTile label="Open threads" value={data?.count ?? 0} hint={`${data?.total ?? 0} total`} />
+        <StatTile label="Scheduled" value={sched.data?.waiting ?? 0} hint={nextScheduled.size ? `next ${fmt([...nextScheduled.values()].sort((a, b) => a.scheduledFor < b.scheduledFor ? -1 : 1)[0].scheduledFor)}` : "none waiting"} />
+        <StatTile label="Follow-ups due" value={fu.data?.count ?? 0} hint={`quiet ${fu.data?.gapDays ?? 4}+ days`} />
       </div>
 
-      {flash && !thread && <div className={`text-sm rounded-md px-3 py-2 ${flash.startsWith("Error") ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-800"}`}>{flash}</div>}
-
-      {/* scheduled sends */}
       {(schedRows.length > 0 || showSched) && (
-        <div className="bg-white border border-slate-200 rounded-lg">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-            <h2 className="font-medium text-slate-900 inline-flex items-center gap-2"><CalendarClock size={16} /> Scheduled sends</h2>
-            <button onClick={() => setShowSched(v => !v)} className="text-xs text-slate-500 hover:text-slate-900">{showSched ? "Hide sent history" : "Show sent history (30 days)"}</button>
-          </div>
+        <Card className="mb-5">
+          <CardHeader title="Scheduled sends" description="Durable queue. Cancel while waiting." actions={<Button size="sm" variant="ghost" onClick={() => setShowSched(v => !v)}>{showSched ? "Hide history" : "Show 30-day history"}</Button>} />
           <div className="divide-y divide-slate-100">
-            {schedRows.length === 0 && <div className="px-4 py-3 text-sm text-slate-500">Nothing scheduled.</div>}
+            {schedRows.length === 0 && <EmptyState title="Nothing scheduled" />}
             {schedRows.map(r => (
-              <div key={r.id} className="px-4 py-3 flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+              <div key={r.id} className="px-4 py-2.5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 text-sm"><span className="font-medium text-slate-900 truncate">{r.company || r.pm_email}</span><span className={`text-xs px-2 py-0.5 rounded-full ${JOB[r.status]}`}>{r.status}</span></div>
-                  <div className="text-xs text-slate-500 mt-0.5">{r.pm_email} · {r.status === "completed" ? "sent" : "sends"} {fmt(r.scheduledFor)}{r.attempts > 0 && r.status !== "completed" ? ` · ${r.attempts} attempt${r.attempts > 1 ? "s" : ""}` : ""}</div>
-                  <div className="text-sm text-slate-600 mt-1 line-clamp-2">{r.text}</div>
-                  {r.error && <div className="text-xs text-red-600 mt-1">{r.error}</div>}
+                  <div className="flex items-center gap-2"><span className="text-sm font-medium text-slate-900 truncate">{r.company || r.pm_email}</span><Badge tone={statusTone(r.status)} dot>{r.status}</Badge></div>
+                  <p className="text-xs text-slate-500 mt-0.5">{r.status === "completed" ? "sent" : "sends"} {fmt(r.scheduledFor)}{r.attempts > 0 && r.status !== "completed" ? ` · ${r.attempts} attempts` : ""}{r.error ? ` · ${r.error}` : ""}</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
-                  <button onClick={() => setSelected(r.pm_email)} className="text-xs border border-slate-300 rounded-md px-2 py-1 hover:border-slate-500">Open thread</button>
-                  {r.status === "waiting" && <button disabled={busy !== null} onClick={() => act(() => triageService.cancel(r.id), "Cancelled")} className="text-xs border border-red-200 text-red-700 rounded-md px-2 py-1 hover:bg-red-50 inline-flex items-center gap-1 disabled:opacity-50"><Trash2 size={12} /> Cancel</button>}
+                  <Button size="sm" onClick={() => setSelected(r.pm_email)}>Open</Button>
+                  {r.status === "waiting" && <Button size="sm" variant="dangerOutline" icon={<Trash2 size={12} />} onClick={async () => { if (await confirm({ title: "Cancel this scheduled send?", message: `To ${r.company || r.pm_email}, ${fmt(r.scheduledFor)}.`, confirmLabel: "Cancel send", danger: true })) act(() => triageService.cancel(r.id), "Cancelled"); }}>Cancel</Button>}
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       )}
 
-      <div className="flex flex-wrap gap-2">
-        {([["actionable", `Needs reply (${data?.awaitingReply ?? 0})`], ["active", `Active (${activeCount})`], ["all", `All (${data?.count ?? 0})`], ...Object.entries(CLS).map(([k, v]) => [k, `${v.label} (${data?.counts?.[k] ?? 0})`]), ["resolved", `Resolved (${data?.states?.RESOLVED ?? 0})`], ["archived", `Archived (${data?.states?.ARCHIVED ?? 0})`]] as [string, string][]).map(([k, label]) => (
-          <button key={k} onClick={() => setFilter(k as any)} className={`px-3 py-1.5 text-sm rounded-md border ${filter === k ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"}`}>{label}</button>
-        ))}
-      </div>
+      <FilterChips items={chips} value={filter} onChange={setFilter} className="mb-4" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* list */}
-        <div className={`lg:col-span-2 bg-white border border-slate-200 rounded-lg divide-y divide-slate-100 lg:max-h-[75vh] lg:overflow-y-auto ${selected ? "hidden lg:block" : ""}`}>
-          {rows.length === 0 && <div className="p-8 text-center text-slate-500 text-sm"><Inbox className="mx-auto mb-2" size={24} />Nothing here.</div>}
-          {rows.map(c => (
-            <button key={c.pm_email} onClick={() => setSelected(c.pm_email)} className={`w-full text-left p-4 hover:bg-slate-50 ${selected === c.pm_email ? "bg-amber-50" : ""}`}>
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium text-slate-900 truncate">{c.company}</span>
-                <span className={`shrink-0 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${CLS[c.classification].cls}`}>{CLS[c.classification].icon}{CLS[c.classification].label}</span>
-              </div>
-              <div className="text-xs text-slate-500 mt-0.5 truncate">{c.pm_email}{c.city ? ` · ${c.city}` : ""}</div>
-              <div className="text-sm text-slate-600 mt-1 line-clamp-2">{c.preview}</div>
-              <div className="flex items-center gap-3 text-xs text-slate-500 mt-2">
-                <span>{filter === "active" ? `last activity ${fmt(lastActivity(c))}` : fmt(c.lastInboundAt)}</span>
-                {c.awaitingReply && <span className="text-amber-700 font-medium">awaiting reply</span>}
-                {c.reopened && <span className="text-violet-700 font-medium">reopened</span>}
-                {c.pendingDraft && <span className="text-sky-700 font-medium">{c.pendingDraft.origin === "followup" ? "follow-up ready" : "draft ready"}</span>}
-                {nextScheduled.has(c.pm_email) && <span className="text-sky-700 font-medium inline-flex items-center gap-1"><CalendarClock size={12} /> scheduled {fmt(nextScheduled.get(c.pm_email)!.scheduledFor)}</span>}
-                {c.staged && <span>{c.staged.total} units staged{c.staged.needsReview ? ` (${c.staged.needsReview} review)` : ""}</span>}
-              </div>
-            </button>
-          ))}
-        </div>
+        <Card className={`lg:col-span-2 lg:max-h-[72vh] lg:overflow-y-auto ${selected ? "hidden lg:block" : ""}`}>
+          {rows.length === 0 && <EmptyState icon={<Inbox size={26} className="mx-auto" />} title="Nothing here" hint="Try another filter." />}
+          <div className="divide-y divide-slate-100">
+            {rows.map(c => (
+              <button key={c.pm_email} onClick={() => setSelected(c.pm_email)} className={`w-full text-left px-4 py-2.5 hover:bg-slate-50 focus-visible:outline-none focus-visible:bg-slate-50 ${selected === c.pm_email ? "bg-amber-50" : ""}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-slate-900 truncate">{c.company}</span>
+                  <span className="text-xs text-slate-500 tabular shrink-0">{ago(c.lastInboundAt)}</span>
+                </div>
+                <p className="text-xs text-slate-600 mt-0.5 line-clamp-1">{c.preview}</p>
+                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                  <Badge tone={statusTone(CLS_LABEL[c.classification])} dot>{CLS_LABEL[c.classification]}</Badge>
+                  {c.awaitingReply && <Badge tone="warning">awaiting reply</Badge>}
+                  {c.pendingDraft && <Badge tone="info">{c.pendingDraft.origin === "followup" ? "follow-up ready" : "draft ready"}</Badge>}
+                  {nextScheduled.has(c.pm_email) && <Badge tone="info"><CalendarClock size={11} aria-hidden /> {fmt(nextScheduled.get(c.pm_email)!.scheduledFor)}</Badge>}
+                  {c.reopened && <Badge tone="accent">reopened</Badge>}
+                  {c.staged && <span className="text-xs text-slate-500 tabular">{c.staged.total} units</span>}
+                </div>
+              </button>
+            ))}
+          </div>
+        </Card>
 
-        {/* thread + actions */}
-        <div className={`lg:col-span-3 bg-white border border-slate-200 rounded-lg p-4 sm:p-5 lg:max-h-[75vh] lg:overflow-y-auto ${selected ? "" : "hidden lg:block"}`}>
-          {selected && <button onClick={() => setSelected("")} className="lg:hidden mb-3 inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900"><ArrowLeft size={16} /> All conversations</button>}
-          {!selected && <div className="text-slate-500 text-sm py-20 text-center">Select a conversation to read the full thread and act on it.</div>}
-          {selected && threadLoading && <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" /></div>}
+        {/* thread */}
+        <Card className={`lg:col-span-3 lg:max-h-[72vh] lg:overflow-y-auto ${selected ? "" : "hidden lg:block"}`}>
+          {!selected && <EmptyState title="Select a conversation" hint="The full thread and every action show here." />}
+          {selected && threadLoading && <Spinner />}
           {thread && !threadLoading && (
-            <div className="space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+            <div>
+              <div className="px-4 py-3 border-b border-slate-200 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div className="min-w-0">
-                  <h2 className="text-lg font-semibold text-slate-900 break-words">{thread.company}</h2>
-                  <p className="text-sm text-slate-500">{thread.pm_email}{thread.city ? ` · ${thread.city}` : ""} · {thread.campaign} campaign</p>
+                  <button onClick={() => setSelected("")} className="lg:hidden mb-1 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900"><ArrowLeft size={13} /> All conversations</button>
+                  <h2 className="text-md font-semibold text-slate-900 break-words">{thread.company}</h2>
+                  <p className="text-xs text-slate-500">{thread.pm_email}{thread.city ? ` · ${thread.city}` : ""} · {thread.campaign}</p>
                 </div>
-                <div className="sm:text-right space-y-2">
-                  <div className="flex flex-wrap items-center sm:justify-end gap-2">
-                    {thread.state === "OPEN" ? (<>
-                      <input value={stateNote} onChange={e => setStateNote(e.target.value)} placeholder="note (optional)" className="text-xs border border-slate-300 rounded-md px-2 py-1 w-36" />
-                      <button disabled={busy !== null} onClick={() => act(() => triageService.setState(thread.pm_email, "RESOLVED", stateNote || undefined), "Resolved", () => setStateNote(""))} title="Done with this thread; it leaves the working views and reopens if they write again" className="inline-flex items-center gap-1 text-xs border border-emerald-300 text-emerald-800 rounded-md px-2 py-1 hover:bg-emerald-50 disabled:opacity-50"><CheckCheck size={12} /> Resolve</button>
-                      <button disabled={busy !== null} onClick={() => act(() => triageService.setState(thread.pm_email, "ARCHIVED", stateNote || undefined), "Archived", () => setStateNote(""))} title="Park it out of sight; reopens if they write again" className="inline-flex items-center gap-1 text-xs border border-slate-300 text-slate-700 rounded-md px-2 py-1 hover:bg-slate-50 disabled:opacity-50"><Archive size={12} /> Archive</button>
-                    </>) : (
-                      <button disabled={busy !== null} onClick={() => act(() => triageService.setState(thread.pm_email, "OPEN"), "Reopened")} className="inline-flex items-center gap-1 text-xs border border-slate-300 text-slate-700 rounded-md px-2 py-1 hover:bg-slate-50 disabled:opacity-50"><RotateCcw size={12} /> Reopen</button>
-                    )}
-                  </div>
-                  <label className="text-xs text-slate-500 block mb-1">Consent / stage</label>
-                  <select value={thread.consent || ""} disabled={!thread.pmCompanyId || busy !== null} onChange={e => act(() => triageService.consent(thread.pm_email, e.target.value), `Stage set to ${e.target.value}`)} className="text-sm border border-slate-300 rounded-md px-2 py-1">
-                    <option value="" disabled>{thread.pmCompanyId ? "set stage" : "no PM record"}</option>
-                    {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <Select aria-label="Consent stage" value={thread.consent || ""} disabled={!thread.pmCompanyId || busy !== null} onChange={e => act(() => triageService.consent(thread.pm_email, e.target.value), `Stage set to ${e.target.value}`)} className="w-auto h-8 text-xs">
+                    <option value="" disabled>{thread.pmCompanyId ? "stage" : "no PM record"}</option>{STAGES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </Select>
+                  {thread.state === "OPEN" ? (<>
+                    <Input value={stateNote} onChange={e => setStateNote(e.target.value)} placeholder="note" className="w-28 h-8 text-xs" />
+                    <Button size="sm" icon={<CheckCheck size={12} />} disabled={busy !== null} onClick={() => act(() => triageService.setState(thread.pm_email, "RESOLVED", stateNote || undefined), "Resolved", () => setStateNote(""))}>Resolve</Button>
+                    <Button size="sm" variant="ghost" icon={<Archive size={12} />} disabled={busy !== null} onClick={() => act(() => triageService.setState(thread.pm_email, "ARCHIVED", stateNote || undefined), "Archived", () => setStateNote(""))}>Archive</Button>
+                  </>) : <Button size="sm" icon={<RotateCcw size={12} />} disabled={busy !== null} onClick={() => act(() => triageService.setState(thread.pm_email, "OPEN"), "Reopened")}>Reopen</Button>}
                 </div>
               </div>
 
-              {nextScheduled.has(thread.pm_email) && (() => { const r = nextScheduled.get(thread.pm_email)!; return (
-                <div className="text-sm rounded-md px-3 py-2 bg-sky-50 text-sky-800 flex items-start justify-between gap-3">
-                  <div><span className="font-medium inline-flex items-center gap-1"><CalendarClock size={14} /> Message scheduled for {fmt(r.scheduledFor)}</span>{r.status === "active" ? " (sending now)" : ""}<div className="text-xs text-sky-700 mt-1 line-clamp-2">{r.text}</div></div>
-                  {r.status === "waiting" && <button disabled={busy !== null} onClick={() => act(() => triageService.cancel(r.id), "Cancelled")} className="shrink-0 text-xs border border-red-200 text-red-700 rounded-md px-2 py-1 hover:bg-red-50 disabled:opacity-50">Cancel</button>}
-                </div>); })()}
-              {thread.state !== "OPEN" && <div className="text-sm rounded-md px-3 py-2 bg-slate-100 text-slate-700">{thread.state === "RESOLVED" ? "Resolved" : "Archived"} {fmt(thread.stateAt)}{thread.stateNote ? ` - ${thread.stateNote}` : ""}. Hidden from the working views; it reopens on its own if they write again.</div>}
-              {thread.reopened && <div className="text-sm rounded-md px-3 py-2 bg-violet-50 text-violet-800">Reopened: they wrote again after this thread was {thread.stateNote ? `closed (${thread.stateNote})` : "closed"}.</div>}
-              {flash && <div className={`text-sm rounded-md px-3 py-2 ${flash.startsWith("Error") ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-800"}`}>{flash}</div>}
+              <div className="p-4 space-y-4">
+                {nextScheduled.has(thread.pm_email) && (() => { const r = nextScheduled.get(thread.pm_email)!; return (
+                  <div className="rounded-sm border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900 flex items-start justify-between gap-3">
+                    <div><span className="font-medium inline-flex items-center gap-1"><CalendarClock size={13} /> Scheduled for {fmt(r.scheduledFor)}</span>{r.status === "active" ? " (sending now)" : ""}<p className="text-xs text-sky-800 mt-0.5 line-clamp-2">{r.text}</p></div>
+                    {r.status === "waiting" && <Button size="sm" variant="dangerOutline" onClick={async () => { if (await confirm({ title: "Cancel this scheduled send?", confirmLabel: "Cancel send", danger: true })) act(() => triageService.cancel(r.id), "Cancelled"); }}>Cancel</Button>}
+                  </div>); })()}
+                {thread.state !== "OPEN" && <div className="rounded-sm bg-slate-100 px-3 py-2 text-sm text-slate-700">{thread.state === "RESOLVED" ? "Resolved" : "Archived"} {fmt(thread.stateAt)}{thread.stateNote ? ` · ${thread.stateNote}` : ""}. Reopens on its own if they write again.</div>}
+                {thread.reopened && <div className="rounded-sm bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-900">Reopened: they wrote again after this was closed{thread.stateNote ? ` (${thread.stateNote})` : ""}.</div>}
 
-              <div className="space-y-3">
-                {thread.messages?.map(m => (
-                  <div key={m.id} className={`rounded-lg p-3 text-sm ${m.direction === "in" ? "bg-slate-50 border border-slate-200" : "bg-amber-50 border border-amber-100 ml-3 sm:ml-8"}`}>
-                    <div className="flex justify-between text-xs text-slate-500 mb-1"><span className="font-medium">{m.direction === "in" ? thread.company : "Robert (us)"}</span><span>{fmt(m.at)}</span></div>
-                    <div className="whitespace-pre-wrap text-slate-800">{m.direction === "in" ? m.text : m.text.slice(0, 600) + (m.text.length > 600 ? " […]" : "")}</div>
-                  </div>
-                ))}
+                <ol className="space-y-2">
+                  {thread.messages?.map(m => (
+                    <li key={m.id} className={`rounded-lg px-3 py-2 text-sm ${m.direction === "in" ? "bg-slate-50 border border-slate-200" : "bg-white border border-amber-200 ml-4 sm:ml-10"}`}>
+                      <div className="flex justify-between text-xs text-slate-500 mb-1"><span className="font-medium text-slate-700">{m.direction === "in" ? thread.company : "Robert"}</span><span className="tabular">{fmt(m.at)}</span></div>
+                      <div className="whitespace-pre-wrap text-slate-800 leading-5">{m.direction === "in" ? m.text : m.text.slice(0, 600) + (m.text.length > 600 ? " […]" : "")}</div>
+                    </li>
+                  ))}
+                </ol>
+
+                {thread.pendingDraft ? (
+                  <Card className="border-sky-200">
+                    <CardHeader title={thread.pendingDraft.origin === "followup" ? `Proposed follow-up ${thread.pendingDraft.nth || ""}` : "Proposed reply"} description={`from ${thread.pendingDraft.channel === "smtp" ? "tgilbert@sweetlease.io" : "the sweetleasepartners inbox"}${thread.pendingDraft.notes_history.length ? ` · revised ${thread.pendingDraft.notes_history.length}×` : ""}`} />
+                    <div className="p-4 space-y-3">
+                      <Textarea value={draftText} onChange={e => setDraftText(e.target.value)} rows={10} aria-label="Reply text" />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button variant="primary" icon={<Send size={14} />} loading={busy === "Sent"} disabled={busy !== null} onClick={() => act(() => triageService.send(thread.pm_email, thread.pendingDraft!.token, draftText), "Sent")}>Send it</Button>
+                        <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes for a revision" className="flex-1 min-w-[180px]" />
+                        <Button icon={<RefreshCw size={14} />} loading={busy === "Redrafted"} disabled={busy !== null || !notes.trim()} onClick={() => act(() => triageService.redraft(thread.pm_email, thread.pendingDraft!.token, notes), "Redrafted")}>Redraft</Button>
+                      </div>
+                    </div>
+                  </Card>
+                ) : (
+                  <p className="text-sm text-slate-500">{thread.awaitingReply ? "Awaiting reply; the pipeline drafts within about 10 minutes of a new inbound." : thread.drafts.filter(d => d.status === "sent").length ? `Last message sent ${fmt(thread.drafts.filter(d => d.status === "sent").slice(-1)[0]?.sent_at)}.` : "No reply needed."}</p>
+                )}
+
+                {!composeOpen ? (
+                  <Button icon={<PenLine size={14} />} onClick={() => setComposeOpen(true)}>Write a new message</Button>
+                ) : (
+                  <Card>
+                    <CardHeader title="New message" description="Sends in this thread as Robert." actions={<Button size="sm" variant="ghost" onClick={() => { setComposeOpen(false); setComposeText(""); }}>Cancel</Button>} />
+                    <div className="p-4 space-y-3">
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Input value={instructions} onChange={e => setInstructions(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && instructions.trim() && busy === null) act(() => triageService.compose(thread.pm_email, instructions, composeText || undefined), composeText ? "Redrafted" : "Drafted", r => setComposeText(r.draft || "")); }} placeholder='Tell the AI what to say, e.g. "check in on the March units"' />
+                        <Button variant="primary" icon={<Sparkles size={14} />} loading={busy === "Drafted" || busy === "Redrafted"} disabled={busy !== null || !instructions.trim()} onClick={() => act(() => triageService.compose(thread.pm_email, instructions, composeText || undefined), composeText ? "Redrafted" : "Drafted", r => setComposeText(r.draft || ""))}>{composeText ? "Redraft" : "Draft with AI"}</Button>
+                      </div>
+                      <Textarea value={composeText} onChange={e => setComposeText(e.target.value)} rows={9} placeholder="The draft appears here. Edit freely, or write your own." aria-label="Message text" />
+                      <div className="flex flex-wrap items-end gap-2">
+                        <Button variant="primary" icon={<Send size={14} />} loading={busy === "Sent"} disabled={busy !== null || !composeText.trim()} onClick={() => act(() => triageService.sendNow(thread.pm_email, composeText, instructions || undefined), "Sent", () => { setComposeText(""); setComposeOpen(false); })}>Send now</Button>
+                        <span className="text-xs text-slate-500 pb-2.5">or</span>
+                        <Field label="Send at"><Input type="datetime-local" value={sendAt} onChange={e => setSendAt(e.target.value)} className="w-auto" /></Field>
+                        <Button icon={<CalendarClock size={14} />} loading={busy === "Scheduled"} disabled={busy !== null || !composeText.trim() || !sendAt} onClick={() => act(() => triageService.schedule(thread.pm_email, composeText, new Date(sendAt).toISOString(), instructions || undefined), "Scheduled", () => { setComposeText(""); setComposeOpen(false); })}>Schedule</Button>
+                      </div>
+                    </div>
+                  </Card>
+                )}
               </div>
-
-              {thread.pendingDraft ? (
-                <div className="border border-sky-200 rounded-lg p-4 bg-sky-50/40 space-y-3">
-                  <div className="flex items-center justify-between"><h3 className="font-medium text-slate-900">{thread.pendingDraft.origin === "followup" ? `Proposed follow-up ${thread.pendingDraft.nth || ""}` : "Proposed reply"}</h3><span className="text-xs text-slate-500">from {thread.pendingDraft.channel === "smtp" ? "tgilbert@" : "sweetleasepartners inbox"}</span></div>
-                  {thread.pendingDraft.notes_history.length > 0 && <p className="text-xs text-slate-500">Revised {thread.pendingDraft.notes_history.length}× - last note: “{thread.pendingDraft.notes_history.slice(-1)[0]}”</p>}
-                  <textarea value={draftText} onChange={e => setDraftText(e.target.value)} rows={12} className="w-full text-sm border border-slate-300 rounded-md p-3 font-sans" />
-                  <div className="flex flex-wrap items-center gap-3">
-                    <button disabled={busy !== null} onClick={() => act(() => triageService.send(thread.pm_email, thread.pendingDraft!.token, draftText), "Sent")} className="inline-flex items-center gap-2 bg-slate-900 text-white rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"><Send size={14} /> {busy === "Sent" ? "Sending…" : "Send it"}</button>
-                    <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes for a revision…" className="flex-1 min-w-[200px] text-sm border border-slate-300 rounded-md px-3 py-2" />
-                    <button disabled={busy !== null || !notes.trim()} onClick={() => act(() => triageService.redraft(thread.pm_email, thread.pendingDraft!.token, notes), "Redrafted")} className="inline-flex items-center gap-2 border border-slate-300 rounded-md px-4 py-2 text-sm disabled:opacity-50"><RefreshCw size={14} /> {busy === "Redrafted" ? "Redrafting…" : "Redraft"}</button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-sm text-slate-500 border border-dashed border-slate-200 rounded-lg p-4">
-                  {thread.awaitingReply ? "Awaiting reply, but no draft is queued yet - the pipeline drafts within ~10 minutes of a new inbound." : thread.drafts.length ? `Last message sent ${fmt(thread.drafts.filter(d => d.status === "sent").slice(-1)[0]?.sent_at)}${thread.drafts.filter(d => d.status === "sent").slice(-1)[0]?.sent_by ? " via " + thread.drafts.filter(d => d.status === "sent").slice(-1)[0]?.sent_by : ""}.` : "No reply needed."}
-                </div>
-              )}
-
-              {/* compose a new in-thread message */}
-              {!composeOpen ? (
-                <button onClick={() => setComposeOpen(true)} className="inline-flex items-center gap-2 text-sm border border-slate-300 rounded-md px-3 py-2 hover:border-slate-500"><PenLine size={14} /> Write a new message in this thread</button>
-              ) : (
-                <div className="border border-violet-200 rounded-lg p-4 bg-violet-50/30 space-y-3">
-                  <div className="flex items-center justify-between"><h3 className="font-medium text-slate-900">New message</h3><span className="text-xs text-slate-500">sends in this thread from the sweetleasepartners inbox, as Robert</span></div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <input value={instructions} onChange={e => setInstructions(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && instructions.trim() && busy === null) act(() => triageService.compose(thread.pm_email, instructions, composeText || undefined), composeText ? "Redrafted" : "Drafted", r => setComposeText(r.draft || "")); }} placeholder='Tell the AI what to say, e.g. "check in on the March units, ask if the 2-beds are still open"' className="flex-1 text-sm border border-slate-300 rounded-md px-3 py-2" />
-                    <button disabled={busy !== null || !instructions.trim()} onClick={() => act(() => triageService.compose(thread.pm_email, instructions, composeText || undefined), composeText ? "Redrafted" : "Drafted", r => setComposeText(r.draft || ""))} className="inline-flex items-center gap-2 bg-violet-700 text-white rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"><Sparkles size={14} /> {busy === "Drafted" || busy === "Redrafted" ? "Drafting…" : composeText ? "Redraft" : "Draft with AI"}</button>
-                  </div>
-                  <textarea value={composeText} onChange={e => setComposeText(e.target.value)} rows={10} placeholder="The draft appears here. Edit freely before sending, or type your own message." className="w-full text-sm border border-slate-300 rounded-md p-3 font-sans" />
-                  <div className="flex flex-wrap items-center gap-3">
-                    <button disabled={busy !== null || !composeText.trim()} onClick={() => act(() => triageService.sendNow(thread.pm_email, composeText, instructions || undefined), "Sent", () => { setComposeText(""); setComposeOpen(false); })} className="inline-flex items-center gap-2 bg-slate-900 text-white rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"><Send size={14} /> {busy === "Sent" ? "Sending…" : "Send now"}</button>
-                    <span className="text-xs text-slate-500">or</span>
-                    <input type="datetime-local" value={sendAt} onChange={e => setSendAt(e.target.value)} className="text-sm border border-slate-300 rounded-md px-3 py-2 max-w-full" />
-                    <button disabled={busy !== null || !composeText.trim() || !sendAt} onClick={() => act(() => triageService.schedule(thread.pm_email, composeText, new Date(sendAt).toISOString(), instructions || undefined), "Scheduled", () => { setComposeText(""); setComposeOpen(false); })} className="inline-flex items-center gap-2 border border-slate-900 text-slate-900 rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"><CalendarClock size={14} /> {busy === "Scheduled" ? "Scheduling…" : "Schedule"}</button>
-                    <button onClick={() => { setComposeOpen(false); setComposeText(""); }} className="text-sm text-slate-500 hover:text-slate-900 ml-auto">Cancel</button>
-                  </div>
-                  <p className="text-xs text-slate-500">Times are your local time. Scheduled sends are durable: they survive restarts, retry on failure, and email you a confirmation when they go out. Cancel from the Scheduled list above while still waiting.</p>
-                </div>
-              )}
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

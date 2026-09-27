@@ -90,7 +90,7 @@ export default function SigningPipelinePage() {
     try {
       setLoading(true);
       const result = await api.get<PipelineData>(
-        "/api/admin/signing-pipeline"
+ "/api/admin/signing-pipeline"
       );
       setData(result);
       setLastRefresh(new Date());
@@ -128,7 +128,7 @@ export default function SigningPipelinePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-lg font-semibold text-gray-900">
             Signing Pipeline
           </h1>
           <p className="text-sm text-gray-500 mt-1">

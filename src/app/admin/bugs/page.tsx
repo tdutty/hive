@@ -82,7 +82,7 @@ function IssueRow({ issue }: { issue: SentryIssue }) {
   const status = STATUS_CONFIG[issue.status] || STATUS_CONFIG.unresolved;
 
   return (
-    <div className="border border-slate-200 rounded-lg bg-white hover:shadow-sm transition-shadow">
+    <div className="border border-slate-200 rounded-lg bg-white hover: transition-shadow">
       <div className="p-4">
         <div className="flex items-start gap-3">
           <div
@@ -230,7 +230,7 @@ export default function BugsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Bugs & Errors</h1>
+          <h1 className="text-lg font-semibold text-gray-900">Bugs & Errors</h1>
           <p className="text-sm text-gray-500 mt-1">
             Live issues from Sentry — SweetLease production
           </p>

@@ -97,7 +97,7 @@ export default function SmsInboxPage() {
     <div className="h-[calc(100dvh-7rem)]">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+          <h1 className="text-lg font-semibold text-slate-900 flex items-center gap-3">
             <MessageSquare size={24} className="text-amber-500" />
             SMS Inbox
             {unreadCount > 0 && (
@@ -123,7 +123,7 @@ export default function SmsInboxPage() {
 
       <div className="flex gap-4 h-[calc(100%-80px)]">
         {/* Conversation List */}
-        <div className="w-80 max-w-[calc(100vw-2rem)] shrink-0 bg-white border border-slate-200 rounded-xl overflow-y-auto">
+        <div className="w-80 max-w-[calc(100vw-2rem)] shrink-0 bg-white border border-slate-200 rounded-lg overflow-y-auto">
           {loading ? (
             <Spinner />
           ) : error && conversations.length === 0 ? null : conversations.length === 0 ? (
@@ -153,12 +153,12 @@ export default function SmsInboxPage() {
                       )}
                       {conv.ownerName || conv.phone}
                     </span>
-                    <span className="text-[10px] text-slate-500 shrink-0">
+                    <span className="text-xs text-slate-500 shrink-0">
                       {formatTime(conv.lastMessageAt)}
                     </span>
                   </div>
                   {conv.address && (
-                    <div className="text-[10px] text-slate-500 flex items-center gap-1 mb-1">
+                    <div className="text-xs text-slate-500 flex items-center gap-1 mb-1">
                       <MapPin size={8} />
                       {conv.address}
                     </div>
@@ -174,7 +174,7 @@ export default function SmsInboxPage() {
         </div>
 
         {/* Message Thread */}
-        <div className="flex-1 bg-white border border-slate-200 rounded-xl flex flex-col">
+        <div className="flex-1 bg-white border border-slate-200 rounded-lg flex flex-col">
           {selected ? (
             <>
               {/* Thread Header */}
@@ -206,7 +206,7 @@ export default function SmsInboxPage() {
                     className={`flex ${msg.direction === "outbound" ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm ${
+                      className={`max-w-[70%] px-4 py-2.5 rounded-xl text-sm ${
                         msg.direction === "outbound"
                           ? "bg-amber-600 text-white rounded-br-sm"
                           : "bg-slate-50 text-slate-700 rounded-bl-sm"
@@ -214,7 +214,7 @@ export default function SmsInboxPage() {
                     >
                       <div>{msg.body}</div>
                       <div
-                        className={`text-[10px] mt-1 ${
+                        className={`text-xs mt-1 ${
                           msg.direction === "outbound" ? "text-amber-200" : "text-slate-500"
                         }`}
                       >

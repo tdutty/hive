@@ -114,7 +114,7 @@ export default function GDPRPage() {
     <div className="space-y-8">
       {/* Page Title */}
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900 mb-2">GDPR Compliance</h1>
+        <h1 className="text-lg font-semibold text-slate-900 mb-2">GDPR Compliance</h1>
         <p className="text-slate-500">Manage user data export and deletion requests</p>
       </div>
 
@@ -221,7 +221,7 @@ export default function GDPRPage() {
 
               {/* Request Stats */}
               <div className="grid grid-cols-2 gap-6">
-                <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
+                <div className="bg-white border border-slate-200 rounded-lg  p-6">
                   <h3 className="font-semibold text-slate-900 mb-4">
                     Export Requests
                   </h3>
@@ -245,7 +245,7 @@ export default function GDPRPage() {
                   </div>
                 </div>
 
-                <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
+                <div className="bg-white border border-slate-200 rounded-lg  p-6">
                   <h3 className="font-semibold text-slate-900 mb-4">
                     Deletion Requests
                   </h3>
@@ -277,7 +277,7 @@ export default function GDPRPage() {
       {/* Export Tab */}
       {activeTab === "export" && (
         <div className="space-y-6">
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6 space-y-4">
+          <div className="bg-white border border-slate-200 rounded-lg  p-6 space-y-4">
             <h2 className="text-lg font-semibold text-slate-900">
               Request Data Export
             </h2>
@@ -344,7 +344,7 @@ export default function GDPRPage() {
       {/* Deletion Tab */}
       {activeTab === "deletion" && (
         <div className="space-y-6">
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6 space-y-4">
+          <div className="bg-white border border-slate-200 rounded-lg  p-6 space-y-4">
             <h2 className="text-lg font-semibold text-slate-900">
               Request Data Deletion
             </h2>

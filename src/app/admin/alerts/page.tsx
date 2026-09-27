@@ -34,7 +34,7 @@ export default function AlertsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+          <h1 className="text-lg font-semibold text-slate-900 flex items-center gap-3">
             <AlertTriangle size={24} className="text-amber-500" />
             System Alerts
           </h1>
@@ -51,7 +51,7 @@ export default function AlertsPage() {
       </div>
 
       {status === "ok" && (
-        <div className="bg-white border border-emerald-500/30 rounded-xl p-6 flex items-center gap-4">
+        <div className="bg-white border border-emerald-500/30 rounded-lg p-6 flex items-center gap-4">
           <CheckCircle size={24} className="text-emerald-500" />
           <div>
             <div className="text-slate-900 font-medium">All systems operating normally</div>
@@ -61,7 +61,7 @@ export default function AlertsPage() {
       )}
 
       {status === "error" && (
-        <div className="bg-white border border-red-500/30 rounded-xl p-6 flex items-center gap-4">
+        <div className="bg-white border border-red-500/30 rounded-lg p-6 flex items-center gap-4">
           <AlertTriangle size={24} className="text-red-500" />
           <div>
             <div className="text-slate-900 font-medium">System Issue Detected</div>
@@ -71,7 +71,7 @@ export default function AlertsPage() {
       )}
 
       {!status && !loading && (
-        <div className="bg-white border border-slate-200 rounded-xl p-6 text-center text-slate-500 text-sm">
+        <div className="bg-white border border-slate-200 rounded-lg p-6 text-center text-slate-500 text-sm">
           Checking system health...
         </div>
       )}

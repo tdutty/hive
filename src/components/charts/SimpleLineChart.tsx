@@ -18,6 +18,8 @@ interface LineConfig {
 }
 
 interface SimpleLineChartProps {
+  /** no border/padding wrapper (when rendered inside a kit Card) */
+  bare?: boolean;
   data: any[];
   lines: LineConfig[];
   xAxisKey: string;
@@ -25,13 +27,14 @@ interface SimpleLineChartProps {
 }
 
 export function SimpleLineChart({
+  bare,
   data,
   lines,
   xAxisKey,
   height = 300,
 }: SimpleLineChartProps) {
   return (
-    <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6 transition-all duration-200">
+    <div className={bare ? "" : "bg-white border border-slate-200 rounded-lg p-6"}>
       <ResponsiveContainer width="100%" height={height}>
         <LineChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="0" stroke="#e2e8f0" vertical={false} />

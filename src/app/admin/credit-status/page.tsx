@@ -66,7 +66,7 @@ export default function CreditStatusPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">API Credit Status</h1>
+          <h1 className="text-lg font-semibold text-slate-900">API Credit Status</h1>
           <p className="text-sm text-slate-500 mt-1">
             Monitor credit balances across all external API services
           </p>
@@ -119,7 +119,7 @@ export default function CreditStatusPage() {
             return (
               <div
                 key={key}
-                className={`rounded-xl border p-5 ${cfg.bg} ${cfg.border} transition hover:scale-[1.01]`}
+                className={`rounded-lg border p-5 ${cfg.bg} ${cfg.border} transition hover:scale-[1.01]`}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>

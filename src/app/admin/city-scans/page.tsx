@@ -64,7 +64,7 @@ export default function CityScanPage() {
   const fetchLandlords = async (city: string, state: string) => {
     try {
       const data = await api.get<{ landlords: PortfolioLandlord[] }>(
-        "/api/admin/city-scans",
+ "/api/admin/city-scans",
         { city, state }
       );
       setLandlords(data.landlords || []);
@@ -108,7 +108,7 @@ export default function CityScanPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 mb-2">
+          <h1 className="text-lg font-semibold text-slate-900 mb-2">
             City Scans
           </h1>
           <p className="text-slate-500">
@@ -125,7 +125,7 @@ export default function CityScanPage() {
       </div>
 
       {/* Scan New City */}
-      <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
+      <div className="bg-white border border-slate-200 rounded-lg  p-6">
         <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-4">
           Scan a New Market
         </h2>
@@ -187,7 +187,7 @@ export default function CityScanPage() {
               <button
                 key={scan.id}
                 onClick={() => fetchLandlords(scan.city, scan.state)}
-                className={`bg-white border rounded-lg shadow-sm p-5 text-left hover:border-amber-300 transition-colors ${
+                className={`bg-white border rounded-lg  p-5 text-left hover:border-amber-300 transition-colors ${
                   selectedCity?.city === scan.city && selectedCity?.state === scan.state
                     ? "border-amber-500 ring-2 ring-amber-500/20"
                     : "border-slate-200"
@@ -247,7 +247,7 @@ export default function CityScanPage() {
               ({landlords.length})
             </span>
           </h2>
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+          <div className="bg-white border border-slate-200 rounded-lg  overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50">

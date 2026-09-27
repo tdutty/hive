@@ -119,7 +119,7 @@ function contactTypeBadge(type: string) {
     PARTNER: "bg-purple-500/20 text-purple-400",
   };
   return (
-    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${styles[type] || "bg-slate-500/20 text-slate-500"}`}>
+    <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${styles[type] || "bg-slate-500/20 text-slate-500"}`}>
       {type}
     </span>
   );
@@ -128,20 +128,20 @@ function contactTypeBadge(type: string) {
 function priorityBadge(score: number) {
   if (score >= 70) {
     return (
-      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">
+      <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">
         Hot
       </span>
     );
   }
   if (score >= 40) {
     return (
-      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">
+      <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">
         Warm
       </span>
     );
   }
   return (
-    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-500/20 text-slate-500">
+    <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-slate-500/20 text-slate-500">
       Cool
     </span>
   );
@@ -340,7 +340,7 @@ export default function ConciergeDraftsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+          <h1 className="text-lg font-semibold text-slate-900 flex items-center gap-3">
             <FileText size={24} className="text-amber-500" />
             Approval Queue
             {total > 0 && (
@@ -364,7 +364,7 @@ export default function ConciergeDraftsPage() {
 
       <div className="flex gap-4 h-[calc(100%-80px)]">
         {/* Left Panel - Draft Queue */}
-        <div className="w-96 max-w-[calc(100vw-2rem)] shrink-0 bg-white border border-slate-200 rounded-xl overflow-y-auto">
+        <div className="w-96 max-w-[calc(100vw-2rem)] shrink-0 bg-white border border-slate-200 rounded-lg overflow-y-auto">
           {error && (
             <div className="p-3">
               <ErrorBanner message={error} onRetry={fetchDrafts} />
@@ -398,7 +398,7 @@ export default function ConciergeDraftsPage() {
                       </span>
                       {contactTypeBadge(draft.contact.type)}
                     </div>
-                    <span className="text-[10px] text-slate-500 shrink-0">
+                    <span className="text-xs text-slate-500 shrink-0">
                       {relativeTime(draft.createdAt)}
                     </span>
                   </div>
@@ -429,7 +429,7 @@ export default function ConciergeDraftsPage() {
         </div>
 
         {/* Right Panel - Draft Detail */}
-        <div className="flex-1 bg-white border border-slate-200 rounded-xl flex flex-col">
+        <div className="flex-1 bg-white border border-slate-200 rounded-lg flex flex-col">
           {selectedId && detail && !detailLoading ? (
             <>
               {/* Scrollable content */}
@@ -506,7 +506,7 @@ export default function ConciergeDraftsPage() {
                             >
                               {msg.direction === "OUTBOUND" ? "SweetLease" : detail.contact.name}
                             </span>
-                            <span className="text-[10px] text-slate-500">
+                            <span className="text-xs text-slate-500">
                               {formatDate(msg.sentAt || msg.receivedAt || msg.createdAt)}
                             </span>
                           </div>
@@ -525,7 +525,7 @@ export default function ConciergeDraftsPage() {
                     <Sparkles size={16} className="text-amber-500" />
                     <span className="text-sm font-medium text-slate-900">AI Draft</span>
                     {hasEdits && (
-                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">
+                      <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">
                         edited
                       </span>
                     )}
@@ -554,7 +554,7 @@ export default function ConciergeDraftsPage() {
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 resize-none min-h-[120px] leading-relaxed"
                     />
                     {detail.channel === "SMS" && (
-                      <div className="text-[10px] text-slate-500 mt-1 text-right">
+                      <div className="text-xs text-slate-500 mt-1 text-right">
                         {editBody.length} characters
                       </div>
                     )}
@@ -590,7 +590,7 @@ export default function ConciergeDraftsPage() {
                             {detail.riskFlags.map((flag, i) => (
                               <span
                                 key={i}
-                                className="text-[10px] font-medium px-2 py-1 rounded bg-red-500/20 text-red-400 flex items-center gap-1"
+                                className="text-xs font-medium px-2 py-1 rounded bg-red-500/20 text-red-400 flex items-center gap-1"
                               >
                                 <AlertTriangle size={10} />
                                 {flag}
@@ -645,7 +645,7 @@ export default function ConciergeDraftsPage() {
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <span
-                                className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                                className={`text-xs font-medium px-1.5 py-0.5 rounded ${
                                   c.owner === "US"
                                     ? "bg-amber-500/20 text-amber-400"
                                     : "bg-blue-500/20 text-blue-400"
@@ -658,7 +658,7 @@ export default function ConciergeDraftsPage() {
                               </span>
                             </div>
                             {c.dueDate && (
-                              <span className={`text-[10px] shrink-0 ml-2 ${isOverdue ? "text-red-400 font-medium" : "text-slate-500"}`}>
+                              <span className={`text-xs shrink-0 ml-2 ${isOverdue ? "text-red-400 font-medium" : "text-slate-500"}`}>
                                 Due {new Date(c.dueDate).toLocaleDateString([], { month: "short", day: "numeric" })}
                               </span>
                             )}

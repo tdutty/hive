@@ -115,7 +115,7 @@ export default function ConciergeContactsPage() {
       if (searchQuery) params.search = searchQuery;
 
       const data = await sweetleaseApi.get<ContactsResponse>(
-        "/api/admin/concierge/contacts",
+ "/api/admin/concierge/contacts",
         params
       );
       setContacts(data.contacts);
@@ -168,7 +168,7 @@ export default function ConciergeContactsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Concierge Contacts</h1>
+          <h1 className="text-lg font-semibold text-slate-900">Concierge Contacts</h1>
           <p className="text-sm text-slate-500 mt-1">
             Contact directory synced from PM companies and tenant match requests
           </p>
@@ -188,7 +188,7 @@ export default function ConciergeContactsPage() {
         {statCards.map((card) => (
           <div
             key={card.label}
-            className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4"
+            className="bg-white rounded-lg border border-slate-200 p-4 flex items-center gap-4"
           >
             <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center">
               {card.icon}
@@ -202,7 +202,7 @@ export default function ConciergeContactsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4">
+      <div className="bg-white rounded-lg border border-slate-200 p-4 flex items-center gap-4">
         <div className="flex items-center gap-2">
           <label className="text-xs font-medium text-slate-500 uppercase">Type</label>
           <select
@@ -246,7 +246,7 @@ export default function ConciergeContactsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
         {loading ? (
           <Spinner label="Loading contacts..." />
         ) : error ? (

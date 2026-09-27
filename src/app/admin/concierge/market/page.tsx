@@ -139,7 +139,7 @@ export default function MarketIntelligencePage() {
     setLoading(true);
     try {
       const data = await sweetleaseApi.get<MarketReport>(
-        "/api/admin/concierge/demand-supply"
+ "/api/admin/concierge/demand-supply"
       );
       setReport(data);
       setError(null);
@@ -219,7 +219,7 @@ export default function MarketIntelligencePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Market Intelligence</h1>
+          <h1 className="text-lg font-semibold text-slate-900">Market Intelligence</h1>
           <p className="text-sm text-slate-500 mt-1">
             Two-sided marketplace view - demand (residents) vs supply (PMs) by city
           </p>
@@ -243,7 +243,7 @@ export default function MarketIntelligencePage() {
         {statCards.map((card) => (
           <div
             key={card.label}
-            className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4"
+            className="bg-white rounded-lg border border-slate-200 p-4 flex items-center gap-4"
           >
             <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center">
               {card.icon}
@@ -260,13 +260,13 @@ export default function MarketIntelligencePage() {
 
       {/* Market Grid */}
       {loading ? (
-        <div className="bg-white rounded-xl border border-slate-200">
+        <div className="bg-white rounded-lg border border-slate-200">
           <Spinner label="Loading market data..." />
         </div>
       ) : error ? (
         <ErrorBanner message={error} onRetry={fetchReport} />
       ) : cities.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 flex flex-col items-center justify-center py-20 text-slate-400">
+        <div className="bg-white rounded-lg border border-slate-200 flex flex-col items-center justify-center py-20 text-slate-400">
           <BarChart3 size={40} className="mb-3" />
           <p className="text-sm">No market data available</p>
           <p className="text-xs mt-1">Run matching to generate the market report</p>
@@ -282,7 +282,7 @@ export default function MarketIntelligencePage() {
             return (
               <div
                 key={cityData.city}
-                className="bg-white rounded-xl border border-slate-200 overflow-hidden"
+                className="bg-white rounded-lg border border-slate-200 overflow-hidden"
               >
                 {/* City Header */}
                 <button
@@ -439,7 +439,7 @@ export default function MarketIntelligencePage() {
                       {/* MATCH Column (center) */}
                       <div className="flex flex-col items-center justify-start pt-6">
                         <div
-                          className={`w-full p-4 rounded-xl border text-center ${statusBg(
+                          className={`w-full p-4 rounded-lg border text-center ${statusBg(
                             cityData.match.status
                           )}`}
                         >
@@ -448,11 +448,11 @@ export default function MarketIntelligencePage() {
                           </div>
                           <p className="text-sm font-medium text-slate-700">
                             {cityData.match.status === "green" &&
-                              "Supply meets demand"}
+ "Supply meets demand"}
                             {cityData.match.status === "amber" &&
-                              "Demand exists, no PM responses"}
+ "Demand exists, no PM responses"}
                             {cityData.match.status === "red" &&
-                              "Urgent - no PM response"}
+ "Urgent - no PM response"}
                           </p>
                           {cityData.match.draftsPending > 0 && (
                             <p className="text-xs text-slate-500 mt-1">
@@ -488,7 +488,7 @@ export default function MarketIntelligencePage() {
                             <p className="text-lg font-bold text-blue-700">
                               {cityData.demand.activeResidents}
                             </p>
-                            <p className="text-[10px] text-blue-500 uppercase font-medium">
+                            <p className="text-xs text-blue-500 uppercase font-medium">
                               Demand
                             </p>
                           </div>
@@ -496,7 +496,7 @@ export default function MarketIntelligencePage() {
                             <p className="text-lg font-bold text-green-700">
                               {cityData.supply.respondedPMs}
                             </p>
-                            <p className="text-[10px] text-green-500 uppercase font-medium">
+                            <p className="text-xs text-green-500 uppercase font-medium">
                               Supply
                             </p>
                           </div>
@@ -507,7 +507,7 @@ export default function MarketIntelligencePage() {
                             <p className="text-lg font-bold text-slate-700">
                               {(cityData.demand.coordinatorEngagementRate * 100).toFixed(0)}%
                             </p>
-                            <p className="text-[10px] text-slate-500 uppercase font-medium">
+                            <p className="text-xs text-slate-500 uppercase font-medium">
                               Coordinator Engagement
                             </p>
                           </div>
@@ -540,7 +540,7 @@ export default function MarketIntelligencePage() {
                                     {pm.companyName}
                                   </p>
                                   {pm.responded && (
-                                    <span className="text-[10px] font-medium text-green-600 bg-green-100 px-1.5 py-0.5 rounded">
+                                    <span className="text-xs font-medium text-green-600 bg-green-100 px-1.5 py-0.5 rounded">
                                       Responded
                                     </span>
                                   )}

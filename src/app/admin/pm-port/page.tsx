@@ -104,7 +104,7 @@ export default function PMPortReviewPage() {
         <div className="flex items-center gap-3">
           <Inbox className="text-orange-500" size={28} />
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">PM Port Review</h1>
+            <h1 className="text-lg font-semibold text-gray-900">PM Port Review</h1>
             <p className="text-sm text-gray-500">Properties accepted PMs sent in, awaiting approval to go live.</p>
           </div>
         </div>
@@ -128,7 +128,7 @@ export default function PMPortReviewPage() {
       ) : (
         <div className="space-y-6">
           {Object.entries(byCompany).map(([pmCompanyId, props]) => (
-            <div key={pmCompanyId} className="border border-gray-200 rounded-xl overflow-hidden">
+            <div key={pmCompanyId} className="border border-gray-200 rounded-lg overflow-hidden">
               <div className="flex items-center justify-between bg-gray-50 px-4 py-3 border-b border-gray-200">
                 <div className="flex items-center gap-2">
                   <Building2 size={18} className="text-gray-500" />

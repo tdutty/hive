@@ -98,7 +98,7 @@ export default function PortfolioHoldersPage() {
       if (search) params.search = search;
 
       const result = await api.get<PortfolioData>(
-        "/api/admin/portfolio-holders",
+ "/api/admin/portfolio-holders",
         params
       );
       setData(result);
@@ -139,14 +139,14 @@ export default function PortfolioHoldersPage() {
   }, [data]);
 
   const fmt = (n: number) =>
-    "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+ "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Portfolio Holders</h1>
+          <h1 className="text-lg font-semibold text-slate-900">Portfolio Holders</h1>
           <p className="text-sm text-slate-500 mt-1">
             Property managers and brokers across your listings — ranked by portfolio size
           </p>
@@ -198,7 +198,7 @@ export default function PortfolioHoldersPage() {
       )}
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+      <div className="flex flex-wrap items-center gap-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
         <div className="relative flex-1 min-w-[200px]">
           <Search
             size={16}
@@ -275,7 +275,7 @@ export default function PortfolioHoldersPage() {
 
       {/* Table */}
       {data && (
-        <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+        <div className="bg-slate-50 rounded-lg border border-slate-200 overflow-hidden">
           {/* Table Header */}
           <div className="grid grid-cols-[2fr_1fr_80px_100px_120px_140px_160px] gap-2 px-4 py-3 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
             <span>Broker / Property Manager</span>
@@ -324,7 +324,7 @@ export default function PortfolioHoldersPage() {
                           {holder.brokerName}
                         </span>
                         {hasDemand && (
-                          <span className="shrink-0 px-1.5 py-0.5 bg-amber-400/20 text-amber-300 text-[10px] font-bold rounded-full flex items-center gap-1">
+                          <span className="shrink-0 px-1.5 py-0.5 bg-amber-400/20 text-amber-300 text-xs font-bold rounded-full flex items-center gap-1">
                             <Users size={10} />
                             {holder.demand!.tenantCount} {holder.demand!.tenantCount === 1 ? "tenant" : "tenants"}
                           </span>
@@ -343,13 +343,13 @@ export default function PortfolioHoldersPage() {
                       {holder.markets.slice(0, 3).map((m) => (
                         <span
                           key={m}
-                          className="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] rounded"
+                          className="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 text-xs rounded"
                         >
                           {m}
                         </span>
                       ))}
                       {holder.markets.length > 3 && (
-                        <span className="px-1.5 py-0.5 bg-gray-500/10 text-slate-500 text-[10px] rounded">
+                        <span className="px-1.5 py-0.5 bg-gray-500/10 text-slate-500 text-xs rounded">
                           +{holder.markets.length - 3}
                         </span>
                       )}
@@ -412,12 +412,12 @@ export default function PortfolioHoldersPage() {
                           key={t.email}
                           className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg"
                         >
-                          <div className="w-6 h-6 rounded-full bg-amber-500/30 flex items-center justify-center text-amber-300 text-[10px] font-bold">
+                          <div className="w-6 h-6 rounded-full bg-amber-500/30 flex items-center justify-center text-amber-300 text-xs font-bold">
                             {t.name.charAt(0)}
                           </div>
                           <div>
                             <div className="text-slate-900 text-xs font-medium">{t.name}</div>
-                            <div className="text-slate-500 text-[10px]">
+                            <div className="text-slate-500 text-xs">
                               {t.city} &middot;{" "}
                               <span
                                 className={
@@ -437,7 +437,7 @@ export default function PortfolioHoldersPage() {
                         </div>
                       ))}
                     </div>
-                    <div className="mt-2 text-[10px] text-slate-500">
+                    <div className="mt-2 text-xs text-slate-500">
                       {holder.demand!.selectedListingIds.length} listing{holder.demand!.selectedListingIds.length !== 1 ? "s" : ""} selected across{" "}
                       {holder.demand!.activeCities.join(", ")}
                     </div>
@@ -492,7 +492,7 @@ export default function PortfolioHoldersPage() {
                                 {l.agentPhone}
                               </a>
                             ) : (
-                              "-"
+ "-"
                             )}
                           </div>
                           <div className="text-slate-500 truncate">
@@ -504,7 +504,7 @@ export default function PortfolioHoldersPage() {
                                 {l.ownerEmail}
                               </a>
                             ) : (
-                              "-"
+ "-"
                             )}
                           </div>
                         </div>
@@ -555,7 +555,7 @@ function StatCard({
 
   return (
     <div
-      className={`rounded-xl border p-4 ${colors[color] || colors.blue}`}
+      className={`rounded-lg border p-4 ${colors[color] || colors.blue}`}
     >
       <div className="flex items-center gap-2 mb-2 opacity-70">{icon}</div>
       <div className="text-2xl font-bold text-slate-900">{value}</div>

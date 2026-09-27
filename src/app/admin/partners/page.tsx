@@ -114,7 +114,7 @@ export default function PartnersPage() {
       <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900">Corporate Partners</h1>
+            <h1 className="text-lg font-semibold text-slate-900">Corporate Partners</h1>
           </div>
         </div>
         <div className="flex items-center justify-center py-20">
@@ -129,7 +129,7 @@ export default function PartnersPage() {
       <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900">Corporate Partners</h1>
+            <h1 className="text-lg font-semibold text-slate-900">Corporate Partners</h1>
           </div>
         </div>
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700">
@@ -151,7 +151,7 @@ export default function PartnersPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 mb-2">Corporate Partners</h1>
+          <h1 className="text-lg font-semibold text-slate-900 mb-2">Corporate Partners</h1>
           <p className="text-slate-500">Manage partner relationships and employee discounts</p>
         </div>
         <button
@@ -175,7 +175,7 @@ export default function PartnersPage() {
         {partners.map((partner: any) => (
           <div
             key={partner.id}
-            className="bg-white border border-slate-200 rounded-lg shadow-sm p-6 space-y-4"
+            className="bg-white border border-slate-200 rounded-lg  p-6 space-y-4"
           >
             {/* Header */}
             <div className="flex items-start justify-between pb-4 border-b border-slate-200">
