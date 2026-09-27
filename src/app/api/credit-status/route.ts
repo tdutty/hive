@@ -34,18 +34,12 @@ export async function GET(req: NextRequest) {
 
   // Anthropic — test if key works
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-3-haiku-20240307",
-        max_tokens: 1,
-        messages: [{ role: "user", content: "hi" }],
-      }),
+    // Key/credit check without spending tokens: listing models is free and
+    // still fails with 401 on a bad key. (This used to send a paid message to
+    // claude-3-haiku every minute the page was open.)
+    const res = await fetch("https://api.anthropic.com/v1/models?limit=1", {
+      headers: { "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+      signal: AbortSignal.timeout(8000),
     });
     if (res.status === 402 || res.status === 403) {
       results.anthropic = { credits: 0, status: "depleted", lastChecked: new Date().toISOString() };
