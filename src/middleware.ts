@@ -10,6 +10,14 @@ import { NextRequest, NextResponse } from "next/server";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Hive has no Server Actions. Scanners POST fake `Next-Action` ids at the app
+  // (thousands so far); Next 14.1's action handler logs each one and, on
+  // malformed bodies, crashes its own error logger ("Cannot read properties of
+  // null (reading 'message')"). Refuse them before the action handler runs.
+  if (request.headers.get("next-action") !== null) {
+    return new NextResponse("Server actions are not supported", { status: 405, headers: { Allow: "GET, HEAD" } });
+  }
+
   if (!pathname.startsWith("/admin")) {
     return NextResponse.next();
   }
@@ -28,5 +36,7 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  // run everywhere except static assets so the Server Action guard covers every route;
+  // the /admin session check below still applies only to /admin paths
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
