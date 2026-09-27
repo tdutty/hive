@@ -94,6 +94,7 @@ const navSections: NavSection[] = [
         icon: <Inbox size={20} />,
       },
       { label: "Email Triage", href: "/admin/triage", icon: <Inbox size={20} /> },
+      { label: "Triage (preview)", href: "/admin/triage-v2", icon: <Inbox size={20} /> },
       {
         label: "Negotiations",
         href: "/admin/negotiations",
@@ -242,6 +243,7 @@ const navSections: NavSection[] = [
         href: "/admin/settings",
         icon: <Settings size={20} />,
       },
+      { label: "Design System", href: "/admin/design", icon: <Settings size={20} /> },
     ],
   },
   {

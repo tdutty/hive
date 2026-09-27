@@ -7,9 +7,19 @@ module.exports = {
   ],
   theme: {
     fontFamily: {
-      sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+      sans: ['var(--font-inter)', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
     },
     extend: {
+      // 6-step scale: meta 12, table 13, body 14, section 16, page title 20, headline 24
+      fontSize: {
+        xs: ['12px', { lineHeight: '16px' }],
+        sm: ['13px', { lineHeight: '18px' }],
+        base: ['14px', { lineHeight: '20px' }],
+        md: ['16px', { lineHeight: '24px' }],
+        lg: ['20px', { lineHeight: '28px', letterSpacing: '-0.01em' }],
+        xl: ['24px', { lineHeight: '32px', letterSpacing: '-0.015em' }],
+        '2xl': ['24px', { lineHeight: '32px', letterSpacing: '-0.015em' }],
+      },
       colors: {
         sidebar: {
           bg: '#1e1e2d',
@@ -25,9 +35,11 @@ module.exports = {
         card: '0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.06)',
         'card-hover': '0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04)',
       },
+      // roles: sm chips/inputs 6, DEFAULT controls 8, lg cards 12, xl dialogs 16
       borderRadius: {
-        sm: '4px',
+        sm: '6px',
         DEFAULT: '8px',
+        md: '8px',
         lg: '12px',
         xl: '16px',
       },

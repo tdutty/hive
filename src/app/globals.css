@@ -21,10 +21,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Smooth transitions */
-* {
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
+/* numbers line up in tables and stat tiles */
+.tabular { font-variant-numeric: tabular-nums; }
 
 /* Card styles */
 .card {
