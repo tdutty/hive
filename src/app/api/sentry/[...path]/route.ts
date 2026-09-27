@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/server-auth";
 
 const SENTRY_API = "https://sentry.io/api/0";
 const SENTRY_TOKEN = process.env.SENTRY_AUTH_TOKEN || "";
@@ -18,6 +19,8 @@ async function proxySentry(
   req: NextRequest,
   { params }: { params: { path: string[] } }
 ) {
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
   if (!SENTRY_TOKEN) {
     return NextResponse.json(
       { error: "SENTRY_AUTH_TOKEN not configured" },

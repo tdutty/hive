@@ -1,6 +1,4 @@
 const API_BASE = "";
-const SWEETLEASE_API = "https://sweetlease.io";
-const SWEETLEASE_ADMIN_KEY = process.env.NEXT_PUBLIC_SWEETLEASE_ADMIN_KEY || "";
 
 interface FetchOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
@@ -94,33 +92,12 @@ export const api = {
   },
 };
 
-// SweetLease API client - for intelligence endpoints that live on sweetlease.io
-const sweetleaseHeaders: Record<string, string> = SWEETLEASE_ADMIN_KEY
-  ? { "X-Admin-Key": SWEETLEASE_ADMIN_KEY }
-  : {};
-
+// SweetLease admin calls go through Hive's own /api/admin proxy (same origin,
+// session-checked, key added server-side). Nothing secret reaches the browser.
 export const sweetleaseApi = {
-  get<T>(endpoint: string, params?: Record<string, string | number | boolean | undefined>) {
-    return request<T>(endpoint, { method: "GET", params, base: SWEETLEASE_API, headers: sweetleaseHeaders });
-  },
-
-  post<T>(endpoint: string, body?: unknown) {
-    return request<T>(endpoint, {
-      method: "POST",
-      body: body ? JSON.stringify(body) : undefined,
-      base: SWEETLEASE_API,
-      headers: sweetleaseHeaders,
-    });
-  },
-
-  patch<T>(endpoint: string, body?: unknown) {
-    return request<T>(endpoint, {
-      method: "PATCH",
-      body: body ? JSON.stringify(body) : undefined,
-      base: SWEETLEASE_API,
-      headers: sweetleaseHeaders,
-    });
-  },
+  get<T>(endpoint: string, params?: Record<string, string | number | boolean | undefined>) { return api.get<T>(endpoint, params); },
+  post<T>(endpoint: string, body?: unknown) { return api.post<T>(endpoint, body); },
+  patch<T>(endpoint: string, body?: unknown) { return api.patch<T>(endpoint, body); },
 };
 
 export { ApiError };

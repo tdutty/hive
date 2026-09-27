@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/server-auth";
 
 const SWEETLEASE_URL =
   process.env.SWEETLEASE_API_URL || "http://localhost:3000";
@@ -11,6 +12,11 @@ async function proxyAdmin(
   req: NextRequest,
   { params }: { params: { path: string[] } }
 ) {
+  // Never relay for anyone who is not a signed-in SweetLease admin. Without this
+  // the proxy handed its site cookie to any caller, signed in or not.
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
+
   const path = params.path.join("/");
   const url = new URL(`/api/admin/${path}`, SWEETLEASE_URL);
 
@@ -39,6 +45,7 @@ async function proxyAdmin(
     method: req.method,
     headers,
     redirect: "manual",
+    signal: AbortSignal.timeout(60_000),
   };
 
   // Forward body for non-GET/HEAD requests
@@ -87,10 +94,7 @@ async function proxyAdmin(
   } catch (error) {
     console.error("[Hive Admin Proxy] Failed to reach SweetLease:", error);
     return NextResponse.json(
-      {
-        error: "Cannot reach SweetLease",
-        details: `Failed to connect to ${SWEETLEASE_URL}. Is SweetLease running?`,
-      },
+      { error: "Cannot reach SweetLease", details: "The upstream API did not respond." },
       { status: 502 }
     );
   }
