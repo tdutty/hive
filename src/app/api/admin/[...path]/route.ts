@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/server-auth";
+import { signHiveRequest } from "@/lib/hive-signature";
 
 const SWEETLEASE_URL =
   process.env.SWEETLEASE_API_URL || "http://localhost:3000";
@@ -40,6 +41,16 @@ async function proxyAdmin(
     ? `site_access=${Buffer.from(`${Date.now()}:${sitePassword}`).toString("base64")}`
     : "";
   headers["cookie"] = [cookie, siteAccessCookie].filter(Boolean).join("; ");
+
+  // Prove to SweetLease that this call came through Hive's server (not a browser):
+  // HMAC over timestamp + method + path with the shared HIVE_ADMIN_SECRET.
+  // No-op until the secret is provisioned on both sides.
+  const hiveSecret = process.env.HIVE_ADMIN_SECRET;
+  if (hiveSecret) {
+    headers["x-hive-auth"] = await signHiveRequest(hiveSecret, req.method, url.pathname);
+    headers["x-hive-method"] = req.method;
+    headers["x-hive-path"] = url.pathname;
+  }
 
   const fetchOptions: RequestInit = {
     method: req.method,
