@@ -107,8 +107,8 @@ export default function TriagePage() {
             {schedRows.map(r => (
               <div key={r.id} className="px-4 py-2.5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2"><span className="text-sm font-medium text-slate-900 truncate">{r.company || r.pm_email}</span><Badge tone={statusTone(r.status)} dot>{r.status}</Badge></div>
-                  <p className="text-xs text-slate-500 mt-0.5">{r.status === "completed" ? "sent" : "sends"} {fmt(r.scheduledFor)}{r.attempts > 0 && r.status !== "completed" ? ` · ${r.attempts} attempts` : ""}{r.error ? ` · ${r.error}` : ""}</p>
+                  <div className="flex items-center gap-2"><span className="text-sm font-medium text-slate-900 truncate">{r.company || r.pm_email}</span>{r.kind === "reminder" && <Badge tone="outline">reminder</Badge>}<Badge tone={statusTone(r.status)} dot>{r.status}</Badge></div>
+                  <p className="text-xs text-slate-500 mt-0.5">{r.kind === "reminder" ? (r.status === "completed" ? "reminded" : "reminds you") : r.status === "completed" ? "sent" : "sends"} {fmt(r.scheduledFor)}{r.attempts > 0 && r.status !== "completed" ? ` · ${r.attempts} attempts` : ""}{r.error ? ` · ${r.error}` : ""}</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <Button size="sm" onClick={() => setSelected(r.pm_email)}>Open</Button>

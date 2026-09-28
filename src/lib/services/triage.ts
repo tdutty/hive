@@ -12,7 +12,7 @@ export interface Conversation {
   staged: { total: number; needsReview: number } | null; drafts: Draft[]; pendingDraft: Draft | null; preview: string; messages?: Message[];
 }
 export interface ConversationList { count: number; total: number; awaitingReply: number; counts: Record<string, number>; states: Record<ThreadState, number>; conversations: Conversation[] }
-export interface ScheduledRow { id: string; status: "waiting" | "active" | "completed" | "failed"; scheduledFor: string; attempts: number; error: string | null; createdAt: string; pm_email: string; company: string; subject: string; text: string; scheduledBy: string }
+export interface ScheduledRow { id: string; kind?: "send" | "reminder"; status: "waiting" | "active" | "completed" | "failed"; scheduledFor: string; attempts: number; error: string | null; createdAt: string; pm_email: string; company: string; subject: string; text: string; scheduledBy: string }
 export interface ScheduledList { count: number; waiting: number; rows: ScheduledRow[] }
 
 const conv = (pm: string) => `/api/admin/triage/conversations/${encodeURIComponent(pm)}`;
