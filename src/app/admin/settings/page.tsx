@@ -184,6 +184,24 @@ export default function SettingsPage() {
     }
   };
 
+  // Automatic replies to landlords who answer our outreach with interest. Saves immediately.
+  const REPLIES_KEY = "outreach.landlordReplies";
+  const repliesOn = changedSettings[REPLIES_KEY] === true || changedSettings[REPLIES_KEY] === "true";
+  const setLandlordReplies = async (on: boolean) => {
+    if (on && !(await confirm({ title: "Turn landlord replies back on?", message: "When a landlord replies with interest, they will automatically be emailed a review link.", confirmLabel: "Turn on", danger: true }))) return;
+    setSourceSaving(true);
+    try {
+      await settingsService.update({ [REPLIES_KEY]: on });
+      setChangedSettings(prev => ({ ...prev, [REPLIES_KEY]: on }));
+      setSaveMessage(on ? "Landlord replies are ON" : "Landlord replies are OFF");
+    } catch (error) {
+      setSaveMessage(`Error saving landlord replies: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setSourceSaving(false);
+      setTimeout(() => setSaveMessage(""), 5000);
+    }
+  };
+
   const isLoading = settingsLoading || twoFALoading;
   const hasError = settingsError || twoFAError;
 
@@ -273,8 +291,11 @@ export default function SettingsPage() {
               <Row title="Automatic landlord outreach" description={landlordOn ? "ON: when tenants pick listings, Locust emails those landlords automatically." : "OFF: no automatic emails to landlords when tenants pick their listings."}>
                 <Toggle label="Automatic landlord outreach" checked={landlordOn} danger onChange={(v) => { if (!sourceSaving) setLandlordOutreach(v); }} />
               </Row>
-              <Row title="Partner notices" description={partnerOn ? "ON: onboarded PM partners get a \"residents interested\" email when tenants pick their units." : "OFF: PM partners are not emailed when tenants pick their units."} last>
+              <Row title="Partner notices" description={partnerOn ? "ON: onboarded PM partners get a \"residents interested\" email when tenants pick their units." : "OFF: PM partners are not emailed when tenants pick their units."}>
                 <Toggle label="Partner notices" checked={partnerOn} danger onChange={(v) => { if (!sourceSaving) setPartnerNotices(v); }} />
+              </Row>
+              <Row title="Landlord replies" description={repliesOn ? "ON: a landlord who replies with interest is emailed a review link automatically." : "OFF: landlords who reply with interest get no automatic email. Handle them by hand."} last>
+                <Toggle label="Landlord replies" checked={repliesOn} danger onChange={(v) => { if (!sourceSaving) setLandlordReplies(v); }} />
               </Row>
             </CardBody>
           </Card>
