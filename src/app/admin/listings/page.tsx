@@ -65,21 +65,16 @@ export default function ListingsPage() {
   };
 
   // Prepare sponsored comparison data
-  const sponsoredComparisonData =
-    businessMetrics.sponsoredPerformance ||
-    [
-      { name: "Sponsored", impressions: 124500, clicks: 8923, conversions: 342 },
-      { name: "Organic", impressions: 87300, clicks: 4156, conversions: 189 },
-    ];
+  const sponsoredComparisonData = businessMetrics.sponsoredPerformance || [];
 
   return (
     <div className="max-w-7xl">
       <PageHeader title="Listings Management" description="Monitor and manage property listings across the platform" />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-        <StatTile label="Total Listings" value={totalListings} delta="+3.2%" deltaTone="up" hint="vs last period" icon={<Building2 size={14} />} />
+        <StatTile label="Total Listings" value={totalListings} icon={<Building2 size={14} />} />
         <StatTile label="Active" value={activeListings} hint={`${totalListings > 0 ? Math.round((activeListings / totalListings) * 100) : 0}% of total`} icon={<Eye size={14} />} />
-        <StatTile label="Sponsored" value={sponsoredCount} delta="+7.1%" deltaTone="up" hint="vs last period" icon={<Zap size={14} />} />
+        <StatTile label="Sponsored" value={sponsoredCount} icon={<Zap size={14} />} />
         <StatTile label="Avg Quality Score" value={avgQualityScore} hint="Out of 10" icon={<Heart size={14} />} />
       </div>
 

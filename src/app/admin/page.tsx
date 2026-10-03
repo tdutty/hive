@@ -20,8 +20,6 @@ import { formatCurrency, formatNumber } from "@/lib/utils";
 
 type ActivityRow = { time?: string; user?: string; action?: string; resource?: string; status?: string; [key: string]: any };
 
-/** MetricCard showed an up/down arrow with the absolute percent; StatTile takes the same as a signed delta. */
-const trendDelta = (trend: number) => ({ delta: `${trend > 0 ? "+" : trend < 0 ? "-" : ""}${Math.abs(trend)}%`, deltaTone: (trend > 0 ? "up" : trend < 0 ? "down" : "flat") as "up" | "down" | "flat" });
 const cell = (v: unknown) => String(v || "-");
 
 export default function AdminDashboard() {
@@ -32,83 +30,66 @@ export default function AdminDashboard() {
   if (loading) return <div><PageHeader title="Dashboard Overview" /><Spinner /></div>;
   if (error) return <div><PageHeader title="Dashboard Overview" /><ErrorBanner message={error} onRetry={refetch} /></div>;
 
-  // Extract metrics from API response
-  const businessMetrics = metrics?.businessMetrics || {};
-  const performanceMetrics = metrics?.performanceMetrics || {};
-  const systemMetrics = metrics?.systemMetrics || {};
-
-  const totalRevenue = businessMetrics.totalRevenue || 2456789;
-  const activeUsers = businessMetrics.activeUsers || 15230;
-  const totalListings = businessMetrics.totalListings || 3847;
-  const systemUptime = systemMetrics.uptime || "99.97%";
-  const revenueTrend = businessMetrics.revenueTrend || 12.5;
-  const usersTrend = businessMetrics.usersTrend || 8.2;
-  const listingsTrend = businessMetrics.listingsTrend || 5.1;
-
-  // Build revenue trend data for chart
-  const revenueChartData = businessMetrics.revenueTrendData || [
-    { month: "Sep", revenue: 1850000, referrals: 420000 },
-    { month: "Oct", revenue: 2100000, referrals: 480000 },
-    { month: "Nov", revenue: 2200000, referrals: 510000 },
-    { month: "Dec", revenue: 2350000, referrals: 580000 },
-    { month: "Jan", revenue: 2400000, referrals: 620000 },
-    { month: "Feb", revenue: 2456789, referrals: 680000 },
-  ];
-
-  // Build listing status data for pie chart
-  const listingStatusData =
-    businessMetrics.listingsByStatus ||
-    [
-      { name: "Active", value: 2156, color: "#10b981" },
-      { name: "Pending", value: 428, color: "#D97706" },
-      { name: "Rented", value: 1098, color: "#3b82f6" },
-      { name: "Inactive", value: 165, color: "#9ca3af" },
-    ];
-
-  // Activity data from API or fallback
-  const activityData: ActivityRow[] = performanceMetrics.recentActivity || [];
-
-  const failedPayments = performanceMetrics.failedPayments || 23;
-  const pendingVerifications = performanceMetrics.pendingVerifications || 89;
-  const refundsThisMonth = performanceMetrics.refundsThisMonth || 4230;
+  // Only real numbers from the SweetLease database: no demo fallbacks, no invented trends.
+  const b = metrics?.businessMetrics || {};
+  const totalRevenue = Number(b.totalRevenue) || 0;
+  const totalListings = Number(b.totalListings) || 0;
+  const approvedListings = Number(b.approvedListings) || 0;
+  const signupsTotal = b.signupsTotal;
+  const signups30d = b.signups30d;
+  const mr: Record<string, number> = b.matchRequestsByStatus || {};
+  const CLOSED = new Set(["leased", "cancelled", "canceled", "failed", "expired", "lost"]);
+  const inPipeline = Object.entries(mr).filter(([k]) => !CLOSED.has(k)).reduce((n, [, v]) => n + v, 0);
+  const pipelineHint = Object.entries(mr).filter(([k]) => !CLOSED.has(k)).sort((a, z) => z[1] - a[1]).slice(0, 2).map(([k, v]) => `${v} ${k.replace(/_/g, " ")}`).join(", ");
+  const monthly: Array<{ month: string; revenue: number; signups: number }> = b.monthly || [];
+  const hasRevenue = monthly.some(m => m.revenue > 0);
+  const COLORS = ["#D97706", "#10b981", "#3b82f6", "#9ca3af", "#8b5cf6", "#ef4444", "#14b8a6", "#f59e0b"];
+  const listingStatusData = (b.listingsByStatus || []).map((d: any, i: number) => ({ ...d, color: COLORS[i % COLORS.length] }));
+  const activityData: ActivityRow[] = [];
+  const failedPayments = Number(b.failedPayments) || 0;
+  const pendingVerifications = Number(b.pendingVerification) || 0;
+  const refundsTotal = Number(b.refundsTotal) || 0;
+  const refundCount = Number(b.refundCount) || 0;
 
   return (
     <div className="max-w-7xl">
       <PageHeader
         title="Dashboard Overview"
-        description="Real-time system performance and user metrics"
+        description="Live numbers from the SweetLease database"
         actions={<Button variant="ghost" size="icon" aria-label="Refresh" onClick={refetch}><RefreshCw size={15} className={refreshing ? "animate-spin" : ""} /></Button>}
       />
 
       {/* Row 1: Key Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-        <StatTile label="Total Revenue" value={formatCurrency(totalRevenue)} {...trendDelta(revenueTrend)} hint="vs last period" icon={<DollarSign size={14} />} />
-        <StatTile label="Active Users" value={formatNumber(activeUsers)} {...trendDelta(usersTrend)} hint="vs last period" icon={<Users size={14} />} />
-        <StatTile label="Total Listings" value={formatNumber(totalListings)} {...trendDelta(listingsTrend)} hint="vs last period" icon={<Building2 size={14} />} />
-        <StatTile label="System Uptime" value={systemUptime} {...trendDelta(0.02)} hint="vs last period" icon={<Activity size={14} />} />
+        <StatTile label="Revenue Collected" value={formatCurrency(totalRevenue)} hint={failedPayments ? `${failedPayments} failed payments` : "Completed payments, all time"} icon={<DollarSign size={14} />} />
+        <StatTile label="Signups" value={signupsTotal == null ? "-" : formatNumber(signupsTotal)} hint={signups30d == null ? undefined : `${signups30d} in the last 30 days`} icon={<Users size={14} />} />
+        <StatTile label="Total Listings" value={formatNumber(totalListings)} hint={`${formatNumber(approvedListings)} approved for matching`} icon={<Building2 size={14} />} />
+        <StatTile label="Tenants in Pipeline" value={formatNumber(inPipeline)} hint={pipelineHint || "No open match requests"} icon={<Activity size={14} />} />
       </div>
 
       {/* Row 2: Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
         <Card>
-          <CardHeader title="Revenue Trend" />
+          <CardHeader title={hasRevenue ? "Revenue and Signups, Last 6 Months" : "Signups, Last 6 Months"} />
           <CardBody>
-            <SimpleLineChart
-              data={revenueChartData}
-              lines={[
-                { dataKey: "revenue", color: "#D97706", name: "Revenue" },
-                { dataKey: "referrals", color: "#9ca3af", name: "Referrals" },
-              ]}
-              xAxisKey="month"
-              height={320}
-            />
+            {monthly.length === 0 ? <EmptyState title="No data yet" /> : (
+              <SimpleLineChart
+                data={monthly}
+                lines={hasRevenue
+                  ? [{ dataKey: "revenue", color: "#D97706", name: "Revenue" }, { dataKey: "signups", color: "#9ca3af", name: "Signups" }]
+                  : [{ dataKey: "signups", color: "#D97706", name: "Signups" }]}
+                xAxisKey="month"
+                height={320}
+              />
+            )}
+            {!hasRevenue && monthly.length > 0 && <p className="text-xs text-slate-500 mt-2">No completed payments in the last 6 months.</p>}
           </CardBody>
         </Card>
 
         <Card>
           <CardHeader title="Listings by Status" />
           <CardBody>
-            <SimplePieChart bare data={listingStatusData} height={320} />
+            {listingStatusData.length === 0 ? <EmptyState title="No listings" /> : <SimplePieChart bare data={listingStatusData} height={320} />}
           </CardBody>
         </Card>
       </div>
@@ -138,9 +119,9 @@ export default function AdminDashboard() {
 
       {/* Row 4: Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <StatTile label="Failed Payments" value={failedPayments} hint="Require manual review" icon={<AlertCircle size={14} />} />
-        <StatTile label="Pending Verifications" value={pendingVerifications} hint="Awaiting completion" icon={<Clock size={14} />} />
-        <StatTile label="Refunds This Month" value={formatCurrency(refundsThisMonth)} hint="12 transactions" icon={<CheckCircle size={14} />} />
+        <StatTile label="Failed Payments" value={failedPayments} hint="All time" icon={<AlertCircle size={14} />} />
+        <StatTile label="Pending Verifications" value={pendingVerifications} hint="Users with a verification step left" icon={<Clock size={14} />} />
+        <StatTile label="Refunds" value={formatCurrency(refundsTotal)} hint={`${refundCount} refunds, all time`} icon={<CheckCircle size={14} />} />
       </div>
     </div>
   );

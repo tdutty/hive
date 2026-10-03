@@ -101,7 +101,7 @@ export default function UsersPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         <StatTile label="Total Users" value={totalUsers} hint="All registered users" icon={<Users size={14} />} />
-        <StatTile label="Active (24h)" value={activeUsers24h} delta="+12.3%" deltaTone="up" hint="vs last period" icon={<UserCheck size={14} />} />
+        <StatTile label="Active (24h)" value={activeUsers24h} hint="Activity is not tracked yet: this counts accounts created in the last 24h" icon={<UserCheck size={14} />} />
         <StatTile label="Completed Onboarding" value={completedOnboarding} hint={`${totalUsers > 0 ? Math.round((completedOnboarding / totalUsers) * 100) : 0}% verified`} icon={<CheckCircle size={14} />} />
         <StatTile label="Pending Verification" value={pendingVerification} hint="Awaiting documents" icon={<Clock size={14} />} />
       </div>

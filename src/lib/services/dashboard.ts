@@ -32,6 +32,7 @@ export const dashboardService = {
     const fin = raw.financial || {};
     const usr = raw.user || {};
     const lst = raw.listing || {};
+    const pipe = raw.pipeline || {};
     const byStatus = lst.byType?.status || {};
     const sponsored = lst.sponsoredPerformance || {};
 
@@ -64,10 +65,20 @@ export const dashboardService = {
           conversions: 0,
         },
       ],
-      listingsByStatus: Object.entries(byStatus).map(([name, value]) => ({
-        name: name.charAt(0).toUpperCase() + name.slice(1),
-        value,
-      })),
+      listingsByStatus: Object.entries(byStatus)
+        .filter(([, value]) => (value as number) > 0)
+        .sort((a, b) => (b[1] as number) - (a[1] as number))
+        .map(([name, value]) => ({
+          name: name.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+          value,
+        })),
+      approvedListings: byStatus.approved || 0,
+      signupsTotal: pipe.signupsTotal ?? null,
+      signups30d: pipe.signups30d ?? null,
+      matchRequestsByStatus: pipe.matchRequestsByStatus || {},
+      monthly: pipe.monthly || [],
+      failedPayments: fin.failedPayments || 0,
+      refundCount: fin.refundStats?.count || 0,
       revenueByRegion: Object.entries(fin.revenueByRegion || {}).map(([city, revenue]) => ({
         city,
         revenue,
