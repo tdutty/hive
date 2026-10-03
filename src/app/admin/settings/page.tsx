@@ -238,6 +238,24 @@ export default function SettingsPage() {
     }
   };
 
+  // Concierge inbox check (reads tgilbert@ every 2 minutes). Saves immediately.
+  const POLL_KEY = "concierge.inboxPoll";
+  const pollOn = changedSettings[POLL_KEY] === true || changedSettings[POLL_KEY] === "true";
+  const setPoll = async (on: boolean) => {
+    if (on && !(await confirm({ title: "Turn the inbox check back on?", message: "Reads the tgilbert@ inbox every 2 minutes. It needs CONCIERGE_IMAP_PASS set in the SweetLease app env or it will fail every run.", confirmLabel: "Turn on" }))) return;
+    setSourceSaving(true);
+    try {
+      await settingsService.update({ [POLL_KEY]: on });
+      setChangedSettings(prev => ({ ...prev, [POLL_KEY]: on }));
+      setSaveMessage(on ? "Inbox check is ON" : "Inbox check is OFF");
+    } catch (error) {
+      setSaveMessage(`Error saving inbox check: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setSourceSaving(false);
+      setTimeout(() => setSaveMessage(""), 5000);
+    }
+  };
+
   const isLoading = settingsLoading || twoFALoading;
   const hasError = settingsError || twoFAError;
 
@@ -336,8 +354,11 @@ export default function SettingsPage() {
               <Row title="PM crawler" description={crawlerOn ? "ON: daily PM coverage crawl, nightly listing sweep and weekly Maps rotation run on HasData." : "OFF: no PM discovery crawling and no HasData spend."}>
                 <Toggle label="PM crawler" checked={crawlerOn} danger onChange={(v) => { if (!sourceSaving) setCrawler(v); }} />
               </Row>
-              <Row title="AI tenant offers" description={aiOffersOn ? "ON: a landlord's AI agent sends AI-written offers straight to tenants (in-app, text, email)." : "OFF: the landlord AI agent cannot message tenants."} last>
+              <Row title="AI tenant offers" description={aiOffersOn ? "ON: a landlord's AI agent sends AI-written offers straight to tenants (in-app, text, email)." : "OFF: the landlord AI agent cannot message tenants."}>
                 <Toggle label="AI tenant offers" checked={aiOffersOn} danger onChange={(v) => { if (!sourceSaving) setAiOffers(v); }} />
+              </Row>
+              <Row title="Concierge inbox check" description={pollOn ? "ON: reads tgilbert@ every 2 minutes and marks PMs as Responded." : "OFF: the inbox is not read automatically."} last>
+                <Toggle label="Concierge inbox check" checked={pollOn} onChange={(v) => { if (!sourceSaving) setPoll(v); }} />
               </Row>
             </CardBody>
           </Card>
