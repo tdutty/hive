@@ -27,7 +27,11 @@ export function middleware(request: NextRequest) {
     request.cookies.get("__Secure-next-auth.session-token")?.value;
 
   if (!sessionToken) {
-    const loginUrl = new URL("/login", request.url);
+    // Behind nginx, request.url is the internal address (https://localhost:3003), so build the
+    // redirect from the public host nginx forwards; a relative-to-internal URL sent people to localhost.
+    const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
+    const proto = request.headers.get("x-forwarded-proto") || "https";
+    const loginUrl = host && !/^(localhost|127\.0\.0\.1)(:|$)/.test(host) ? new URL("/login", `${proto}://${host}`) : new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }
