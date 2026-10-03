@@ -202,6 +202,24 @@ export default function SettingsPage() {
     }
   };
 
+  // PM coverage crawler (HasData Maps/listing discovery). Saves immediately.
+  const CRAWLER_KEY = "crawler.enabled";
+  const crawlerOn = changedSettings[CRAWLER_KEY] === true || changedSettings[CRAWLER_KEY] === "true";
+  const setCrawler = async (on: boolean) => {
+    if (on && !(await confirm({ title: "Turn the crawler back on?", message: "The daily PM coverage crawl, nightly listing sweep and weekly Maps rotation will resume and spend HasData credits.", confirmLabel: "Turn on", danger: true }))) return;
+    setSourceSaving(true);
+    try {
+      await settingsService.update({ [CRAWLER_KEY]: on });
+      setChangedSettings(prev => ({ ...prev, [CRAWLER_KEY]: on }));
+      setSaveMessage(on ? "Crawler is ON" : "Crawler is OFF");
+    } catch (error) {
+      setSaveMessage(`Error saving crawler: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setSourceSaving(false);
+      setTimeout(() => setSaveMessage(""), 5000);
+    }
+  };
+
   const isLoading = settingsLoading || twoFALoading;
   const hasError = settingsError || twoFAError;
 
@@ -294,8 +312,11 @@ export default function SettingsPage() {
               <Row title="Partner notices" description={partnerOn ? "ON: onboarded PM partners get a \"residents interested\" email when tenants pick their units." : "OFF: PM partners are not emailed when tenants pick their units."}>
                 <Toggle label="Partner notices" checked={partnerOn} danger onChange={(v) => { if (!sourceSaving) setPartnerNotices(v); }} />
               </Row>
-              <Row title="Landlord replies" description={repliesOn ? "ON: a landlord who replies with interest is emailed a review link automatically." : "OFF: landlords who reply with interest get no automatic email. Handle them by hand."} last>
+              <Row title="Landlord replies" description={repliesOn ? "ON: a landlord who replies with interest is emailed a review link automatically." : "OFF: landlords who reply with interest get no automatic email. Handle them by hand."}>
                 <Toggle label="Landlord replies" checked={repliesOn} danger onChange={(v) => { if (!sourceSaving) setLandlordReplies(v); }} />
+              </Row>
+              <Row title="PM crawler" description={crawlerOn ? "ON: daily PM coverage crawl, nightly listing sweep and weekly Maps rotation run on HasData." : "OFF: no PM discovery crawling and no HasData spend."} last>
+                <Toggle label="PM crawler" checked={crawlerOn} danger onChange={(v) => { if (!sourceSaving) setCrawler(v); }} />
               </Row>
             </CardBody>
           </Card>
