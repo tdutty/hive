@@ -47,6 +47,7 @@ import {
   ChevronDown,
   Search as SearchIcon,
   Command,
+  PauseCircle,
 } from "lucide-react";
 import {
   useNotifications,
@@ -239,6 +240,7 @@ const navSections: NavSection[] = [
         href: "/admin/settings",
         icon: <Settings size={20} />,
       },
+      { label: "Paused & Archived", href: "/admin/paused", icon: <PauseCircle size={20} /> },
       { label: "Design System", href: "/admin/design", icon: <Settings size={20} /> },
     ],
   },
