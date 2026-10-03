@@ -166,6 +166,24 @@ export default function SettingsPage() {
     }
   };
 
+  // "Residents interested" notices to onboarded PM partners. Saves immediately.
+  const PARTNER_KEY = "outreach.partnerNotices";
+  const partnerOn = changedSettings[PARTNER_KEY] === true || changedSettings[PARTNER_KEY] === "true";
+  const setPartnerNotices = async (on: boolean) => {
+    if (on && !(await confirm({ title: "Turn partner notices back on?", message: "Onboarded PM partners will be emailed automatically when tenants pick their units.", confirmLabel: "Turn on", danger: true }))) return;
+    setSourceSaving(true);
+    try {
+      await settingsService.update({ [PARTNER_KEY]: on });
+      setChangedSettings(prev => ({ ...prev, [PARTNER_KEY]: on }));
+      setSaveMessage(on ? "Partner notices are ON" : "Partner notices are OFF");
+    } catch (error) {
+      setSaveMessage(`Error saving partner notices: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setSourceSaving(false);
+      setTimeout(() => setSaveMessage(""), 5000);
+    }
+  };
+
   const isLoading = settingsLoading || twoFALoading;
   const hasError = settingsError || twoFAError;
 
@@ -252,8 +270,11 @@ export default function SettingsPage() {
               <Row title="Scraped listing import" description={scrapedOn ? "ON: signups and new searches run Locust scraping, and scraped listings are imported and sent for approval." : "OFF: listings come from ALN. No Locust searches, scraped imports, photo backfill or approval emails."}>
                 <Toggle label="Scraped listing import" checked={scrapedOn} danger onChange={(v) => { if (!sourceSaving) setScrapedImport(v); }} />
               </Row>
-              <Row title="Automatic landlord outreach" description={landlordOn ? "ON: when tenants pick listings, Locust emails those landlords automatically." : "OFF: no automatic emails to landlords. Onboarded PM partners still get tenant-interest notices."} last>
+              <Row title="Automatic landlord outreach" description={landlordOn ? "ON: when tenants pick listings, Locust emails those landlords automatically." : "OFF: no automatic emails to landlords when tenants pick their listings."}>
                 <Toggle label="Automatic landlord outreach" checked={landlordOn} danger onChange={(v) => { if (!sourceSaving) setLandlordOutreach(v); }} />
+              </Row>
+              <Row title="Partner notices" description={partnerOn ? "ON: onboarded PM partners get a \"residents interested\" email when tenants pick their units." : "OFF: PM partners are not emailed when tenants pick their units."} last>
+                <Toggle label="Partner notices" checked={partnerOn} danger onChange={(v) => { if (!sourceSaving) setPartnerNotices(v); }} />
               </Row>
             </CardBody>
           </Card>
