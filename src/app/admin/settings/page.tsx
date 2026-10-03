@@ -148,6 +148,24 @@ export default function SettingsPage() {
     }
   };
 
+  // Automatic landlord outreach (demand-bundling emails to listing owners). Saves immediately.
+  const LANDLORD_KEY = "outreach.landlordAuto";
+  const landlordOn = changedSettings[LANDLORD_KEY] === true || changedSettings[LANDLORD_KEY] === "true";
+  const setLandlordOutreach = async (on: boolean) => {
+    if (on && !(await confirm({ title: "Turn automatic landlord outreach back on?", message: "When tenants pick listings, landlords will be emailed automatically again, and tenants will be told we're negotiating with offers in 2-3 business days.", confirmLabel: "Turn on", danger: true }))) return;
+    setSourceSaving(true);
+    try {
+      await settingsService.update({ [LANDLORD_KEY]: on });
+      setChangedSettings(prev => ({ ...prev, [LANDLORD_KEY]: on }));
+      setSaveMessage(on ? "Automatic landlord outreach is ON" : "Automatic landlord outreach is OFF");
+    } catch (error) {
+      setSaveMessage(`Error saving landlord outreach: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setSourceSaving(false);
+      setTimeout(() => setSaveMessage(""), 5000);
+    }
+  };
+
   const isLoading = settingsLoading || twoFALoading;
   const hasError = settingsError || twoFAError;
 
@@ -229,10 +247,13 @@ export default function SettingsPage() {
 
           {/* Listing Source */}
           <Card>
-            <CardHeader title="Listing Source" />
+            <CardHeader title="Listings & Outreach" />
             <CardBody className="pt-1 pb-1">
-              <Row title="Scraped listing import" description={scrapedOn ? "ON: signups and new searches run Locust scraping, and scraped listings are imported and sent for approval." : "OFF: listings come from ALN. No Locust searches, scraped imports, photo backfill or approval emails."} last>
+              <Row title="Scraped listing import" description={scrapedOn ? "ON: signups and new searches run Locust scraping, and scraped listings are imported and sent for approval." : "OFF: listings come from ALN. No Locust searches, scraped imports, photo backfill or approval emails."}>
                 <Toggle label="Scraped listing import" checked={scrapedOn} danger onChange={(v) => { if (!sourceSaving) setScrapedImport(v); }} />
+              </Row>
+              <Row title="Automatic landlord outreach" description={landlordOn ? "ON: when tenants pick listings, Locust emails those landlords automatically." : "OFF: no automatic emails to landlords. Onboarded PM partners still get tenant-interest notices."} last>
+                <Toggle label="Automatic landlord outreach" checked={landlordOn} danger onChange={(v) => { if (!sourceSaving) setLandlordOutreach(v); }} />
               </Row>
             </CardBody>
           </Card>
