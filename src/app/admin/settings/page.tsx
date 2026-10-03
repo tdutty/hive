@@ -84,7 +84,8 @@ export default function SettingsPage() {
   // Initialize local state when settings load
   useEffect(() => {
     if (settings) {
-      setChangedSettings(settings);
+      // the API returns { success, settings }; edit the inner object only
+      setChangedSettings(((settings as any).settings ?? {}) as Settings);
     }
   }, [settings]);
 
@@ -126,6 +127,25 @@ export default function SettingsPage() {
   const handleSignOut = async () => {
     if (!(await confirm({ title: "Sign out of Hive?", confirmLabel: "Sign out", danger: true }))) return;
     await signOut({ callbackUrl: "/login" });
+  };
+
+  // Listing source: ALN (licensed) vs. the old scraped import (Locust/Zillow). Saves immediately.
+  const SCRAPED_KEY = "listings.scrapedImport";
+  const scrapedOn = changedSettings[SCRAPED_KEY] === true || changedSettings[SCRAPED_KEY] === "true";
+  const [sourceSaving, setSourceSaving] = useState(false);
+  const setScrapedImport = async (on: boolean) => {
+    if (on && !(await confirm({ title: "Turn scraped listing import back on?", message: "Signups and new searches will start Locust scraping again, scraped listings will be imported, and approval emails will resume.", confirmLabel: "Turn on", danger: true }))) return;
+    setSourceSaving(true);
+    try {
+      await settingsService.update({ [SCRAPED_KEY]: on });
+      setChangedSettings(prev => ({ ...prev, [SCRAPED_KEY]: on }));
+      setSaveMessage(on ? "Scraped listing import is ON" : "Scraped listing import is OFF (ALN)");
+    } catch (error) {
+      setSaveMessage(`Error saving listing source: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setSourceSaving(false);
+      setTimeout(() => setSaveMessage(""), 5000);
+    }
   };
 
   const isLoading = settingsLoading || twoFALoading;
@@ -203,6 +223,16 @@ export default function SettingsPage() {
               </Row>
               <Row title="Alert on Critical Events" last>
                 <Toggle label="Alert on Critical Events" checked={!!changedSettings.alertsOnCritical} onChange={(v) => handleToggle("alertsOnCritical", v)} />
+              </Row>
+            </CardBody>
+          </Card>
+
+          {/* Listing Source */}
+          <Card>
+            <CardHeader title="Listing Source" />
+            <CardBody className="pt-1 pb-1">
+              <Row title="Scraped listing import" description={scrapedOn ? "ON: signups and new searches run Locust scraping, and scraped listings are imported and sent for approval." : "OFF: listings come from ALN. No Locust searches, scraped imports, photo backfill or approval emails."} last>
+                <Toggle label="Scraped listing import" checked={scrapedOn} danger onChange={(v) => { if (!sourceSaving) setScrapedImport(v); }} />
               </Row>
             </CardBody>
           </Card>
