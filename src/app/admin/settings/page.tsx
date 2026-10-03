@@ -220,6 +220,24 @@ export default function SettingsPage() {
     }
   };
 
+  // AI-written offers from a landlord's AI agent straight to tenants. Saves immediately.
+  const AI_OFFERS_KEY = "outreach.aiTenantOffers";
+  const aiOffersOn = changedSettings[AI_OFFERS_KEY] === true || changedSettings[AI_OFFERS_KEY] === "true";
+  const setAiOffers = async (on: boolean) => {
+    if (on && !(await confirm({ title: "Turn AI tenant offers back on?", message: "A landlord's AI agent will send AI-written offers straight to tenants by in-app notice, text and email, with no human review and no text-consent check.", confirmLabel: "Turn on", danger: true }))) return;
+    setSourceSaving(true);
+    try {
+      await settingsService.update({ [AI_OFFERS_KEY]: on });
+      setChangedSettings(prev => ({ ...prev, [AI_OFFERS_KEY]: on }));
+      setSaveMessage(on ? "AI tenant offers are ON" : "AI tenant offers are OFF");
+    } catch (error) {
+      setSaveMessage(`Error saving AI tenant offers: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setSourceSaving(false);
+      setTimeout(() => setSaveMessage(""), 5000);
+    }
+  };
+
   const isLoading = settingsLoading || twoFALoading;
   const hasError = settingsError || twoFAError;
 
@@ -315,8 +333,11 @@ export default function SettingsPage() {
               <Row title="Landlord replies" description={repliesOn ? "ON: a landlord who replies with interest is emailed a review link automatically." : "OFF: landlords who reply with interest get no automatic email. Handle them by hand."}>
                 <Toggle label="Landlord replies" checked={repliesOn} danger onChange={(v) => { if (!sourceSaving) setLandlordReplies(v); }} />
               </Row>
-              <Row title="PM crawler" description={crawlerOn ? "ON: daily PM coverage crawl, nightly listing sweep and weekly Maps rotation run on HasData." : "OFF: no PM discovery crawling and no HasData spend."} last>
+              <Row title="PM crawler" description={crawlerOn ? "ON: daily PM coverage crawl, nightly listing sweep and weekly Maps rotation run on HasData." : "OFF: no PM discovery crawling and no HasData spend."}>
                 <Toggle label="PM crawler" checked={crawlerOn} danger onChange={(v) => { if (!sourceSaving) setCrawler(v); }} />
+              </Row>
+              <Row title="AI tenant offers" description={aiOffersOn ? "ON: a landlord's AI agent sends AI-written offers straight to tenants (in-app, text, email)." : "OFF: the landlord AI agent cannot message tenants."} last>
+                <Toggle label="AI tenant offers" checked={aiOffersOn} danger onChange={(v) => { if (!sourceSaving) setAiOffers(v); }} />
               </Row>
             </CardBody>
           </Card>
