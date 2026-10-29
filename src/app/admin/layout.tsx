@@ -102,6 +102,11 @@ const navSections: NavSection[] = [
         href: "/admin/pm-port",
         icon: <Inbox size={20} />,
       },
+      {
+        label: "PM Terms",
+        href: "/admin/pm-port/terms",
+        icon: <FileSignature size={20} />,
+      },
       { label: "Email Triage", href: "/admin/triage", icon: <Inbox size={20} /> },
       {
         label: "Negotiations",
@@ -682,7 +687,10 @@ function TopHeader() {
   const { data: session } = useSession();
   const { setOpen } = useContext(DrawerCtx);
   const pathname = usePathname();
-  const crumb = navSections.flatMap((s) => s.items.map((i) => ({ ...i, section: s.title }))).find((i) => (i.href === "/admin" ? pathname === "/admin" : pathname.startsWith(i.href)));
+  // most specific match, same rule as the sidebar
+  const crumb = navSections.flatMap((s) => s.items.map((i) => ({ ...i, section: s.title })))
+    .filter((i) => (i.href === "/admin" ? pathname === "/admin" : pathname === i.href || pathname.startsWith(i.href + "/")))
+    .sort((a, b) => b.href.length - a.href.length)[0];
 
   return (
     <header className="fixed top-0 left-0 lg:left-64 right-0 h-16 border-b border-slate-200 bg-white flex items-center justify-between px-4 sm:px-6 lg:px-8 z-30">

@@ -98,6 +98,7 @@ export const sweetleaseApi = {
   get<T>(endpoint: string, params?: Record<string, string | number | boolean | undefined>) { return api.get<T>(endpoint, params); },
   post<T>(endpoint: string, body?: unknown) { return api.post<T>(endpoint, body); },
   patch<T>(endpoint: string, body?: unknown) { return api.patch<T>(endpoint, body); },
+  put<T>(endpoint: string, body?: unknown) { return api.put<T>(endpoint, body); },
 };
 
 export { ApiError };
