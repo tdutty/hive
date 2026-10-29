@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { sweetleaseApi } from "@/lib/api";
 import { Button, Card, PageHeader, Badge, Input, Textarea } from "@/components/kit";
 import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
-import { FileSignature, RefreshCw, Building2, CheckCircle2, Clock, Pencil } from "lucide-react";
+import { FileSignature, RefreshCw, Building2, CheckCircle2, Clock, Pencil, UserPlus, Copy, Mail, Link2 } from "lucide-react";
 
 interface Override { flatRate?: number; noDealDiscount?: boolean; noRenewalFee?: boolean; note?: string; agreedAt?: string; evidence?: { label: string; date?: string; sha256: string }[] }
 interface Company {
@@ -12,6 +12,7 @@ interface Company {
   override: Override | null; overrideSummary: string | null;
   accepted: { at: string; name: string; title: string } | null;
   acceptedOlderVersion: { at: string; name: string } | null;
+  account: { status: "claimed"; at: string; email: string } | { status: "existing"; email: string } | { status: "invited"; at: string; expiresAt: string } | { status: "none" };
 }
 
 const fmt = (s: string) => new Date(s).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -38,8 +39,8 @@ export default function PmTermsPage() {
   return (
     <div className="max-w-5xl">
       <PageHeader
-        title="PM Terms"
-        description="Which operators accepted their partner terms on their /port page, and the custom terms billing uses for them."
+        title="PM Partners"
+        description="Each operator's partner terms (accepted on their /port page, custom terms billing uses) and their SweetLease login."
         actions={<Button variant="ghost" size="icon" aria-label="Refresh" onClick={load}><RefreshCw size={15} className={loading ? "animate-spin" : ""} /></Button>}
       />
       {error && <ErrorBanner message={error} onRetry={load} className="mb-4" />}
@@ -69,6 +70,7 @@ export default function PmTermsPage() {
                       {!c.accepted && c.acceptedOlderVersion && <> · <Clock size={11} className="inline" aria-hidden /> accepted earlier terms on {fmt(c.acceptedOlderVersion.at)}</>}
                       {c.override?.evidence?.length ? ` · ${c.override.evidence.length} evidence item${c.override.evidence.length === 1 ? "" : "s"}` : ""}
                     </div>
+                    <AccountLine company={c} onChanged={load} onError={setError} />
                   </div>
                   <Button size="sm" variant={editing === c.id ? "secondary" : "ghost"} icon={<Pencil size={13} />} onClick={() => setEditing(editing === c.id ? null : c.id)}>
                     {c.override ? "Edit terms" : "Set custom terms"}
@@ -79,6 +81,70 @@ export default function PmTermsPage() {
             ))}
           </ul>
         </Card>
+      )}
+    </div>
+  );
+}
+
+function AccountLine({ company: c, onChanged, onError }: { company: Company; onChanged: () => void; onError: (m: string) => void }) {
+  const [busy, setBusy] = useState<"link" | "email" | "attach" | null>(null);
+  const [link, setLink] = useState<string | null>(null);
+  const [armedEmail, setArmedEmail] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const invite = async (send: boolean) => {
+    if (send && !armedEmail) { setArmedEmail(true); return; }
+    setArmedEmail(false);
+    setBusy(send ? "email" : "link");
+    try {
+      const r = await sweetleaseApi.post<{ url: string; email: string; emailed: { sent: boolean; reason?: string } }>(`/api/admin/pm-account/${c.id}/invite`, { send });
+      setLink(r.url);
+      if (send && !r.emailed.sent) onError(`Invite created but the email was not sent (${r.emailed.reason}). Copy the link instead.`);
+      onChanged();
+    } catch {
+      onError(c.contactEmail ? "Creating the invite failed" : "Add a contact email for this operator first");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const copy = async () => {
+    if (!link) return;
+    try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {}
+  };
+
+  const attach = async () => {
+    setBusy("attach");
+    try { await sweetleaseApi.post(`/api/admin/pm-account/${c.id}/link`, {}); onChanged(); }
+    catch { onError("Linking the existing login failed"); }
+    finally { setBusy(null); }
+  };
+
+  if (c.account.status === "existing") {
+    return (
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+        <Badge tone="warning" dot>Has a login, not linked</Badge>
+        <span>{c.account.email}</span>
+        <Button size="sm" variant="ghost" icon={<Link2 size={13} />} onClick={attach} loading={busy === "attach"} disabled={!!busy}>Link existing login</Button>
+      </div>
+    );
+  }
+  if (c.account.status === "claimed") {
+    return <div className="mt-1 text-xs text-slate-600"><Badge tone="success" dot>Account active</Badge> <span className="ml-1">{c.account.email} · since {fmt(c.account.at)}</span></div>;
+  }
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+      {c.account.status === "invited" ? <Badge tone="warning" dot>Invited {fmt(c.account.at)}</Badge> : <Badge tone="neutral" dot>No login yet</Badge>}
+      <Button size="sm" variant="ghost" icon={<UserPlus size={13} />} onClick={() => invite(false)} loading={busy === "link"} disabled={!!busy || !c.contactEmail}>Create invite link</Button>
+      <Button size="sm" variant="ghost" icon={<Mail size={13} />} onClick={() => invite(true)} loading={busy === "email"} disabled={!!busy || !c.contactEmail}>
+        {armedEmail ? `Confirm: email ${c.contactEmail}` : "Email invite"}
+      </Button>
+      {link && (
+        <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 py-1">
+          <span className="max-w-[260px] truncate font-mono text-[11px]">{link}</span>
+          <button onClick={copy} className="text-slate-500 hover:text-slate-800" aria-label="Copy invite link"><Copy size={12} /></button>
+          {copied && <span className="text-emerald-600">Copied</span>}
+        </span>
       )}
     </div>
   );

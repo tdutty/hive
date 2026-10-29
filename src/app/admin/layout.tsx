@@ -103,7 +103,7 @@ const navSections: NavSection[] = [
         icon: <Inbox size={20} />,
       },
       {
-        label: "PM Terms",
+        label: "PM Partners",
         href: "/admin/pm-port/terms",
         icon: <FileSignature size={20} />,
       },
