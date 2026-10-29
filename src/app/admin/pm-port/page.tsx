@@ -56,7 +56,7 @@ export default function PMPortReviewPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await sweetleaseApi.get<StagingResponse>("/api/admin/pm-port/staging");
+      const res = await sweetleaseApi.get<StagingResponse>("/api/admin/pm-port/staging", { excludeSource: "url" });
       setData(res);
     } catch {
       setError("Failed to load staging queue");
@@ -102,8 +102,8 @@ export default function PMPortReviewPage() {
   return (
     <div className="max-w-6xl">
       <PageHeader
-        title="PM Port Review"
-        description="Properties accepted PMs sent in, awaiting approval to go live."
+        title="PM Uploads"
+        description="Spreadsheet and manual uploads from operators, awaiting approval. Units from listings links are in Link Imports."
         actions={
           <Button variant="ghost" size="icon" aria-label="Refresh" onClick={load}>
             <RefreshCw size={15} className={loading ? "animate-spin" : ""} />

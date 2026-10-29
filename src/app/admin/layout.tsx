@@ -48,6 +48,7 @@ import {
   Search as SearchIcon,
   Command,
   PauseCircle,
+  Link2,
 } from "lucide-react";
 import {
   useNotifications,
@@ -92,7 +93,12 @@ const navSections: NavSection[] = [
         icon: <CheckCircle size={20} />,
       },
       {
-        label: "PM Port Review",
+        label: "PM Link Imports",
+        href: "/admin/pm-port/links",
+        icon: <Link2 size={20} />,
+      },
+      {
+        label: "PM Uploads",
         href: "/admin/pm-port",
         icon: <Inbox size={20} />,
       },
@@ -303,12 +309,12 @@ function Sidebar() {
   useEffect(() => { setOpen(false); }, [pathname, setOpen]);
   useEffect(() => { document.body.style.overflow = open ? "hidden" : ""; return () => { document.body.style.overflow = ""; }; }, [open]);
 
-  const isActive = (href: string) => {
-    if (href === "/admin") {
-      return pathname === "/admin";
-    }
-    return pathname.startsWith(href);
-  };
+  // The most specific matching item wins, so /admin/pm-port/links does not also light up /admin/pm-port
+  const activeHref = navSections
+    .flatMap((sec) => sec.items.map((i) => i.href))
+    .filter((h) => (h === "/admin" ? pathname === "/admin" : pathname === h || pathname.startsWith(h + "/")))
+    .sort((a, b) => b.length - a.length)[0];
+  const isActive = (href: string) => href === activeHref;
 
   const handleSignOut = async () => {
     await signOut({ redirect: false });
