@@ -238,6 +238,24 @@ export default function SettingsPage() {
     }
   };
 
+  // Account deletions: erase (anonymize) accounts once their confirmed deletion date passes. Saves immediately.
+  const DELETIONS_KEY = "privacy.accountDeletions";
+  const deletionsOn = changedSettings[DELETIONS_KEY] === true || changedSettings[DELETIONS_KEY] === "true";
+  const setDeletions = async (on: boolean) => {
+    if (on && !(await confirm({ title: "Turn account deletions on?", message: "Once a day, accounts whose confirmed deletion date has passed have their personal data erased (name, email, phone, logins). Leases and payments are kept. Review the dry run first: /api/cron/account-deletions?dryRun=1.", confirmLabel: "Turn on", danger: true }))) return;
+    setSourceSaving(true);
+    try {
+      await settingsService.update({ [DELETIONS_KEY]: on });
+      setChangedSettings(prev => ({ ...prev, [DELETIONS_KEY]: on }));
+      setSaveMessage(on ? "Account deletions are ON" : "Account deletions are OFF");
+    } catch (error) {
+      setSaveMessage(`Error saving account deletions: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setSourceSaving(false);
+      setTimeout(() => setSaveMessage(""), 5000);
+    }
+  };
+
   // Onboarding reminder emails to recent sign-ups who didn't finish the survey. Saves immediately.
   const REMIND_KEY = "outreach.onboardingReminders";
   const remindOn = changedSettings[REMIND_KEY] === true || changedSettings[REMIND_KEY] === "true";
@@ -389,6 +407,9 @@ export default function SettingsPage() {
               </Row>
               <Row title="PM crawler" description={crawlerOn ? "ON: daily PM coverage crawl, nightly listing sweep and weekly Maps rotation run on HasData." : "OFF: no PM discovery crawling and no HasData spend."}>
                 <Toggle label="PM crawler" checked={crawlerOn} danger onChange={(v) => { if (!sourceSaving) setCrawler(v); }} />
+              </Row>
+              <Row title="Account deletions" description={deletionsOn ? "ON: daily, accounts past their confirmed deletion date have personal data erased (leases and payments kept)." : "OFF: confirmed deletion requests wait; nothing is erased."}>
+                <Toggle label="Account deletions" checked={deletionsOn} danger onChange={(v) => { if (!sourceSaving) setDeletions(v); }} />
               </Row>
               <Row title="Onboarding reminders" description={remindOn ? "ON: daily day 1/3/7 reminder emails to sign-ups from the last 21 days who didn't finish the survey." : "OFF: no onboarding reminder emails are sent."}>
                 <Toggle label="Onboarding reminders" checked={remindOn} danger onChange={(v) => { if (!sourceSaving) setRemind(v); }} />
