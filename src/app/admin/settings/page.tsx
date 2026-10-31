@@ -238,6 +238,24 @@ export default function SettingsPage() {
     }
   };
 
+  // Onboarding reminder emails to recent sign-ups who didn't finish the survey. Saves immediately.
+  const REMIND_KEY = "outreach.onboardingReminders";
+  const remindOn = changedSettings[REMIND_KEY] === true || changedSettings[REMIND_KEY] === "true";
+  const setRemind = async (on: boolean) => {
+    if (on && !(await confirm({ title: "Turn onboarding reminders on?", message: "Once a day, people who started the survey in the last 21 days but didn't finish get up to three reminder emails (day 1, 3 and 7). Preview the list first with /api/cron/onboarding-reminder?dryRun=1.", confirmLabel: "Turn on", danger: true }))) return;
+    setSourceSaving(true);
+    try {
+      await settingsService.update({ [REMIND_KEY]: on });
+      setChangedSettings(prev => ({ ...prev, [REMIND_KEY]: on }));
+      setSaveMessage(on ? "Onboarding reminders are ON" : "Onboarding reminders are OFF");
+    } catch (error) {
+      setSaveMessage(`Error saving onboarding reminders: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setSourceSaving(false);
+      setTimeout(() => setSaveMessage(""), 5000);
+    }
+  };
+
   // Automatic tenant penalty processing: warnings and off-session card charges. Saves immediately.
   const PENALTY_KEY = "payments.penaltyAutoCharge";
   const penaltyOn = changedSettings[PENALTY_KEY] === true || changedSettings[PENALTY_KEY] === "true";
@@ -371,6 +389,9 @@ export default function SettingsPage() {
               </Row>
               <Row title="PM crawler" description={crawlerOn ? "ON: daily PM coverage crawl, nightly listing sweep and weekly Maps rotation run on HasData." : "OFF: no PM discovery crawling and no HasData spend."}>
                 <Toggle label="PM crawler" checked={crawlerOn} danger onChange={(v) => { if (!sourceSaving) setCrawler(v); }} />
+              </Row>
+              <Row title="Onboarding reminders" description={remindOn ? "ON: daily day 1/3/7 reminder emails to sign-ups from the last 21 days who didn't finish the survey." : "OFF: no onboarding reminder emails are sent."}>
+                <Toggle label="Onboarding reminders" checked={remindOn} danger onChange={(v) => { if (!sourceSaving) setRemind(v); }} />
               </Row>
               <Row title="Automatic penalty charges" description={penaltyOn ? "ON: every 12h the worker warns tenants about penalties and charges their saved cards (Stripe, off-session)." : "OFF: no penalty warnings, texts or card charges are sent."}>
                 <Toggle label="Automatic penalty charges" checked={penaltyOn} danger onChange={(v) => { if (!sourceSaving) setPenalty(v); }} />
