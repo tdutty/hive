@@ -238,6 +238,24 @@ export default function SettingsPage() {
     }
   };
 
+  // Automatic tenant penalty processing: warnings and off-session card charges. Saves immediately.
+  const PENALTY_KEY = "payments.penaltyAutoCharge";
+  const penaltyOn = changedSettings[PENALTY_KEY] === true || changedSettings[PENALTY_KEY] === "true";
+  const setPenalty = async (on: boolean) => {
+    if (on && !(await confirm({ title: "Turn automatic penalty charges on?", message: "Every 12 hours the worker will email and text tenants about penalties and charge their saved cards off-session through Stripe, with no human review.", confirmLabel: "Turn on", danger: true }))) return;
+    setSourceSaving(true);
+    try {
+      await settingsService.update({ [PENALTY_KEY]: on });
+      setChangedSettings(prev => ({ ...prev, [PENALTY_KEY]: on }));
+      setSaveMessage(on ? "Automatic penalty charges are ON" : "Automatic penalty charges are OFF");
+    } catch (error) {
+      setSaveMessage(`Error saving penalty charges: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setSourceSaving(false);
+      setTimeout(() => setSaveMessage(""), 5000);
+    }
+  };
+
   // Concierge inbox check (reads tgilbert@ every 2 minutes). Saves immediately.
   const POLL_KEY = "concierge.inboxPoll";
   const pollOn = changedSettings[POLL_KEY] === true || changedSettings[POLL_KEY] === "true";
@@ -353,6 +371,9 @@ export default function SettingsPage() {
               </Row>
               <Row title="PM crawler" description={crawlerOn ? "ON: daily PM coverage crawl, nightly listing sweep and weekly Maps rotation run on HasData." : "OFF: no PM discovery crawling and no HasData spend."}>
                 <Toggle label="PM crawler" checked={crawlerOn} danger onChange={(v) => { if (!sourceSaving) setCrawler(v); }} />
+              </Row>
+              <Row title="Automatic penalty charges" description={penaltyOn ? "ON: every 12h the worker warns tenants about penalties and charges their saved cards (Stripe, off-session)." : "OFF: no penalty warnings, texts or card charges are sent."}>
+                <Toggle label="Automatic penalty charges" checked={penaltyOn} danger onChange={(v) => { if (!sourceSaving) setPenalty(v); }} />
               </Row>
               <Row title="AI tenant offers" description={aiOffersOn ? "ON: a landlord's AI agent sends AI-written offers straight to tenants (in-app, text, email)." : "OFF: the landlord AI agent cannot message tenants."}>
                 <Toggle label="AI tenant offers" checked={aiOffersOn} danger onChange={(v) => { if (!sourceSaving) setAiOffers(v); }} />
