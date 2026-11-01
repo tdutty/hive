@@ -6,6 +6,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useEffect, useRef, useState, createContext, useContext } from "react";
 import {
   LayoutDashboard,
+  Send,
   Users,
   Building2,
   DollarSign,
@@ -106,6 +107,11 @@ const navSections: NavSection[] = [
         label: "PM Partners",
         href: "/admin/pm-port/terms",
         icon: <FileSignature size={20} />,
+      },
+      {
+        label: "Cold Outreach",
+        href: "/admin/outreach/instantly",
+        icon: <Send size={20} />,
       },
       { label: "Email Triage", href: "/admin/triage", icon: <Inbox size={20} /> },
       {
