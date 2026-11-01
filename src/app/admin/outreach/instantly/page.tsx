@@ -5,8 +5,13 @@ import { sweetleaseApi } from "@/lib/api";
 import { Button, Card, CardHeader, CardBody, PageHeader, Badge, StatTile, FilterChips, Table, THead, TH, TBody, TR, TD, Input } from "@/components/kit";
 import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
 import { RefreshCw, Send, ChevronDown, ChevronRight, UserX } from "lucide-react";
+import { SimpleLineChart } from "@/components/charts/SimpleLineChart";
 
 interface Step { step: number; sent: number; replied: number; replyRate: number | null; bounced: number; unsubscribed: number }
+interface VariantStep { step: number; variants: { variant: number; label: string; sent: number; replied: number; replyRate: number | null }[] }
+interface Mailbox { account: string; sent: number; bounced: number; bounceRate: number | null; replied: number; replyRate: number | null; unsubscribed: number; health: Campaign["health"] }
+interface Week { week: string; sent: number; bounced: number; replied: number; unsubscribed: number; bounceRate: number | null; replyRate: number | null }
+interface Source { source: string; sent: number; bounced: number; bounceRate: number | null; replied: number; replyRate: number | null; interested: number }
 interface Campaign {
   campaignId: string | null;
   name: string;
@@ -23,11 +28,15 @@ interface Campaign {
   health: "ok" | "warning" | "danger" | "unknown";
   next: { pmsContacted: number; termsAccepted: number; unitsLive: number; leasesSigned: number };
   steps: Step[];
+  variants: VariantStep[];
 }
 interface Funnel {
   days: number;
   totals: { contacted: number; bounced: number; replied: number; interested: number; unsubscribed: number; bounceRate: number | null; replyRate: number | null; unsubscribeRate: number | null };
   campaigns: Campaign[];
+  mailboxes: Mailbox[];
+  weekly: Week[];
+  sources: Source[];
   suppressedFromInstantly: number;
 }
 
@@ -247,6 +256,30 @@ export default function InstantlyFunnelPage() {
                                     </tbody>
                                   </table>
                                 )}
+                                {c.variants.length > 0 && (
+                                  <div className="mt-4">
+                                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 mb-1">A/B tests</p>
+                                    <div className="flex flex-wrap gap-3">
+                                      {c.variants.map((v) => {
+                                        const best = Math.max(...v.variants.map((x) => x.replyRate ?? -1));
+                                        return (
+                                          <div key={v.step} className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm">
+                                            <p className="font-medium text-slate-900 mb-1">Email {v.step}</p>
+                                            {v.variants.map((x) => (
+                                              <p key={x.variant} className="tabular text-slate-700">
+                                                <span className={x.replyRate === best && best > 0 ? "font-semibold text-slate-900" : ""}>Variant {x.label}</span>
+                                                {": "}{x.replied}/{x.sent} replied ({pct(x.replyRate)})
+                                              </p>
+                                            ))}
+                                            {Math.min(...v.variants.map((x) => x.sent)) < 100 && (
+                                              <p className="text-xs text-slate-500 mt-1">Under 100 sends per variant: too early to call.</p>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
                                 <p className="mt-2 text-xs text-slate-500">
                                   {c.next.pmsContacted} of these contacts match a PM company in SweetLease. Interested {c.interested}, not interested {c.notInterested}.
                                 </p>
@@ -261,6 +294,77 @@ export default function InstantlyFunnelPage() {
               </div>
             </Card>
           )}
+          {data.weekly.length > 0 && (
+            <Card className="mt-5">
+              <CardHeader title="Week by week" description="Reply and bounce rate per week, in people reached. A rising bounce line is the early warning to pause and clean the list." />
+              <div className="px-2 pb-3">
+                <SimpleLineChart
+                  bare
+                  height={220}
+                  xAxisKey="label"
+                  data={data.weekly.map((w) => ({ ...w, label: new Date(w.week + "T00:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }) }))}
+                  lines={[
+                    { dataKey: "replyRate", color: "#0284c7", name: "Reply rate %" },
+                    { dataKey: "bounceRate", color: "#dc2626", name: "Bounce rate %" },
+                  ]}
+                />
+              </div>
+            </Card>
+          )}
+
+          {data.mailboxes.length > 0 && (
+            <Card className="mt-5">
+              <CardHeader title="Sending mailboxes" description="If one account's bounces climb while the others stay low, that mailbox or its domain needs attention." />
+              <div className="overflow-x-auto">
+                <Table>
+                  <THead>
+                    <tr><TH>Mailbox</TH><TH numeric>Reached</TH><TH numeric>Bounce</TH><TH numeric>Replied</TH><TH numeric>Unsub</TH><TH>Health</TH></tr>
+                  </THead>
+                  <TBody>
+                    {data.mailboxes.map((m) => (
+                      <TR key={m.account}>
+                        <TD className="font-medium text-slate-900">{m.account}</TD>
+                        <TD numeric className="font-semibold">{m.sent}</TD>
+                        <TD numeric className={m.bounceRate != null && m.bounceRate >= 2 ? "text-red-700 font-semibold" : ""}>{pct(m.bounceRate)}</TD>
+                        <TD numeric><span className="font-semibold">{m.replied}</span> <span className="text-slate-500">({pct(m.replyRate)})</span></TD>
+                        <TD numeric muted>{m.unsubscribed}</TD>
+                        <TD><Badge dot tone={HEALTH[m.health].tone}>{HEALTH[m.health].label}</Badge></TD>
+                      </TR>
+                    ))}
+                  </TBody>
+                </Table>
+              </div>
+            </Card>
+          )}
+
+          <Card className="mt-5">
+            <CardHeader title="Lead sources" description="Which lists are worth buying or building again. Sources are recorded when leads go in through the upload script." />
+            {data.sources.length === 0 ? (
+              <p className="px-5 pb-4 text-sm text-slate-500">
+                No sourced leads yet. Upload with <code className="text-xs bg-slate-100 rounded px-1 py-0.5">scripts/instantly/upload-leads.ts --source &quot;list name&quot;</code> and results will show here.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <THead>
+                    <tr><TH>Source</TH><TH numeric>Reached</TH><TH numeric>Bounce</TH><TH numeric>Replied</TH><TH numeric>Interested</TH></tr>
+                  </THead>
+                  <TBody>
+                    {data.sources.map((src) => (
+                      <TR key={src.source}>
+                        <TD className="font-medium text-slate-900">{src.source}</TD>
+                        <TD numeric className="font-semibold">{src.sent}</TD>
+                        <TD numeric className={src.bounceRate != null && src.bounceRate >= 2 ? "text-red-700 font-semibold" : ""}>{pct(src.bounceRate)}</TD>
+                        <TD numeric><span className="font-semibold">{src.replied}</span> <span className="text-slate-500">({pct(src.replyRate)})</span></TD>
+                        <TD numeric>{src.interested}</TD>
+                      </TR>
+                    ))}
+                  </TBody>
+                </Table>
+              </div>
+            )}
+          </Card>
+
           <EraseContact onDone={load} />
         </>
       )}
