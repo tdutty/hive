@@ -2,9 +2,9 @@
 
 import { Fragment, useState, useEffect, useCallback } from "react";
 import { sweetleaseApi } from "@/lib/api";
-import { Button, Card, CardHeader, PageHeader, Badge, StatTile, FilterChips, Table, THead, TH, TBody, TR, TD } from "@/components/kit";
+import { Button, Card, CardHeader, CardBody, PageHeader, Badge, StatTile, FilterChips, Table, THead, TH, TBody, TR, TD, Input } from "@/components/kit";
 import { ErrorBanner, Spinner, EmptyState } from "@/components/ui/AsyncState";
-import { RefreshCw, Send, ChevronDown, ChevronRight } from "lucide-react";
+import { RefreshCw, Send, ChevronDown, ChevronRight, UserX } from "lucide-react";
 
 interface Step { step: number; sent: number; replied: number; replyRate: number | null; bounced: number; unsubscribed: number }
 interface Campaign {
@@ -31,7 +31,77 @@ interface Funnel {
   suppressedFromInstantly: number;
 }
 
+interface ForgetResult {
+  email: string;
+  dryRun: boolean;
+  instantly: { found: number; deleted: number; skipped?: string; errors: string[] };
+  eventsScrubbed: number;
+}
+
 type Range = "30" | "90" | "365";
+
+/** Erasure request from a cold-outreach contact: check first (dry run), then erase. */
+function EraseContact({ onDone }: { onDone: () => void }) {
+  const [email, setEmail] = useState("");
+  const [check, setCheck] = useState<ForgetResult | null>(null);
+  const [done, setDone] = useState<ForgetResult | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const run = async (dryRun: boolean) => {
+    setBusy(true);
+    setErr(null);
+    try {
+      const r = await sweetleaseApi.post<ForgetResult>("/api/admin/outreach/forget", { email: email.trim(), dryRun });
+      if (dryRun) { setCheck(r); setDone(null); } else { setDone(r); setCheck(null); setEmail(""); onDone(); }
+    } catch {
+      setErr("Couldn't process that address");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card className="mt-5">
+      <CardHeader
+        title={<span className="inline-flex items-center gap-2"><UserX size={16} className="text-slate-500" aria-hidden />Erase a contact</span>}
+        description="When a property manager asks us to delete their data: their Instantly leads are deleted, our stored emails are scrubbed, and the address stays on do-not-contact so they are never emailed again."
+      />
+      <CardBody>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            type="email"
+            placeholder="name@company.com"
+            value={email}
+            onChange={(e) => { setEmail(e.target.value); setCheck(null); }}
+            className="w-72"
+          />
+          <Button variant="secondary" disabled={busy || !email.includes("@")} onClick={() => run(true)}>Check</Button>
+          {check && (
+            <Button variant="danger" disabled={busy} onClick={() => run(false)}>
+              Erase {check.email}
+            </Button>
+          )}
+        </div>
+        {err && <p className="mt-2 text-sm text-red-700">{err}</p>}
+        {check && (
+          <p className="mt-3 text-sm text-slate-700">
+            Found <span className="font-semibold">{check.instantly.found}</span> Instantly lead{check.instantly.found === 1 ? "" : "s"} and{" "}
+            <span className="font-semibold">{check.eventsScrubbed}</span> stored event{check.eventsScrubbed === 1 ? "" : "s"}.
+            {check.instantly.skipped && <span className="text-amber-700"> Instantly not checked: {check.instantly.skipped}.</span>}
+            {check.instantly.errors.length > 0 && <span className="text-red-700"> Instantly error: {check.instantly.errors[0]}</span>}
+          </p>
+        )}
+        {done && (
+          <p className="mt-3 text-sm text-emerald-800">
+            Erased {done.email}: {done.instantly.deleted} Instantly lead{done.instantly.deleted === 1 ? "" : "s"} deleted, {done.eventsScrubbed} event{done.eventsScrubbed === 1 ? "" : "s"} scrubbed, kept on do-not-contact.
+            {done.instantly.errors.length > 0 && <span className="text-red-700"> Some Instantly deletes failed: {done.instantly.errors.join(", ")}</span>}
+          </p>
+        )}
+      </CardBody>
+    </Card>
+  );
+}
 const pct = (v: number | null) => (v == null ? "-" : `${v}%`);
 const HEALTH: Record<Campaign["health"], { tone: "success" | "warning" | "danger" | "neutral"; label: string }> = {
   ok: { tone: "success", label: "Healthy" },
@@ -191,6 +261,7 @@ export default function InstantlyFunnelPage() {
               </div>
             </Card>
           )}
+          <EraseContact onDone={load} />
         </>
       )}
     </div>
